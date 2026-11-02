@@ -71,6 +71,14 @@ workspace/
 
 `wiki/projects/` holds project **records**; the root `projects/` folder holds **deliverables**. Records are human-readable text files. Ask the AI to edit them in plain language.
 
+## Explore your Wiki in 3D
+
+See how your notes and projects connect. Explore the 3D graph and replay how your Wiki has grown over time.
+
+![Animated demonstration of connected pages growing in kote2's Wiki graph](https://github.com/user-attachments/assets/dfb41563-1fea-4ac0-9303-cc9cd7579a7d)
+
+*A demo using kote2's own Wiki. The interface shown is in Japanese.*
+
 ## Read when you need it
 
 The linked guides below are currently in Japanese.
