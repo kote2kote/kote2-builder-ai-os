@@ -1,0 +1,9 @@
+{
+  "schema": 1,
+  "methods": ["project-setup@1", "agent-settings@1"],
+  "ai": ["claude", "codex"],
+  "skills": [],
+  "checks": [
+    {"name": "合意した完成条件と両AI実読込", "status": "unrun", "evidence": "README.md"}
+  ]
+}

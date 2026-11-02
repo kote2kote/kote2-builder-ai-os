@@ -1,0 +1,10 @@
+# scripts/setup.sh がこのひな型から cloudflared/config.yml を書き出します(直接編集しない)。
+# ~/.cloudflared/config.yml(既存の常設トンネル)は読まない。起動時に --config でこのファイルを明示する。
+tunnel: __TUNNEL_ID__
+credentials-file: __CREDENTIALS_FILE__
+
+ingress:
+  - hostname: __N8N_HOST__
+    # localhost ではなく 127.0.0.1(IPv6 の ::1 に解決されて繋がらない事故を避ける)
+    service: http://127.0.0.1:__N8N_LOCAL_PORT__
+  - service: http_status:404

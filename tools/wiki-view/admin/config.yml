@@ -1,0 +1,76 @@
+# yaml-language-server: $schema=https://unpkg.com/@sveltia/cms@0.252.0/schema/sveltia-cms.json
+# ============================================================
+# ワークスペースの Wiki（wiki/）を、本人が画面で直すための Sveltia CMS の設定（kote2 Builder AI OS の本体。OS の更新で配る）
+# - 開き方: ワークスペースのいちばん上で python3 tools/wiki_view.py open edit → Chrome / Edge で「ローカルリポジトリで作業」（Work with Local Repository）→
+#   ワークスペースのフォルダ（wiki/ と .git があるフォルダ）を選ぶ。backend は github を名乗るだけ（認証も remote も使わない）
+# - 保存するとワークスペースのファイルが直接変わる。commit はしない（次に AI と話すとき、AI が中身を見て commit する）。
+#   Sveltia の設定にある「ローカルの変更を commit する」は OFF のままにする
+# - 書き方は wiki/README.md。書き方を崩しにくいように、本文はふつうの文字の欄（text）にし、日付も文字のまま扱い、空の項目は書かない。
+#   保存すると変わること（tests/wiki/ で確かめた）: front matter のあとに空行が1行入る・front matter の中のコメント（# …）が消える・
+#   ここに無い項目は消えずに残るが、ここにある項目のあとへ名前の順に並び替わる。本文と、ここにある項目の並びは変わらない
+# - v3 から移したカード（wiki/notes/v3/）は項目が多く、保存すると並びが大きく変わるので、ここでは直さない（画面で読む・直すのは AI に頼む）
+# - ページを新しく作る・消すのは AI に頼む（ここでは直すだけ）
+# ============================================================
+backend:
+  name: github
+  repo: local/workspace
+  branch: main
+media_folder: wiki/assets
+output:
+  omit_empty_optional_fields: true
+collections:
+  - name: projects
+    label: 案件
+    description: 1 つの仕事に 1 ページ。状態・次の一手・本文を直せる
+    folder: wiki/projects
+    extension: md
+    format: yaml-frontmatter
+    create: false
+    delete: false
+    summary: '{{title}}'
+    sortable_fields: [title, updated]
+    fields:
+      - { name: title, label: 題, widget: string }
+      - name: status
+        label: 状態
+        widget: select
+        options: [{ label: 進行中, value: active }, { label: 一時停止, value: paused }, { label: 完了, value: done }]
+      - { name: updated, label: 更新した日, widget: string, required: false, hint: 'YYYY-MM-DD（例 2026-10-25）' }
+      - { name: v3_path, label: v3 での場所（v3 から移した仕事）, widget: string, required: false }
+      - { name: path, label: 成果物の場所, widget: string, required: false }
+      - { name: recipe, label: もとにしたレシピ, widget: string, required: false }
+      - { name: next, label: 次の一手, widget: string, required: false }
+      - { name: body, label: 本文, widget: text }
+  - name: notes
+    label: 知識
+    description: 調べて分かったこと・次の仕事でも使えるコツ
+    folder: wiki/notes
+    extension: md
+    format: yaml-frontmatter
+    create: false
+    delete: false
+    summary: '{{title}}'
+    sortable_fields: [title, updated]
+    fields:
+      - { name: title, label: 題, widget: string }
+      - name: status
+        label: 状態
+        widget: select
+        options: [{ label: 未確認, value: draft }, { label: 確かめた, value: confirmed }]
+      - { name: updated, label: 更新した日, widget: string, required: false, hint: 'YYYY-MM-DD' }
+      - { name: body, label: 本文, widget: text }
+  - name: me
+    label: わたし
+    files:
+      - name: profile
+        label: プロフィール（本人が言ったこと）
+        file: wiki/me/profile.md
+        format: frontmatter
+        fields:
+          - { name: body, label: 本文, widget: text, hint: '1 行に 1 つ。行の終わりに〔本人 YYYY-MM-DD〕' }
+      - name: proposals
+        label: 確認待ち（AI の推測）
+        file: wiki/me/proposals.md
+        format: frontmatter
+        fields:
+          - { name: body, label: 本文, widget: text }

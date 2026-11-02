@@ -1,0 +1,13 @@
+{
+  "webhook_setting_id": "1",
+  "webhook_event_type": "message_created",
+  "webhook_event_time": 1700000000,
+  "webhook_event": {
+    "message_id": "1000000000000001",
+    "room_id": 12345678,
+    "account_id": 1234567,
+    "body": "テスト(メンション無し。ボットは反応しない)",
+    "send_time": 1700000000,
+    "update_time": 0
+  }
+}

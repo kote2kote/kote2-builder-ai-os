@@ -1,0 +1,128 @@
+{
+  "_note": "架空データ。実在の会社名・製品名・人名・URL・鍵を書かない(秘密走査の対象)。tests/ui/*.mjs と screens.mjs が mock-api.mjs 経由で使う",
+  "placeholders": {
+    "PRODUCT_NAME": "AI Search ナレッジ"
+  },
+  "scenarios": {
+    "default": {
+      "kbs": [
+        {
+          "id": "k-a1b2c3",
+          "name": "サンプル資料 A",
+          "description": "架空の加湿器のマニュアルと FAQ",
+          "docCount": 2,
+          "createdAt": "2026-01-10"
+        },
+        {
+          "id": "k-d4e5f6",
+          "name": "サンプル資料 B",
+          "description": "架空の空気清浄機の取扱説明書",
+          "docCount": 1,
+          "createdAt": "2026-01-12"
+        },
+        {
+          "id": "k-g7h8i9",
+          "name": "社内ルール(架空)",
+          "description": "経費精算と休暇申請の手順",
+          "docCount": 1,
+          "createdAt": "2026-01-15"
+        }
+      ],
+      "docs": {
+        "k-a1b2c3": [
+          {
+            "id": "d-0001",
+            "name": "加湿器マニュアル(架空).pdf",
+            "type": "pdf",
+            "pages": 12,
+            "size": 1843200,
+            "createdAt": "2026-01-10"
+          },
+          {
+            "id": "d-0002",
+            "name": "よくある質問(架空).md",
+            "type": "file",
+            "size": 5120,
+            "createdAt": "2026-01-11"
+          }
+        ],
+        "k-d4e5f6": [
+          {
+            "id": "d-0003",
+            "name": "空気清浄機 取扱説明書(架空).pdf",
+            "type": "pdf",
+            "pages": 8,
+            "size": 1228800,
+            "createdAt": "2026-01-12"
+          }
+        ],
+        "k-g7h8i9": [
+          {
+            "id": "d-0004",
+            "name": "経費精算の手順(架空).md",
+            "type": "file",
+            "size": 3072,
+            "createdAt": "2026-01-15"
+          }
+        ]
+      },
+      "chat": {
+        "answer": "フィルターの掃除は次の手順です。\n1. 電源を切り、電源プラグを抜く\n2. 背面カバーを外し、フィルターを取り出す\n3. ぬるま湯で軽く押し洗いし、陰干しで完全に乾かす\n4. 元の向きで戻し、カバーを閉める(マニュアル 3 ページ)",
+        "sources": [
+          {
+            "kbId": "k-a1b2c3",
+            "docId": "d-0001",
+            "docName": "加湿器マニュアル(架空).pdf",
+            "page": 3,
+            "score": 0.842,
+            "excerpt": "フィルターのお手入れ: 2 週間に 1 回を目安に、ぬるま湯で押し洗いしてください。洗剤は使わないでください。",
+            "hasThumb": true
+          },
+          {
+            "kbId": "k-a1b2c3",
+            "docId": "d-0001",
+            "docName": "加湿器マニュアル(架空).pdf",
+            "page": 4,
+            "score": 0.611,
+            "excerpt": "フィルターの交換目安は約 1 年です。目詰まりや臭いが取れない場合は交換してください。",
+            "hasThumb": true
+          },
+          {
+            "kbId": "k-a1b2c3",
+            "docId": "d-0002",
+            "docName": "よくある質問(架空).md",
+            "score": 0.472,
+            "excerpt": "Q. フィルターを洗っても臭いが残る A. 完全に乾いていない可能性があります。半日以上陰干ししてください。",
+            "hasThumb": false
+          }
+        ],
+        "empty": {
+          "answer": "登録された資料に記載がありません。",
+          "sources": []
+        }
+      },
+      "sync": {
+        "configured": true,
+        "running": false,
+        "startedAt": "2026-01-15 03:00:00",
+        "endedAt": "2026-01-15 03:02:10"
+      }
+    },
+    "empty": {
+      "kbs": [],
+      "docs": {},
+      "chat": {
+        "answer": "登録済みのナレッジから該当する記載が見つかりませんでした。まずナレッジに資料を登録してください。",
+        "sources": [],
+        "empty": {
+          "answer": "登録された資料に記載がありません。",
+          "sources": []
+        }
+      },
+      "sync": {
+        "configured": true,
+        "running": false
+      }
+    }
+  }
+}

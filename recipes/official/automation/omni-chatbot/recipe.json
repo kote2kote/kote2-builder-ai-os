@@ -1,0 +1,62 @@
+{
+  "schema": 2,
+  "id": "omni-chatbot",
+  "name": "マルチチャネル AI チャットボット",
+  "summary": "Slack / Discord / Chatwork / LINE の 4 チャネルで動く AI チャットボットを、頭脳 1 本 + アダプター方式(署名検証・3 秒 ACK・二重返信ガード同梱)で一発構築する",
+  "usecase": "automation",
+  "category": "official/automation",
+  "version": "1.1.0",
+  "builder_min_version": "3.32",
+
+  "status": "verified",
+  "tested": { "mac": "pass", "win": "untested" },
+  "signoff": { "by": "distributor", "date": "2026-09-11" },
+  "provenance": {
+    "migrated_from": "v1",
+    "v1_path": "recipes/official/automation/omni-chatbot.md(v2 昇格 2026-09-04 と同一コミットで削除)",
+    "v1_status": "verified",
+    "v1_tested": { "mac": "pass", "win": "untested" },
+    "v1_tested_note": "tested の値は v1(実ビルド mac 2026-08-31 ローカルモードで 4 チャネル実往復)の実績。win は tests の .cmd / taskkill 経路を書いただけで未実走 = untested",
+    "v1_signoff": "2026-08-31",
+    "v2_verified_on": "2026-09-04",
+    "v2_verified_note": "配布 ZIP から recipe-test.sh --candidate(mac・claude -p)でパッケージ再生: core 12 ファイルがコピーされ、標準ハーネス込みで validate 25/0・TEST-002 typecheck・TEST-003 署名拒否(9 ケース)・TEST-013 署名受理(4 ケース)・TEST-014 dedupe 7 ケースすべて PASS。範囲はチャネル送信・トンネル作成なしのスモーク。実チャネル往復は v1 実ビルド(mac 2026-08-31)が根拠",
+    "migrated_on": "2026-09-04",
+    "migrated_by": "scripts/recipe-migrate.sh + 手作業(templates/core・tests の結晶化)",
+    "core_source": "output/omni-chatbot (mac 2026-08-31 ローカルモード 4 チャネル実開通ビルド)",
+    "core_source_note": "src/{verify,dedupe,brain,brain-cli,index,server-node}.ts・src/adapters/4 枚・scripts/send-test.sh・docs/channel-setup.html を 2026-09-04 に一方向昇格。作者環境固有の合言葉コマンド(EXCL-01: src/commands-local.ts と各アダプター内の分岐・brain.ts の差し替え口)と送信ハブ(EXCL-02: scripts/send.mjs)は外し、コピーが単体で typecheck・tests 緑になることをスクラッチで確認済み。UI は無い(templates/ui・assets/screens・tests/ui なし)",
+    "tests_note": "tests/webhook-signature.mjs と tests/dedupe-unit.mjs は 2026-09-04 に output/omni-chatbot のスクラッチコピー + templates/core 上書きコピーの両方で PASS(13 件 / 7 件)",
+    "v1_1_0_on": "2026-09-11",
+    "v1_1_0_note": "更新モード(builder.md ②)で 1.0.0 → 1.1.0。生成物 output/omni-chatbot の 2026-09-05〜09-08 の実ビルド(ローカル頭脳 4 方式 + 会話メモリ。各方式で mac 実チャネル往復・記憶 4 連・道具遮断・同時 2 発を確認。Codex 2 方式は設計 → Codex 実機レビュー(修正後 GO)→ 実装の順)から、src/brain.ts(convKey / forget 配管)・src/server-node.ts(BRAIN_BACKEND 切替 + fail-fast)・adapters 4 枚(会話キー)を差分昇格し、src/brain-sdk.ts / brain-codex.ts / brain-app.ts / docs/design-brain-codex.md を新規昇格。EXCL-01(合言葉コマンド: commands-local.ts・matchCommand・*_COMMAND_ALLOWED_USER・splitChunks 連投)と EXCL-02(send.mjs)は今回も外した。tests/brain-backend-unit.mjs(TEST-019)を追加。生成物側の v1 形式 md(recipe/omni-chatbot.md。TEST-013〜016 の採番)はこの版の TEST-015〜018 に対応し直した"
+  },
+
+  "extends": null,
+  "parts": { "required": [], "optional": [] },
+  "runtime": { "node": ">=22", "pnpm": ">=9", "wrangler": ">=4" },
+
+  "placeholders": ["PROJECT_NAME", "WEBHOOK_BASE_URL"],
+
+  "templates": {
+    "ui": [],
+    "core": [
+      { "from": "templates/core/src/verify.ts", "to": "src/verify.ts", "reason": ["TEST-003", "TEST-013"] },
+      { "from": "templates/core/src/dedupe.ts", "to": "src/dedupe.ts", "reason": ["TEST-009", "TEST-014"] },
+      { "from": "templates/core/src/brain.ts", "to": "src/brain.ts", "reason": ["TEST-010", "TEST-019"] },
+      { "from": "templates/core/src/brain-cli.ts", "to": "src/brain-cli.ts", "reason": ["PIT-CC-MCP-001", "TEST-010"] },
+      { "from": "templates/core/src/brain-sdk.ts", "to": "src/brain-sdk.ts", "reason": ["TEST-015", "TEST-016", "PIT-CC-MCP-001"] },
+      { "from": "templates/core/src/brain-codex.ts", "to": "src/brain-codex.ts", "reason": ["TEST-017", "PIT-CODEX-002"] },
+      { "from": "templates/core/src/brain-app.ts", "to": "src/brain-app.ts", "reason": ["TEST-018", "PIT-CODEX-001"] },
+      { "from": "templates/core/docs/design-brain-codex.md", "to": "docs/design-brain-codex.md", "reason": ["PIT-CODEX-001", "PIT-CODEX-002"] },
+      { "from": "templates/core/src/index.ts", "to": "src/index.ts", "reason": ["TEST-010", "PIT-CFTUNNEL-002", "TEST-008"] },
+      { "from": "templates/core/src/server-node.ts", "to": "src/server-node.ts", "reason": ["TEST-001", "PIT-NODE-002", "TEST-003", "TEST-013", "TEST-019"] },
+      { "from": "templates/core/src/adapters/slack.ts", "to": "src/adapters/slack.ts", "reason": ["TEST-004", "PIT-SLACK-001", "TEST-003", "TEST-013"] },
+      { "from": "templates/core/src/adapters/discord.ts", "to": "src/adapters/discord.ts", "reason": ["TEST-005", "TEST-003", "TEST-013"] },
+      { "from": "templates/core/src/adapters/chatwork.ts", "to": "src/adapters/chatwork.ts", "reason": ["TEST-006", "TEST-003", "TEST-013"] },
+      { "from": "templates/core/src/adapters/line.ts", "to": "src/adapters/line.ts", "reason": ["TEST-007", "TEST-003", "TEST-013"] },
+      { "from": "templates/core/scripts/send-test.sh", "to": "scripts/send-test.sh", "reason": ["TEST-012"] },
+      { "from": "templates/core/docs/channel-setup.html", "to": "docs/channel-setup.html", "reason": ["TEST-004", "TEST-005", "TEST-006", "TEST-007"] }
+    ],
+    "remove": []
+  },
+
+  "screens": []
+}

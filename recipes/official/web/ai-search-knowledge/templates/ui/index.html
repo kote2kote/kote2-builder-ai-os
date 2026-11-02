@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{PRODUCT_NAME}} — ナレッジ一覧</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/styles.css">
+</head>
+<body class="index-page">
+<div class="layout">
+  <aside id="app-sidebar" aria-label="メインナビゲーション"></aside>
+
+  <main id="main">
+    <p class="eyebrow">AI SEARCH KNOWLEDGE</p>
+    <h2 class="page-title">ナレッジベース</h2>
+    <p class="page-sub">ナレッジを作って資料を登録すると、その資料だけを根拠にチャットで質問できます。まずカードの「開く」から資料一覧へ進んでください。</p>
+
+    <section>
+      <h3 class="sec">ナレッジを作る</h3>
+      <form class="create-form" id="create-form">
+        <div class="formrow">
+          <input type="text" id="kb-name" placeholder="例: 製品マニュアル、社内規程 …" maxlength="80" aria-label="ナレッジ名">
+          <button type="submit">作成</button>
+        </div>
+        <input type="text" id="kb-desc" placeholder="説明(任意): 何の資料かを 1 行で。例: A 社との定例打ち合わせ議事録" maxlength="200" aria-label="ナレッジの説明(任意)">
+        <p class="field-hint">説明を書いておくと、全体チャットで「どのナレッジを見るか」の手がかりになります。後から資料一覧の画面で編集できます。</p>
+      </form>
+    </section>
+
+    <section>
+      <h3 class="sec">ナレッジ一覧</h3>
+      <div class="cards" id="kb-cards">
+        <div class="empty">読み込み中…</div>
+      </div>
+    </section>
+
+    <footer class="meta">回答は登録された資料だけを根拠にします。資料に無いことは「記載がありません」と答えます。</footer>
+  </main>
+</div>
+
+<script type="module">
+import { api, el, mountSidebar, withLock } from "/common.js";
+
+mountSidebar(document.getElementById("app-sidebar"), { current: "knowledge" });
+
+const main = document.getElementById("main");
+const cards = document.getElementById("kb-cards");
+const form = document.getElementById("create-form");
+const nameInput = document.getElementById("kb-name");
+const descInput = document.getElementById("kb-desc");
+
+let kbs = [];
+
+function render() {
+  cards.innerHTML = "";
+  if (kbs.length === 0) {
+    cards.appendChild(el("div", "empty", "まだナレッジがありません。上のフォームから最初のナレッジを作ってください。"));
+    return;
+  }
+  for (const kb of kbs) {
+    const card = el("div", "card");
+    card.appendChild(el("div", "name", kb.name));
+    if (kb.description) card.appendChild(el("div", "desc", kb.description));
+    card.appendChild(el("div", "meta", `${new Date(kb.createdAt).toLocaleDateString("ja-JP")} 作成`));
+    const actions = el("div", "actions");
+    const docsLink = el("a", "btn open-btn", "開く");
+    docsLink.href = `/docs?kb=${encodeURIComponent(kb.id)}`;
+    const delBtn = el("button", "danger", "削除");
+    delBtn.addEventListener("click", () => removeKb(kb));
+    actions.append(docsLink, delBtn);
+    card.appendChild(actions);
+    cards.appendChild(card);
+  }
+}
+
+async function load() {
+  try {
+    const body = await api("/api/kb");
+    kbs = body.kbs;
+    render();
+  } catch (e) {
+    cards.innerHTML = "";
+    cards.appendChild(el("div", "empty", `読み込みに失敗しました: ${e.message}`));
+  }
+}
+
+form.addEventListener("submit", async (ev) => {
+  ev.preventDefault();
+  const name = nameInput.value.trim();
+  if (!name) return;
+  await withLock(main, async () => {
+    try {
+      const description = descInput.value.trim();
+      const body = await api("/api/kb", { method: "POST", json: { name, ...(description ? { description } : {}) } });
+      // 楽観更新: 一覧の再取得を待たず、応答を正として画面に足す(KV は結果整合)
+      kbs.unshift(body.kb);
+      nameInput.value = "";
+      descInput.value = "";
+      render();
+    } catch (e) {
+      alert(e.message);
+    }
+  });
+});
+
+async function removeKb(kb) {
+  if (!confirm(`ナレッジ「${kb.name}」を削除します。中の資料もすべて消えます。よろしいですか?\n(検索結果への反映には数分かかります)`)) return;
+  await withLock(main, async () => {
+    try {
+      await api(`/api/kb/${encodeURIComponent(kb.id)}`, { method: "DELETE" });
+      kbs = kbs.filter((k) => k.id !== kb.id);
+      render();
+    } catch (e) {
+      alert(e.message);
+    }
+  });
+}
+
+load();
+</script>
+</body>
+</html>

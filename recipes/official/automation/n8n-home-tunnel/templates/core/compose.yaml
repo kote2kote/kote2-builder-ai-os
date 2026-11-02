@@ -1,0 +1,31 @@
+# このマシン専用の n8n。名前・ポート・データの置き場・版はすべて .env から読む(マシンごとに違う値)。
+# 直接ここへ秘密値やマシン固有の値を書かない。
+name: ${N8N_INSTANCE:?N8N_INSTANCE が .env にありません}
+
+services:
+  n8n:
+    image: docker.n8n.io/n8nio/n8n:${N8N_VERSION:?N8N_VERSION が .env にありません}
+    container_name: ${N8N_INSTANCE}
+    restart: unless-stopped
+    # 127.0.0.1 だけで待ち受ける(LAN には出さない。外への出口はトンネルだけ)
+    ports:
+      - "127.0.0.1:${N8N_LOCAL_PORT:?N8N_LOCAL_PORT が .env にありません}:5678"
+    environment:
+      - N8N_HOST=${N8N_HOST:?N8N_HOST が .env にありません}
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=https
+      - WEBHOOK_URL=https://${N8N_HOST}/
+      - N8N_EDITOR_BASE_URL=https://${N8N_HOST}/
+      # トンネル(cloudflared)を 1 段挟むので、転送元 IP をそこから読む
+      - N8N_PROXY_HOPS=1
+      - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY:?N8N_ENCRYPTION_KEY が空です。bash scripts/setup.sh を実行してください}
+      - N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS=true
+      - GENERIC_TIMEZONE=Asia/Tokyo
+      - TZ=Asia/Tokyo
+    volumes:
+      - n8n_data:/home/node/.n8n
+
+volumes:
+  # 同じマシンの他の n8n とデータを混ぜないよう、名前を .env で固定して分ける
+  n8n_data:
+    name: ${N8N_VOLUME:?N8N_VOLUME が .env にありません}

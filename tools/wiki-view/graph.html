@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Knowledge Cosmos — Wiki</title>
+<!-- ============================================================
+  tools/wiki-view/graph.html — ワークスペースの Wiki の 3D グラフ（kote2 Builder AI OS の本体。OS の更新で配る）
+  - kote2 Builder v3 の 3D 知識グラフ（templates/wiki/graph.html）を写して、OS の Wiki の項目に合わせたもの
+  - index.html と同じ ./index.json を読み、related（ページの中のリンク・v3 の related・案件のレシピ）を 3D の力学グラフで描く（表示専用・何も書かない）
+  - three.js は CDN(jsdelivr・版と中身を固定)から読む。読めない環境(オフライン / WebGL 無し)は index.html#/graph の 2D に案内する
+  - 見どころ: 知識の誕生順リプレイ(Space)/ 種類で集める(G)/ シネマ(C = 録画向けの自動巡回)/ ノードをつかんで引っぱる
+============================================================ -->
+<style>
+  :root {
+    --bg:#03060b; --text:#e8f1f8; --sub:#8a9bab; --line:rgba(150,200,230,.16); --glass:rgba(10,18,28,.62);
+    --knowledge:#5ee0ff; --troubleshooting:#ffbe3d; --decisions:#7c9dff; --patterns:#45f0a8; --sources:#b58bff; --projects:#ff6b8b;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html,body { height:100%; overflow:hidden; background:var(--bg); color:var(--text); font-family:"Noto Sans JP",-apple-system,BlinkMacSystemFont,sans-serif; font-size:14px; -webkit-font-smoothing:antialiased; }
+  #stage { position:fixed; inset:0; touch-action:none; }
+  #stage canvas { display:block; width:100%; height:100%; }
+  button,input { font:inherit; color:inherit; }
+  a { color:var(--knowledge); }
+  .glass { background:var(--glass); border:1px solid var(--line); backdrop-filter:blur(14px) saturate(140%); -webkit-backdrop-filter:blur(14px) saturate(140%); border-radius:14px; }
+  /* HUD */
+  .hud { position:fixed; z-index:5; transition:opacity .6s, transform .6s; }
+  #brand { top:18px; left:20px; padding:12px 16px; }
+  #brand .k { font-size:11px; letter-spacing:.32em; color:var(--sub); font-weight:600; }
+  #brand h1 { font-size:20px; font-weight:800; letter-spacing:.04em; line-height:1.3; background:linear-gradient(90deg,#fff,#9fe8ff 55%,#c3a8ff); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  #brand .stats { font-size:12px; color:var(--sub); margin-top:3px; font-feature-settings:"tnum"; }
+  #brand .warn { font-size:11.5px; color:#ffcf6b; margin-top:6px; line-height:1.6; max-width:330px; }
+  #top, #origin, #kind, #topic { background:rgba(255,255,255,.04); border:1px solid var(--line); border-radius:10px; color:var(--text); font:inherit; font-size:12.5px; font-weight:700; padding:6px 8px; cursor:pointer; max-width:100%; }
+  #top option, #origin option, #kind option, #topic option { background:#0b1118; }
+  #brand .stats b { color:var(--text); font-weight:700; }
+  #tools { top:18px; right:20px; display:flex; gap:8px; align-items:center; padding:8px; flex-wrap:wrap; justify-content:flex-end; max-width:calc(100vw - 360px); }
+  .b { border:1px solid var(--line); background:rgba(255,255,255,.04); border-radius:10px; padding:7px 12px; font-size:12.5px; font-weight:700; cursor:pointer; white-space:nowrap; text-decoration:none; color:var(--text); display:inline-flex; gap:6px; align-items:center; transition:background .2s,border-color .2s,box-shadow .2s; }
+  .b:hover { background:rgba(255,255,255,.1); }
+  .b.on { border-color:rgba(94,224,255,.7); box-shadow:0 0 18px rgba(94,224,255,.35) inset, 0 0 14px rgba(94,224,255,.25); }
+  .b kbd { font-family:ui-monospace,Menlo,monospace; font-size:10.5px; color:var(--sub); border:1px solid var(--line); border-radius:4px; padding:0 4px; }
+  #search { position:relative; }
+  #search input { width:clamp(150px, 15vw, 250px); background:rgba(255,255,255,.05); border:1px solid var(--line); border-radius:10px; padding:7px 12px 7px 30px; font-size:13px; outline:none; transition:border-color .2s, box-shadow .2s, width .3s; }
+  #search input:focus { border-color:rgba(94,224,255,.6); box-shadow:0 0 16px rgba(94,224,255,.25); width:clamp(220px, 20vw, 300px); }
+  #search::before { content:"⌕"; position:absolute; left:10px; top:50%; transform:translateY(-52%); color:var(--sub); font-size:15px; pointer-events:none; }
+  #search .n { position:absolute; right:10px; top:50%; transform:translateY(-50%); font-size:11px; color:var(--sub); pointer-events:none; }
+  #legend { left:20px; bottom:18px; display:flex; flex-wrap:wrap; gap:6px; padding:8px; max-width:calc(100vw - 40px); }
+  #legend button { border:1px solid transparent; background:none; border-radius:99px; padding:4px 10px 4px 8px; font-size:12px; cursor:pointer; display:inline-flex; align-items:center; gap:6px; color:var(--text); transition:opacity .2s, background .2s; }
+  #legend button:hover { background:rgba(255,255,255,.07); }
+  #legend button.off { opacity:.35; }
+  #legend i { width:9px; height:9px; border-radius:50%; box-shadow:0 0 10px currentColor; background:currentColor; }
+  #legend .c { color:var(--sub); font-size:11px; font-feature-settings:"tnum"; }
+  #hint { right:20px; bottom:18px; font-size:11.5px; color:var(--sub); padding:9px 13px; line-height:1.7; text-align:right; }
+  #hint b { color:var(--text); font-weight:600; }
+  /* 詳細パネル */
+  #panel { top:96px; right:20px; width:360px; max-height:calc(100vh - 170px); overflow-y:auto; padding:18px 18px 16px; transform:translateX(calc(100% + 40px)); opacity:0; pointer-events:none; }
+  #panel.on { transform:none; opacity:1; pointer-events:auto; }
+  #panel .x { position:absolute; top:10px; right:10px; background:none; border:0; color:var(--sub); font-size:18px; cursor:pointer; width:28px; height:28px; border-radius:8px; }
+  #panel .x:hover { background:rgba(255,255,255,.08); color:var(--text); }
+  #panel .shelf { font-size:11px; letter-spacing:.14em; font-weight:700; display:flex; align-items:center; gap:7px; }
+  #panel .shelf i { width:8px; height:8px; border-radius:50%; background:currentColor; box-shadow:0 0 10px currentColor; }
+  #panel h2 { font-size:17px; line-height:1.5; margin:8px 24px 6px 0; font-weight:800; }
+  #panel .sum { font-size:13px; color:#b9c6d2; line-height:1.75; }
+  #panel .meta { display:flex; flex-wrap:wrap; gap:6px; margin:12px 0; font-size:11.5px; }
+  #panel .meta span { border:1px solid var(--line); border-radius:99px; padding:1px 9px; color:var(--sub); font-feature-settings:"tnum"; }
+  #panel .meta .st { color:var(--text); }
+  #panel h3 { font-size:11px; letter-spacing:.14em; color:var(--sub); font-weight:700; margin:14px 0 6px; }
+  #panel ul { list-style:none; display:flex; flex-direction:column; gap:2px; }
+  #panel li button { width:100%; text-align:left; background:none; border:0; border-radius:8px; padding:6px 8px; font-size:12.5px; line-height:1.5; cursor:pointer; display:flex; gap:8px; align-items:baseline; }
+  #panel li button:hover { background:rgba(255,255,255,.07); }
+  #panel li i { flex:none; width:7px; height:7px; border-radius:50%; background:currentColor; transform:translateY(-1px); }
+  #panel li small { margin-left:auto; color:var(--sub); font-size:10.5px; white-space:nowrap; }
+  #panel .tags { display:flex; flex-wrap:wrap; gap:5px; }
+  #panel .tags span { font-size:11px; color:var(--sub); background:rgba(255,255,255,.05); border-radius:99px; padding:1px 8px; }
+  #panel .acts { display:flex; gap:8px; margin-top:16px; }
+  #panel .acts .b.primary { background:linear-gradient(90deg,rgba(94,224,255,.25),rgba(181,139,255,.25)); border-color:rgba(94,224,255,.5); }
+  /* ラベル(3D の点に追従する HTML) */
+  #labels { position:fixed; inset:0; pointer-events:none; z-index:3; overflow:hidden; }
+  .lb { position:absolute; left:0; top:0; white-space:nowrap; font-size:12px; font-weight:650; color:#eaf6ff; text-shadow:0 0 6px #000,0 0 12px rgba(0,0,0,.9); will-change:transform,opacity; transform-origin:50% 0; }
+  .lb.main { font-size:14.5px; font-weight:800; }
+  .lb.born { font-size:13.5px; color:#fff; }
+  .shelf-lb { position:absolute; left:0; top:0; font-size:12px; letter-spacing:.36em; font-weight:800; opacity:0; transition:opacity .8s; text-shadow:0 0 14px currentColor; }
+  body.cluster .shelf-lb { opacity:.85; }
+  /* 成長リプレイ */
+  #timeline { left:50%; bottom:70px; transform:translate(-50%,20px); opacity:0; pointer-events:none; text-align:center; padding:14px 26px 16px; min-width:300px; }
+  #timeline.on { opacity:1; transform:translate(-50%,0); }
+  #timeline .k { font-size:10.5px; letter-spacing:.34em; color:var(--sub); font-weight:700; }
+  #timeline .date { font-size:34px; font-weight:800; letter-spacing:.04em; font-feature-settings:"tnum"; line-height:1.3; background:linear-gradient(90deg,#fff,#9fe8ff); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  #timeline .count { font-size:12.5px; color:var(--sub); font-feature-settings:"tnum"; }
+  #timeline .bar { height:3px; border-radius:3px; background:rgba(255,255,255,.1); margin-top:10px; overflow:hidden; }
+  #timeline .bar i { display:block; height:100%; width:0; background:linear-gradient(90deg,var(--knowledge),var(--sources)); box-shadow:0 0 12px var(--knowledge); }
+  /* シネマ(録画向け。UI を消して自動巡回) */
+  #caption { left:44px; bottom:56px; max-width:min(620px,calc(100vw - 88px)); opacity:0; transform:translateY(12px); pointer-events:none; }
+  #caption.on { opacity:1; transform:none; }
+  #caption .shelf { font-size:12px; letter-spacing:.3em; font-weight:800; }
+  #caption .t { font-size:clamp(22px,3.2vw,38px); font-weight:900; line-height:1.35; margin:6px 0 8px; text-shadow:0 0 30px rgba(0,0,0,.9); }
+  #caption .s { font-size:clamp(13px,1.3vw,16px); color:#c3d0db; line-height:1.8; text-shadow:0 0 12px #000; }
+  body.cinema .hud:not(#caption):not(#cine-exit):not(#timeline) { opacity:0; pointer-events:none; }
+  body.cinema.idle { cursor:none; }
+  #cine-exit { top:18px; right:20px; opacity:0; pointer-events:none; font-size:11.5px; color:var(--sub); padding:7px 12px; }
+  body.cinema #cine-exit { opacity:.7; pointer-events:auto; }
+  body.cinema.idle #cine-exit { opacity:0; }
+  #toast { left:50%; top:42%; transform:translate(-50%,-50%) scale(.96); opacity:0; pointer-events:none; text-align:center; transition:opacity .8s, transform .8s; }
+  #toast.on { opacity:1; transform:translate(-50%,-50%) scale(1); }
+  #toast b { display:block; font-size:clamp(28px,4.5vw,54px); font-weight:900; letter-spacing:.04em; background:linear-gradient(90deg,#fff,#9fe8ff 50%,#c3a8ff); -webkit-background-clip:text; background-clip:text; color:transparent; filter:drop-shadow(0 0 24px rgba(94,224,255,.45)); }
+  #toast span { font-size:13px; letter-spacing:.3em; color:var(--sub); }
+  /* 起動 */
+  #boot { position:fixed; inset:0; z-index:20; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px; background:var(--bg); transition:opacity 1.2s; text-align:center; padding:24px; }
+  #boot.done { opacity:0; pointer-events:none; }
+  #boot .k { font-size:12px; letter-spacing:.5em; color:var(--sub); font-weight:700; }
+  #boot .orb { width:10px; height:10px; border-radius:50%; background:#fff; box-shadow:0 0 30px 10px rgba(94,224,255,.7),0 0 80px 30px rgba(181,139,255,.35); animation:breath 1.6s ease-in-out infinite; }
+  #boot .msg { font-size:13px; color:var(--sub); line-height:1.9; max-width:520px; }
+  #boot.err .orb { background:var(--projects); box-shadow:0 0 30px 8px rgba(255,107,139,.5); animation:none; }
+  #boot code { font-family:ui-monospace,Menlo,monospace; background:rgba(255,255,255,.07); padding:1px 6px; border-radius:4px; }
+  @keyframes breath { 50% { transform:scale(1.8); opacity:.7; } }
+  @media (max-width:1440px) { #tools .b kbd { display:none; } }  /* 「表示」を足した分、ノート PC 幅ではキーの表記を省いて 1 段に収める(キー操作はそのまま効く) */
+  @media (max-width:860px) {
+    #tools { top:auto; bottom:64px; right:12px; left:12px; max-width:none; justify-content:flex-start; }
+    #search { flex:1 1 100%; } #search input, #search input:focus { width:100%; }
+    #tools { bottom:62px; padding:6px; gap:6px; } .b { padding:6px 9px; font-size:12px; }
+    #brand { top:12px; left:12px; } #hint { display:none; }
+    #legend { left:12px; right:12px; bottom:10px; flex-wrap:nowrap; overflow-x:auto; scrollbar-width:none; } #legend button { flex:none; }
+    #panel { top:auto; bottom:0; right:0; left:0; width:auto; max-height:52vh; border-radius:16px 16px 0 0; transform:translateY(100%); }
+    #timeline { bottom:auto; top:110px; } #caption { left:20px; bottom:30px; }
+    .b kbd { display:none; }
+  }
+  @media (prefers-reduced-motion: reduce) { .hud, #boot { transition:none; } #boot .orb { animation:none; } }
+</style>
+<!-- three.js は版と中身を固定して読む（integrity。CDN の中身が違えば読み込まず、2D に案内する）。版を上げるときは読む全部のファイルのハッシュを作り直す -->
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.min.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+}, "integrity": {
+  "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.min.js": "sha384-IDC7sAMAIMB/TZ6dgKKPPAKZ2bXXXP8+FBMBC8cU319eBhKITx+PaalhfDkDNH28",
+  "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/controls/OrbitControls.js": "sha384-aJoe4qqS/DgF2jh9njAuvA6QIveJYoCuYOfYjdFY8P3eawzmc9bEQ40jq2TvOyuP",
+  "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/lines/LineMaterial.js": "sha384-bLpiIpNrFJ+EMb4Upzkap/Bc9Ul2wLoUMEfFm0PmZfyywMUYUsc5X98AuAYwwjq1",
+  "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/lines/LineSegments2.js": "sha384-nm+9Od/cYIb15jGaA1U2Geoo18K/i9fF2fZ4KbI2rZydtfYxqwtWRlbvdVfiECU5",
+  "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/lines/LineSegmentsGeometry.js": "sha384-2bbjHgEUXo9c3VW3OaZV638VYLXKhlNhNStU2D1Jm77zamWSQVYZak2p/Z0bZrmh",
+  "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/postprocessing/EffectComposer.js": "sha384-L+Ns9skCAqjab7aG8LH5VLknBCoENW7p37sOj39jnITwlWZFabWc29JwzgYf6ygy",
+  "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/postprocessing/MaskPass.js": "sha384-SDM80tiGflO8UDV/QzR/mASjcc/+wF7KfRVFNHJUIPcTctwoPI8GoWVTlccZw7V4",
+  "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/postprocessing/OutputPass.js": "sha384-pAQ55aG4oXjA92n2goVLMWU14Ik/bNUs29MfxOM6meGyGzTJoFm7WxEU0D0SqsNI",
+  "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/postprocessing/Pass.js": "sha384-gSqIFh8vMmp1veyOysIS3KPVUl/A5JPefYvW4b89OeYeW0bwkrjN7qcC1h0XJK/K",
+  "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/postprocessing/RenderPass.js": "sha384-JBzMcXwTgF2e9tw3AU4+jg+nVDdl7hTHlT0C5qZVa/1DUUe/KIm4L3e2jorIH28/",
+  "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/postprocessing/ShaderPass.js": "sha384-zetU6HhR/vTtgSvnS9DE+GQPZhVT/ZOSLa/1+DSM6rkM9hvBgQWr9bCEosZt93ch",
+  "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/postprocessing/UnrealBloomPass.js": "sha384-NLbvCtTvm5zjFCKW1mFWUjcnFLVOn258z3hKOAoYCXJ1DtQO54I+x5LPquFbIig+",
+  "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/shaders/CopyShader.js": "sha384-kzVlcj2amFaRNIWZ5zE0PmIN+QTNWWvrgKk31S8N/7w0nf7Qq3xqxHRLbD2UPPSl",
+  "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/shaders/LuminosityHighPassShader.js": "sha384-a6qrIDfNt1Ss7Z4VtgMalz9gq8H/Up3lSSf1Agc4HRaDMvNd9eP9k7DckAv5JxQF",
+  "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/shaders/OutputShader.js": "sha384-CdpJL3xlIkjJQAbzgyazSoOx+/oBcwUCsBVSU25SKy8/PEdYEn24U+4mnmx3R4YX"
+} }
+</script>
+</head>
+<body>
+<div id="stage"></div>
+<div id="labels"></div>
+
+<div class="hud glass" id="brand">
+  <div class="k" id="root-name">WIKI</div>
+  <h1>Knowledge Cosmos</h1>
+  <div class="stats" id="stats"></div>
+</div>
+<div class="hud glass" id="tools">
+  <div id="search"><input id="q" type="search" placeholder="ページを探す（題・要約）" autocomplete="off"><span class="n" id="qn"></span></div>
+  <button class="b" id="bt-play" type="button" title="日付の順にページが生まれる様子を再生">▶ 成長を再生 <kbd>Space</kbd></button>
+  <button class="b" id="bt-cluster" type="button" title="同じ種類のページを引き寄せる">⦿ 種類で集める <kbd>G</kbd></button>
+  <button class="b" id="bt-cine" type="button" title="UI を消して自動で巡回(録画向け)">🎬 シネマ <kbd>C</kbd></button>
+  <button class="b" id="bt-fit" type="button" title="全体を映す">⤢ 全体 <kbd>R</kbd></button>
+  <select id="top" title="重要度の高いカードだけに絞る(カードが多くて重い時に)"></select>
+  <select id="origin" aria-label="出どころ"></select>
+  <select id="topic" aria-label="内容カテゴリ"></select>
+  <select id="kind" aria-label="知識の種類"></select>
+  <a class="b" href="./index.html#/graph" title="依存なしの 2D グラフ">2D</a>
+  <a class="b" href="./index.html" title="Wiki の画面に戻る">← Wiki</a>
+</div>
+<div class="hud glass" id="legend"></div>
+<div class="hud glass" id="hint"><b>ドラッグ</b> 回転 · <b>ホイール</b> ズーム · <b>点をつかむ</b> 引っぱる<br><b>クリック</b> 詳細 · <b>/</b> 検索 · <b>Esc</b> 解除 · <b>F</b> 全画面</div>
+<aside class="hud glass" id="panel" aria-live="polite"></aside>
+<div class="hud glass" id="timeline"><div class="k">KNOWLEDGE GROWTH</div><div class="date" id="tl-date">—</div><div class="count" id="tl-count"></div><div class="bar"><i id="tl-bar"></i></div></div>
+<div class="hud" id="caption"><div class="shelf" id="cap-shelf"></div><div class="t" id="cap-title"></div><div class="s" id="cap-sum"></div></div>
+<div class="hud glass" id="cine-exit">🎬 シネマ中 · Esc / C で戻る</div>
+<div class="hud" id="toast"><b id="toast-b"></b><span id="toast-s"></span></div>
+<div id="boot"><div class="orb"></div><div class="k">KNOWLEDGE COSMOS</div><div class="msg">ページを読み込んでいます…</div></div>
+
+<script type="module">
+const $ = s => document.querySelector(s);
+const pageHref = k => '#/p/' + String(k).split('/').map(encodeURIComponent).join('/');  // キーに % や ? があっても開けるように
+const unhash = () => { try { return decodeURIComponent(location.hash.replace(/^#\/p\//, '')); } catch (e) { return ''; } };
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+const PALETTE = { notes:'#5ee0ff', me:'#ffbe3d', v3:'#b58bff', recipes:'#45f0a8', projects:'#ff6b8b', other:'#9fb3c8' };
+const STATUS = { active:'進行中', paused:'一時停止', done:'完了', draft:'未確認', confirmed:'確かめた' };
+const NOREF = new Set(['paused']);  // 一時停止の案件は暗く描く（未確認＝draft は少しだけ暗く。下の dim）
+const REDUCE = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const boot = $('#boot');
+function fail(html) { boot.classList.add('err'); boot.querySelector('.msg').innerHTML = html; }
+
+main().catch(e => { console.error(e); fail(`3D 表示でエラーが起きました（${esc(e.message)}）。<br><a href="./index.html#/graph">2D のグラフで見る →</a>`); });
+
+async function main() {
+  // ---------- データと three.js ----------
+  let DATA;
+  try {
+    const r = await fetch('./index.json', { cache:'no-store' });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    DATA = await r.json();
+  } catch (e) {
+    return fail(`データを読み込めませんでした（${esc(e.message)}）。<br>ワークスペースのいちばん上で <code>python3 tools/wiki_view.py open 3d</code> を実行して開いてください`);
+  }
+  let THREE, OrbitControls, EffectComposer, RenderPass, UnrealBloomPass, OutputPass, LineSegments2, LineSegmentsGeometry, LineMaterial;
+  try {
+    const m = await Promise.all([
+      import('three'), import('three/addons/controls/OrbitControls.js'),
+      import('three/addons/postprocessing/EffectComposer.js'), import('three/addons/postprocessing/RenderPass.js'),
+      import('three/addons/postprocessing/UnrealBloomPass.js'), import('three/addons/postprocessing/OutputPass.js'),
+      import('three/addons/lines/LineSegments2.js'), import('three/addons/lines/LineSegmentsGeometry.js'), import('three/addons/lines/LineMaterial.js'),
+    ]);
+    THREE = m[0]; ({ OrbitControls } = m[1]); ({ EffectComposer } = m[2]); ({ RenderPass } = m[3]); ({ UnrealBloomPass } = m[4]);
+    ({ OutputPass } = m[5]); ({ LineSegments2 } = m[6]); ({ LineSegmentsGeometry } = m[7]); ({ LineMaterial } = m[8]);
+  } catch (e) {
+    return fail('3D ライブラリ(three.js)を読み込めませんでした。インターネットにつながっていないか、配信元の中身が変わっています（中身が違うものは読み込みません）。<br><a href="./index.html#/graph">オフラインでも動く 2D グラフで見る →</a>');
+  }
+
+  // ---------- グラフ(related だけを線にする。2D と同じ規則) ----------
+  const COLS = Object.fromEntries((DATA.display_collections || DATA.collections || []).map(c => [c.name, c.label.replace(/\(.*$/, '').trim()]));
+  const pages = DATA.pages || [];
+  const N = pages.length;
+  if (!N) return fail('まだページがありません。仕事の記録が wiki/ に増えると、ここに星が生まれます。');
+  const index = new Map(pages.map((p, i) => [p.key, i]));
+  const nodes = pages.map((p, i) => ({
+    i, p, key:p.key, col:p.role || p.collection, deg:0, nb:[], inc:[], imp:Math.max(0, Math.min(1, (+p.importance || 0) / 100)), vis:true,
+    x:0, y:0, z:0, vx:0, vy:0, vz:0, fx:null, rx:0, ry:0, rz:0,
+    born:true, on:true, scale:0, popT:0, hl:1, hlT:1, flash:0, showUntil:0, phase:Math.random() * 6.283,
+    date:String(p.created || p.updated || p.decided_on || '').slice(0, 10),
+  }));
+  const edges = [], edgeOf = new Map();
+  pages.forEach((p, i) => (Array.isArray(p.related) ? p.related : []).forEach(k => {
+    const j = index.get(k);
+    if (j === undefined || j === i) return;
+    const a = Math.min(i, j), b = Math.max(i, j), id = a * N + b;
+    if (edgeOf.has(id)) return;
+    edgeOf.set(id, edges.length);
+    edges.push({ a, b, hl:1, hlT:1 });
+  }));
+  edges.forEach((e, k) => { for (const [s, t] of [[e.a, e.b], [e.b, e.a]]) { nodes[s].deg++; nodes[s].nb.push(t); nodes[s].inc.push(k); } });
+  const edgeBetween = (i, j) => edgeOf.get(Math.min(i, j) * N + Math.max(i, j));
+  nodes.forEach((n, i) => {
+    n.size = 1.3 + Math.sqrt(n.deg) * .6 + n.imp * 2.6;  // 大きさ = つながりの数（参照された数を重く。tools/wiki_view.py が importance に入れる）
+    n.halo = n.p.important === true ? .4 : Math.max(0, n.imp - .5) * .7;  // 光輪は進行中の案件と、つながりが特に多いページだけ（全部に付けると白飛びする）
+    n.color = new THREE.Color(PALETTE[n.col] || '#9fb3c8');
+    const r = 2.5 * Math.cbrt(i + 1), phi = Math.acos(1 - 2 * (i + .5) / N), th = Math.PI * (1 + Math.sqrt(5)) * i;
+    n.x = r * Math.sin(phi) * Math.cos(th); n.y = r * Math.cos(phi); n.z = r * Math.sin(phi) * Math.sin(th);
+  });
+  // カードが多い時の見え方(500 枚までは従来どおり): 星雲が大きくなるのでカメラを遠くまで引けるようにし、背景も同じ倍率で広げ、発光と線を控えめにする(白飛び防止)
+  const BG = Math.max(1, Math.sqrt(N / 500)), GLOW = Math.min(1, Math.sqrt(800 / N)), LINE_K = Math.min(1, 1200 / Math.max(1, edges.length));
+  const colsPresent = [...new Set(nodes.map(n => n.col))];
+  const shelfOn = Object.fromEntries(colsPresent.map(c => [c, true]));
+
+  // ---------- シーン ----------
+  const stage = $('#stage');
+  let renderer;
+  try { renderer = new THREE.WebGLRenderer({ antialias:true, powerPreference:'high-performance' }); }
+  catch (e) { return fail('この環境では WebGL が使えません。<br><a href="./index.html#/graph">2D グラフで見る →</a>'); }
+  const PR = Math.min(devicePixelRatio || 1, 2);
+  renderer.setPixelRatio(PR);
+  stage.appendChild(renderer.domElement);
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color('#03060b');
+  const camera = new THREE.PerspectiveCamera(48, 1, 0.5, 8000 * BG);
+  camera.position.set(0, 60, 900);
+  const controls = new OrbitControls(camera, renderer.domElement);
+  Object.assign(controls, { enableDamping:true, dampingFactor:.07, rotateSpeed:.7, zoomSpeed:.9, minDistance:6, maxDistance:1500 * BG, autoRotateSpeed:.45 });
+  if ('zoomToCursor' in controls) controls.zoomToCursor = true;
+  const composer = new EffectComposer(renderer);
+  composer.setPixelRatio(PR);
+  composer.addPass(new RenderPass(scene, camera));
+  const bloom = new UnrealBloomPass(new THREE.Vector2(1, 1), 1.05 * GLOW, .55, .06);
+  composer.addPass(bloom);
+  composer.addPass(new OutputPass());
+
+  const glowVS = `attribute float size; attribute float alpha; attribute vec3 color; uniform float uScale; varying vec3 vC; varying float vA;
+    void main(){ vec4 mv = modelViewMatrix * vec4(position, 1.0); gl_PointSize = size * uScale / max(-mv.z, .1); gl_Position = projectionMatrix * mv; vC = color; vA = alpha; }`;
+  const glowFS = `uniform float uCore; varying vec3 vC; varying float vA;
+    void main(){ float d = length(gl_PointCoord - .5) * 2.; if (d > 1.) discard; float g = exp(-d * d * 5.); float core = uCore > 0. ? smoothstep(uCore, 0., d) : 0.;
+      gl_FragColor = vec4((vC * g + vec3(core) * .9) * vA, 1.); }`;
+  const glowMat = core => new THREE.ShaderMaterial({ uniforms:{ uScale:{ value:1 }, uCore:{ value:core } }, vertexShader:glowVS, fragmentShader:glowFS, transparent:true, depthWrite:false, blending:THREE.AdditiveBlending });
+  const pointsGeo = (n, extra = {}) => {
+    const g = new THREE.BufferGeometry();
+    const attrs = { position:new Float32Array(n * 3), color:new Float32Array(n * 3), size:new Float32Array(n), alpha:new Float32Array(n), ...extra };
+    for (const [k, arr] of Object.entries(attrs)) g.setAttribute(k, new THREE.BufferAttribute(arr, arr.length / n).setUsage(THREE.DynamicDrawUsage));
+    return g;
+  };
+  const glowMats = [];
+
+  // 背景: 星・星雲・近くの塵(パララックスで奥行きを出す)
+  {
+    const S = 2600, g = pointsGeo(S, { phase:new Float32Array(S) });
+    const P = g.attributes.position.array, C = g.attributes.color.array, Z = g.attributes.size.array, A = g.attributes.alpha.array, F = g.attributes.phase.array;
+    const tint = [new THREE.Color('#ffffff'), new THREE.Color('#bfe8ff'), new THREE.Color('#ffe2c2'), new THREE.Color('#d9ccff')];
+    for (let i = 0; i < S; i++) {
+      const u = Math.random() * 2 - 1, t = Math.random() * 6.283, r = (1900 + Math.random() * 1900) * BG, s = Math.sqrt(1 - u * u);
+      P.set([r * s * Math.cos(t), r * u, r * s * Math.sin(t)], i * 3);
+      const c = tint[i % 4]; C.set([c.r, c.g, c.b], i * 3);
+      Z[i] = (3 + Math.random() ** 3 * 14) * BG; A[i] = .25 + Math.random() * .6; F[i] = Math.random() * 100;
+    }
+    const mat = new THREE.ShaderMaterial({ uniforms:{ uScale:{ value:1 }, uTime:{ value:0 } }, transparent:true, depthWrite:false, blending:THREE.AdditiveBlending,
+      vertexShader:`attribute float size; attribute float alpha; attribute float phase; attribute vec3 color; uniform float uScale; uniform float uTime; varying vec3 vC; varying float vA;
+        void main(){ vec4 mv = modelViewMatrix * vec4(position, 1.); gl_PointSize = size * uScale / max(-mv.z, .1); gl_Position = projectionMatrix * mv; vC = color; vA = alpha * (.65 + .35 * sin(uTime * (.6 + fract(phase) * 1.8) + phase)); }`,
+      fragmentShader:`varying vec3 vC; varying float vA; void main(){ float d = length(gl_PointCoord - .5) * 2.; if (d > 1.) discard; gl_FragColor = vec4(vC * exp(-d * d * 7.) * vA, 1.); }` });
+    const stars = new THREE.Points(g, mat); stars.frustumCulled = false; scene.add(stars); glowMats.push(mat);
+    scene.userData.stars = mat;
+    const neb = (hex, pos, size, op) => {
+      const cv = document.createElement('canvas'); cv.width = cv.height = 256;
+      const x = cv.getContext('2d'), gr = x.createRadialGradient(128, 128, 0, 128, 128, 128);
+      gr.addColorStop(0, hex); gr.addColorStop(.4, hex + '55'); gr.addColorStop(1, hex + '00');
+      x.fillStyle = gr; x.fillRect(0, 0, 256, 256);
+      const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map:new THREE.CanvasTexture(cv), transparent:true, opacity:op, depthWrite:false, blending:THREE.AdditiveBlending }));
+      sp.position.set(...pos.map(v => v * BG)); sp.scale.setScalar(size * BG); scene.add(sp);
+    };
+    neb('#1d6f8a', [-1500, 400, -2200], 2600, .22); neb('#5a2f8f', [1700, -300, -1600], 2400, .2);
+    neb('#8a2f5e', [300, 900, 2100], 2200, .12); neb('#1f4f8f', [-900, -800, 1800], 2000, .14);
+    const D = 700, dg = pointsGeo(D);
+    for (let i = 0; i < D; i++) {
+      const u = Math.random() * 2 - 1, t = Math.random() * 6.283, r = (60 + Math.random() ** .6 * 520) * BG, s = Math.sqrt(1 - u * u);
+      dg.attributes.position.array.set([r * s * Math.cos(t), r * u * .55, r * s * Math.sin(t)], i * 3);
+      dg.attributes.color.array.set([.45, .7, .9], i * 3); dg.attributes.size.array[i] = (.7 + Math.random() * 1.6) * BG; dg.attributes.alpha.array[i] = .08 + Math.random() * .22;
+    }
+    const dm = glowMat(0), dust = new THREE.Points(dg, dm); dust.frustumCulled = false; scene.add(dust); glowMats.push(dm);
+    scene.userData.dust = dust;
+  }
+
+  // ノード: 芯(球)+ 光輪(点スプライト)
+  const coreMesh = new THREE.InstancedMesh(new THREE.SphereGeometry(1, 24, 16), new THREE.MeshBasicMaterial({ color:0xffffff }), N);
+  coreMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage); coreMesh.frustumCulled = false;
+  coreMesh.setColorAt(0, new THREE.Color()); scene.add(coreMesh);
+  const haloGeo = pointsGeo(N), haloMat = glowMat(0), halo = new THREE.Points(haloGeo, haloMat);
+  halo.frustumCulled = false; scene.add(halo); glowMats.push(haloMat);
+
+  // 線: related(太さのある線。色は両端の棚色のグラデーション)
+  const E = edges.length;
+  let linePos = null, lineCol = null, lineGeo = null, lineMat = null;
+  if (E) {
+    lineGeo = new LineSegmentsGeometry();
+    lineGeo.setPositions(new Float32Array(E * 6)); lineGeo.setColors(new Float32Array(E * 6));
+    linePos = lineGeo.attributes.instanceStart.data; lineCol = lineGeo.attributes.instanceColorStart.data;
+    lineMat = new LineMaterial({ vertexColors:true, linewidth:1.4, transparent:true, depthWrite:false, blending:THREE.AdditiveBlending });
+    const lines = new LineSegments2(lineGeo, lineMat); lines.frustumCulled = false; scene.add(lines);
+  }
+
+  // 信号(線の上を流れる光。触れたノードからは想起のように外へ広がる)
+  const MAXP = Math.min(3000, 200 + E * 6);
+  const pulseGeo = pointsGeo(MAXP), pulseMat = glowMat(.28), pulsePts = new THREE.Points(pulseGeo, pulseMat);
+  pulsePts.frustumCulled = false; scene.add(pulsePts); glowMats.push(pulseMat);
+  const pulses = Array.from({ length:MAXP }, () => ({ live:false, e:0, from:0, t:0, sp:1, str:1 }));
+  let pulseCursor = 0;
+  function spawnPulse(e, from, str = .7) {
+    for (let k = 0; k < MAXP; k++) {
+      const p = pulses[(pulseCursor + k) % MAXP];
+      if (p.live) continue;
+      pulseCursor = (pulseCursor + k + 1) % MAXP;
+      return Object.assign(p, { live:true, e, from, t:0, sp:(.45 + Math.random() * .5) * (str > 1 ? 1.5 : 1), str });
+    }
+  }
+
+  // 誕生の波紋 / 選択リング
+  const ringGeo = new THREE.RingGeometry(.92, 1, 64);
+  const rings = Array.from({ length:24 }, () => {
+    const m = new THREE.Mesh(ringGeo, new THREE.MeshBasicMaterial({ color:0xffffff, transparent:true, opacity:0, depthWrite:false, blending:THREE.AdditiveBlending, side:THREE.DoubleSide }));
+    m.visible = false; scene.add(m); return { m, t:1, n:null };
+  });
+  const ring = n => { const r = rings.find(r => r.t >= 1) || rings[0]; Object.assign(r, { t:0, n }); r.m.material.color.copy(n.color); r.m.visible = true; };
+  const selRing = new THREE.Mesh(new THREE.RingGeometry(.84, 1, 72), new THREE.MeshBasicMaterial({ color:0xffffff, transparent:true, opacity:.9, depthWrite:false, blending:THREE.AdditiveBlending, side:THREE.DoubleSide }));
+  selRing.visible = false; scene.add(selRing);
+
+  // ---------- 力学(d3-force と同じ考え方の 3D 版: 反発 + related のばね + 中心 / 棚への引力) ----------
+  let alpha = 1, alphaTarget = 0, cluster = false;
+  const ALPHA_DECAY = 1 - Math.pow(.001, 1 / 330), CHARGE = -75, LINK = 24, VDECAY = .6;
+  const anchors = {};
+  colsPresent.forEach((c, k) => {
+    const a = k / colsPresent.length * Math.PI * 2 + Math.PI / 2, R = 110 + colsPresent.length * 24;  // 正面(XY 面)の輪に棚を並べる
+    anchors[c] = new THREE.Vector3(Math.cos(a) * R * 1.25, Math.sin(a) * R, (k % 2 ? 1 : -1) * 30);
+  });
+  const knowledge = p => (p.role || p.collection) === 'notes' && !p.navigation;
+  const topicMatch = (p, value) => !value || (knowledge(p) && (value === ':none' ? !p.os_topic_state && !(p.os_topics || []).length : value === ':pending' ? p.os_topic_state === 'pending' : p.os_topic_state === 'classified' && Array.isArray(p.os_topics) && p.os_topics.includes(value)));
+  const topicOptions = () => `<option value="">内容カテゴリ: すべて</option>${(DATA.topics || []).map(topic => `<option value="${esc(topic.id)}">${esc(topic.title)} (${topic.count})</option>`).join('')}<option value=":none">カテゴリなし</option><option value=":pending">確認待ち</option>`;
+  const matchesContext = n => topicMatch(n.p, $('#topic').value) && (!$('#origin').value || n.p.origin === $('#origin').value) && (!$('#kind').value || n.p.kind === $('#kind').value);
+  const refreshOn = () => nodes.forEach(n => { n.on = n.born && shelfOn[n.col] && n.vis && matchesContext(n); });
+  function tick() {
+    alpha += (alphaTarget - alpha) * ALPHA_DECAY;
+    if (alpha < .003) return;
+    const act = nodes.filter(n => n.on), L = act.length;
+    for (let i = 0; i < L; i++) {
+      const a = act[i];
+      for (let j = i + 1; j < L; j++) {
+        const b = act[j];
+        let dx = b.x - a.x, dy = b.y - a.y, dz = b.z - a.z, d2 = dx * dx + dy * dy + dz * dz;
+        if (d2 > 360000) continue;
+        if (d2 < 1e-4) { dx = Math.random() - .5; dy = Math.random() - .5; dz = Math.random() - .5; d2 = dx * dx + dy * dy + dz * dz; }
+        const w = CHARGE * alpha / Math.max(d2, 4);
+        a.vx += dx * w; a.vy += dy * w; a.vz += dz * w; b.vx -= dx * w; b.vy -= dy * w; b.vz -= dz * w;
+      }
+    }
+    for (const e of edges) {
+      const a = nodes[e.a], b = nodes[e.b];
+      if (!a.on || !b.on) continue;
+      let dx = b.x + b.vx - a.x - a.vx, dy = b.y + b.vy - a.y - a.vy, dz = b.z + b.vz - a.z - a.vz;
+      let l = Math.sqrt(dx * dx + dy * dy + dz * dz) || 1e-3;
+      l = (l - LINK) / l * alpha / Math.min(a.deg, b.deg);
+      dx *= l; dy *= l; dz *= l;
+      const bias = a.deg / (a.deg + b.deg);
+      b.vx -= dx * bias; b.vy -= dy * bias; b.vz -= dz * bias;
+      a.vx += dx * (1 - bias); a.vy += dy * (1 - bias); a.vz += dz * (1 - bias);
+    }
+    for (const n of act) {
+      const t = cluster ? anchors[n.col] : ORIGIN, g = (cluster ? .16 : n.deg ? .012 : .028) * alpha;
+      n.vx += (t.x - n.x) * g; n.vy += (t.y - n.y) * g; n.vz += (t.z - n.z) * g;
+      if (n.fx) { n.x = n.fx.x; n.y = n.fx.y; n.z = n.fx.z; n.vx = n.vy = n.vz = 0; continue; }
+      n.vx *= VDECAY; n.vy *= VDECAY; n.vz *= VDECAY;
+      const sp = Math.hypot(n.vx, n.vy, n.vz); if (sp > 22) { n.vx *= 22 / sp; n.vy *= 22 / sp; n.vz *= 22 / sp; }
+      n.x += n.vx; n.y += n.vy; n.z += n.vz;
+    }
+  }
+  const ORIGIN = new THREE.Vector3();
+
+  // ---------- 注目(ホバー / 選択 / 検索)→ 明るさの目標値 ----------
+  let hover = null, selected = null, hits = null, cine = null, tl = null, dragging = null;
+  const rank = n => n.imp * 100 + Math.min(9, n.deg);  // 名前を常に出す・シネマで寄る順 = 重要度(同点は接続数)
+  const topByDeg = new Set(nodes.filter(n => n.deg >= 2 || n.imp > 0).sort((a, b) => rank(b) - rank(a)).slice(0, Math.max(6, Math.min(14, Math.round(N * .14)))).map(n => n.i));
+  let labelSet = new Set(topByDeg), focusCenter = null;
+  function applyFocus() {
+    const c = hover ?? selected;
+    focusCenter = c;
+    labelSet = new Set(cine ? [] : topByDeg);
+    if (c != null) {
+      const set = new Set([c, ...nodes[c].nb]);
+      nodes.forEach(n => { n.hlT = set.has(n.i) ? 1 : .09; });
+      edges.forEach(e => { e.hlT = e.a === c || e.b === c ? 2.1 : set.has(e.a) && set.has(e.b) ? .3 : .05; });
+      labelSet = set;
+    } else if (hits) {
+      const near = new Set(hits); hits.forEach(i => nodes[i].nb.forEach(j => near.add(j)));
+      nodes.forEach(n => { n.hlT = hits.has(n.i) ? 1.25 : near.has(n.i) ? .4 : .07; });
+      edges.forEach(e => { e.hlT = hits.has(e.a) || hits.has(e.b) ? 1.3 : .05; });
+      labelSet = new Set([...hits].slice(0, 40));
+    } else {
+      nodes.forEach(n => { n.hlT = 1; }); edges.forEach(e => { e.hlT = 1; });
+    }
+  }
+
+  // ---------- カメラ移動 ----------
+  let fly = null, fitTimer = 0;
+  const fitLater = (ms, dur) => { clearTimeout(fitTimer); fitTimer = setTimeout(() => fitView(dur), ms); };
+  const ease = t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+  function flyTo(pos, target, dur = 1.3) { fly = { t:0, dur, p0:camera.position.clone(), p1:pos, q0:controls.target.clone(), q1:target }; }
+  const rpos = n => new THREE.Vector3(n.rx, n.ry, n.rz);
+  function flyToNode(n, dur = 1.3, dist) {
+    const nb = n.nb.map(j => nodes[j]).filter(m => m.on);
+    const spread = nb.reduce((m, o) => Math.max(m, Math.hypot(o.x - n.x, o.y - n.y, o.z - n.z)), 0);
+    const d = dist ?? Math.max(150, n.size * 48, Math.min(300, spread * 2.6 + 40));  // 重要度で大きい星は少し離れて映す
+    const dir = camera.position.clone().sub(controls.target).normalize();
+    const t = rpos(n);
+    flyTo(t.clone().add(dir.multiplyScalar(d)), t, dur);
+  }
+  function fitView(dur = 1.6, only) {
+    const list = nodes.filter(n => n.on && (!only || only.has(n.i)));
+    if (!list.length) return;
+    const c = list.reduce((v, n) => v.add(new THREE.Vector3(n.x, n.y, n.z)), new THREE.Vector3()).divideScalar(list.length);
+    const R = Math.max(25, ...list.map(n => Math.hypot(n.x - c.x, n.y - c.y, n.z - c.z) + n.size));
+    const vf = THREE.MathUtils.degToRad(camera.fov), hf = 2 * Math.atan(Math.tan(vf / 2) * camera.aspect);
+    const d = Math.min(1400 * BG, R / Math.sin(Math.min(vf, hf) / 2) * 1.02);
+    const dir = camera.position.clone().sub(controls.target).normalize();
+    flyTo(c.clone().add(dir.multiplyScalar(d)), c, dur);
+  }
+
+  // ---------- UI ----------
+  const shelfName = c => COLS[c] || c;
+  const dot = c => `style="color:${PALETTE[c] || '#9fb3c8'}"`;
+  $('#root-name').textContent = (DATA.root_name ? DATA.root_name + ' · ' : '') + 'WIKI';
+  const isolates = nodes.filter(n => !n.deg).length;
+  $('#stats').innerHTML = `<b>${N}</b> ページ · <b>${E}</b> 本のつながり${isolates ? ` · 孤立 ${isolates}` : ''}` +
+    (N >= (DATA.card_nudge || 2000) ? `<div class="warn">ページが ${N}。${DATA.card_nudge || 2000} を超えると重くなってきます。右の「表示」で上位に絞ってください。</div>` : '');
+  // 表示の絞り込み（つながりの上位 N / 進行中の案件とそのつながり）。ページが多くて重い時に
+  const topSel = $('#top');
+  $('#topic').innerHTML = topicOptions();
+  $('#topic').addEventListener('change', () => { refreshOn(); if (selected != null && !nodes[selected].on) deselect(); if ($('#q').value) $('#q').dispatchEvent(new Event('input')); alpha = Math.max(alpha, .6); fitLater(900, 1.6); });
+  for (const [id, field, title] of [['origin','origin','出どころ'],['kind','kind','知識の種類']]) {
+    const select = $('#' + id);
+    select.innerHTML = `<option value="">${title}: すべて</option>` + [...new Set(pages.map(p => p[field]).filter(Boolean))].sort().map(value => `<option value="${esc(value)}">${esc(field === 'origin' ? (value === 'v3' ? 'v3の記録' : 'OS利用後の記録') : pages.find(p => p[field] === value).kind_label)}</option>`).join('');
+    select.addEventListener('change', () => { refreshOn(); if (selected != null && !nodes[selected].on) deselect(); if ($('#q').value) $('#q').dispatchEvent(new Event('input')); alpha = Math.max(alpha, .6); fitLater(900, 1.6); });
+  }
+  topSel.innerHTML = `<option value="">表示: 全部</option>${[1000, 500, 200].filter(k => k < N).map(k => `<option value="${k}">上位 ${k}</option>`).join('')}<option value="star">進行中の案件とそのつながり</option>`;
+  topSel.addEventListener('change', () => {
+    const v = topSel.value, keep = v && v !== 'star' ? new Set(nodes.slice().sort((a, b) => rank(b) - rank(a)).slice(0, +v).map(n => n.i)) : null;
+    nodes.forEach(n => { n.vis = !v || (v === 'star' ? n.p.important === true || n.nb.some(j => nodes[j].p.important === true) : keep.has(n.i)); });
+    refreshOn(); if (selected != null && !nodes[selected].on) deselect(); alpha = Math.max(alpha, .6); fitLater(900, 1.6); topSel.blur();
+  });
+  $('#legend').innerHTML = colsPresent.map(c => `<button type="button" data-col="${esc(c)}" title="クリックで表示 / 非表示"><i ${dot(c)}></i>${esc(shelfName(c))}<span class="c">${nodes.filter(n => n.col === c).length}</span></button>`).join('');
+  $('#legend').addEventListener('click', e => {
+    const b = e.target.closest('button[data-col]'); if (!b) return;
+    const c = b.dataset.col; shelfOn[c] = !shelfOn[c]; b.classList.toggle('off', !shelfOn[c]);
+    refreshOn(); if (selected != null && !nodes[selected].on) deselect(); alpha = Math.max(alpha, .5);
+  });
+  const shelfLabels = colsPresent.map(c => { const el = document.createElement('div'); el.className = 'shelf-lb'; el.setAttribute('style', `color:${PALETTE[c] || '#9fb3c8'}`); el.textContent = shelfName(c).replace(/^\S+\s/, '').toUpperCase(); $('#labels').appendChild(el); return [c, el]; });
+
+  const panel = $('#panel');
+  function openPanel(n) {
+    const p = n.p, back = nodes.filter(m => (m.p.related || []).includes(n.key)).map(m => m.i);
+    const rel = [...new Set([...n.nb])].map(j => nodes[j]).sort((a, b) => b.deg - a.deg);
+    const item = m => `<li><button type="button" data-i="${m.i}"><i ${dot(m.col)}></i><span>${esc(m.p.title)}</span><small>${back.includes(m.i) && !(p.related || []).includes(m.key) ? '被参照' : esc(shelfName(m.col).replace(/^\S+\s/, ''))}</small></button></li>`;
+    panel.innerHTML = `<button class="x" type="button" aria-label="閉じる">×</button>
+      <div class="shelf" ${dot(n.col)}><i></i>${esc(shelfName(n.col))}</div>
+      <h2>${esc(p.title)}</h2>
+      <div class="sum">${esc(p.summary || '')}</div>
+      <div class="meta">${esc(p.kind_label || '')} · ${p.origin === 'v3' ? '出どころ: v3' : 'OS利用後の記録'}${p.previous_status ? ` · v3での状態: ${esc(p.previous_status)}（現在への適用確認とは別）` : ''}</div>
+      ${knowledge(p) ? `<div class="meta">内容カテゴリ: ${esc((p.os_topics || []).map(identifier => (DATA.topics || []).find(topic => topic.id === identifier)?.title).filter(Boolean).join(' · ') || (p.os_topic_state === 'pending' ? '確認待ち' : 'カテゴリなし'))}</div>` : ''}
+      <div class="meta"><span class="st">${esc(STATUS[p.status] || p.status || '—')}</span><span>参照された ${p.backlinks || 0}</span>${p.created ? `<span>作成 ${esc(String(p.created).slice(0, 10))}</span>` : ''}${p.updated ? `<span>更新 ${esc(String(p.updated).slice(0, 10))}</span>` : ''}<span>つながり ${n.deg}</span></div>
+      ${p.symptom ? `<h3>現象</h3><div class="sum">${esc(p.symptom)}</div>` : ''}
+      ${rel.length ? `<h3>つながっているページ</h3><ul>${rel.map(item).join('')}</ul>` : '<h3>つながり</h3><div class="sum">つながりがまだありません（孤立）。</div>'}
+      ${(p.tags || []).length ? `<h3>タグ</h3><div class="tags">${p.tags.map(t => `<span>${esc(t)}</span>`).join('')}</div>` : ''}
+      <div class="acts"><a class="b primary" href="./index.html${esc(pageHref(n.key))}">ページを開く →</a>${p.edit ? `<a class="b" href="../admin/index.html#/collections/${encodeURIComponent(p.edit.collection)}/entries/${p.edit.slug.split('/').map(encodeURIComponent).join('/')}" target="_blank" rel="noopener">✎ 直す</a>` : ''}</div>`;
+    panel.classList.add('on'); frameCinema();
+  }
+  panel.addEventListener('click', e => {
+    if (e.target.closest('.x')) return deselect();
+    const b = e.target.closest('button[data-i]'); if (b) select(+b.dataset.i);
+  });
+  function select(i, { fly:doFly = true, withPanel = true } = {}) {
+    clearTimeout(fitTimer); autoFit = 0; selected = i; applyFocus();
+    const n = nodes[i];
+    for (const k of n.inc) if (nodes[edges[k].a].on && nodes[edges[k].b].on) spawnPulse(k, i, 1.6);
+    n.flash = 1; ring(n);
+    if (withPanel) { openPanel(n); history.replaceState(null, '', pageHref(n.key)); }
+    if (doFly) flyToNode(n);
+  }
+  function deselect() { selected = null; applyFocus(); panel.classList.remove('on'); frameCinema(); if (location.hash) history.replaceState(null, '', location.pathname + location.search); }
+
+  // 検索
+  const q = $('#q'), qn = $('#qn');
+  let qTimer = 0;
+  q.addEventListener('input', () => {
+    const t = q.value.trim().toLowerCase();
+    if (!t) { hits = null; qn.textContent = ''; applyFocus(); return; }
+    hits = new Set(nodes.filter(n => n.on && [n.p.title, n.p.summary, n.p.id, ...(n.p.tags || []), ...(n.p.questions || []), ...(n.p.stacks || [])].some(v => String(v || '').toLowerCase().includes(t))).map(n => n.i));
+    qn.textContent = `${hits.size} 件`;
+    if (selected != null) { selected = null; panel.classList.remove('on'); frameCinema(); }
+    applyFocus();
+    clearTimeout(qTimer); if (hits.size) qTimer = setTimeout(() => fitView(1.2, hits.size === 1 ? new Set([...hits, ...nodes[[...hits][0]].nb]) : hits), 380);
+  });
+  q.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && hits && hits.size) { const best = [...hits].sort((a, b) => rank(nodes[b]) - rank(nodes[a]))[0]; q.blur(); hits = null; select(best); }
+    if (e.key === 'Escape') { q.value = ''; q.dispatchEvent(new Event('input')); q.blur(); }
+  });
+
+  // 成長リプレイ(作成日の順に星が生まれ、つながった瞬間に信号が走る)
+  const order = nodes.slice().sort((a, b) => (a.date || '9999').localeCompare(b.date || '9999') || a.key.localeCompare(b.key));
+  function birth(n) {
+    n.born = true; n.on = shelfOn[n.col] && n.vis && matchesContext(n);
+    const nb = n.nb.map(j => nodes[j]).filter(m => m.born);
+    const base = nb[0];
+    const u = Math.random() * 2 - 1, t = Math.random() * 6.283, s = Math.sqrt(1 - u * u), r = base ? 6 + Math.random() * 6 : 25 + Math.random() * 45;
+    n.x = (base ? base.x : 0) + r * s * Math.cos(t); n.y = (base ? base.y : 0) + r * u * .6; n.z = (base ? base.z : 0) + r * s * Math.sin(t);
+    n.vx = n.vy = n.vz = 0; n.scale = 0; n.popT = 0; n.flash = 1; n.showUntil = T + 2.4;
+    if (!n.on) return;  // 棚の表示切替や「表示: 上位」で隠したカードは、生まれても光らせない
+    ring(n); nb.forEach(m => spawnPulse(edgeBetween(n.i, m.i), n.i, 1.8));
+    alpha = Math.max(alpha, .32);
+  }
+  function startReplay() {
+    if (cine) toggleCinema();
+    deselect(); hits = null; q.value = ''; qn.textContent = '';
+    nodes.forEach(n => { n.born = false; n.scale = 0; n.flash = 0; }); refreshOn(); applyFocus();
+    pulses.forEach(p => { p.live = false; });
+    tl = { k:0, acc:.6, per:Math.max(.12, Math.min(.55, 26 / N)) };
+    $('#timeline').classList.add('on'); $('#bt-play').innerHTML = '■ 停止 <kbd>Space</kbd>'; $('#bt-play').classList.add('on');
+    const R = 40 + 22 * Math.cbrt(N), dir = camera.position.clone().sub(controls.target).normalize();
+    flyTo(dir.multiplyScalar(R * 2.6), new THREE.Vector3(), 1.8);
+  }
+  function stopReplay(finished) {
+    if (!tl) return;
+    order.forEach(n => { if (!n.born) birth(n); });
+    tl = null; $('#timeline').classList.remove('on'); $('#bt-play').innerHTML = '▶ 成長を再生 <kbd>Space</kbd>'; $('#bt-play').classList.remove('on');
+    if (finished) toast(`${N} のページ`, `${E} 本のつながり`);
+    fitLater(finished ? 900 : 0, 2);
+  }
+  function stepReplay(dt) {
+    if (!tl) return;
+    tl.acc += dt;
+    while (tl.acc >= tl.per && tl.k < order.length) { tl.acc -= tl.per; birth(order[tl.k++]); }
+    const cur = order[Math.max(0, tl.k - 1)];
+    $('#tl-date').textContent = tl.k ? (cur.date || '日付なし') : '—';
+    $('#tl-count').textContent = `${tl.k} / ${N} ページ · ${edges.filter(e => nodes[e.a].born && nodes[e.b].born).length} 本のつながり`;
+    $('#tl-bar').style.width = (tl.k / N * 100) + '%';
+    tl.fit = (tl.fit ?? 1.5) - dt;
+    if (tl.fit <= 0 && tl.k > 2) { tl.fit = 2.4; if (T - lastInteract > 2) fitView(2.4); }
+    if (tl.k >= order.length && tl.acc > 1.4) stopReplay(true);
+  }
+  let toastTimer = 0;
+  function toast(b, s) { $('#toast-b').textContent = b; $('#toast-s').textContent = s; $('#toast').classList.add('on'); clearTimeout(toastTimer); toastTimer = setTimeout(() => $('#toast').classList.remove('on'), 2600); }
+
+  // シネマ(UI を消し、つながりの多い知識を順に巡る。キャプション付き)
+  function frameCinema() {  // 被写体の寄せ: シネマは右(左下のキャプションを避ける)/ 詳細パネル表示中は左。回転してもずれない投影オフセット
+    const shift = W > 860 ? (cine ? -W * .16 : panel.classList.contains('on') ? W * .14 : 0) : 0;
+    if (shift) camera.setViewOffset(W, H, shift, 0, W, H); else camera.clearViewOffset();
+    camera.updateProjectionMatrix();
+  }
+  function toggleCinema() {
+    if (cine) {
+      cine = null; document.body.classList.remove('cinema', 'idle'); $('#caption').classList.remove('on'); $('#bt-cine').classList.remove('on');
+      selected = null; applyFocus(); frameCinema(); fitView(1.8); return;
+    }
+    if (tl) stopReplay(false);
+    deselect(); cine = { next:.4, last:-1, seen:new Set() }; frameCinema(); document.body.classList.add('cinema'); $('#bt-cine').classList.add('on'); applyFocus();
+  }
+  function stepCinema(dt) {
+    if (!cine) return;
+    cine.next -= dt;
+    if (cine.next > 0) return;
+    let pool = nodes.filter(n => n.on && n.deg && n.i !== cine.last);
+    if (!pool.length) pool = nodes.filter(n => n.on && n.i !== cine.last);
+    if (!pool.length) return;
+    let pickFrom = pool.filter(n => !cine.seen.has(n.i));
+    if (!pickFrom.length) { cine.seen.clear(); pickFrom = pool; }
+    const w = pickFrom.map(n => Math.pow(n.deg + 1, 1.6) * (1 + 3 * n.imp)), sum = w.reduce((a, b) => a + b, 0);  // 重要なカードほど巡りやすい
+    let r = Math.random() * sum, pick = pickFrom[0];
+    for (let k = 0; k < pickFrom.length; k++) { r -= w[k]; if (r <= 0) { pick = pickFrom[k]; break; } }
+    cine.last = pick.i; cine.seen.add(pick.i); cine.next = 7;
+    select(pick.i, { fly:false, withPanel:false });
+    flyToNode(pick, 3.2, Math.max(105, Math.min(240, pick.nb.reduce((m, j) => Math.max(m, Math.hypot(nodes[j].x - pick.x, nodes[j].y - pick.y, nodes[j].z - pick.z)), 0) * 2.4 + 30)));
+    const cap = $('#caption'); cap.classList.remove('on');
+    setTimeout(() => {
+      if (!cine) return;
+      $('#cap-shelf').setAttribute('style', `color:${PALETTE[pick.col]}`); $('#cap-shelf').textContent = shelfName(pick.col);
+      $('#cap-title').textContent = pick.p.title; $('#cap-sum').textContent = pick.p.summary || '';
+      cap.classList.add('on');
+    }, 1400);
+  }
+
+  function toggleCluster() {
+    cluster = !cluster; document.body.classList.toggle('cluster', cluster); $('#bt-cluster').classList.toggle('on', cluster);
+    alpha = Math.max(alpha, .9); if (selected == null && !cine) fitLater(1600, 1.8);
+  }
+  document.querySelectorAll('#tools button').forEach(b => b.addEventListener('click', () => b.blur()));
+  $('#bt-play').addEventListener('click', () => tl ? stopReplay(false) : startReplay());
+  $('#bt-cluster').addEventListener('click', toggleCluster);
+  $('#bt-cine').addEventListener('click', toggleCinema);
+  $('#bt-fit').addEventListener('click', () => { deselect(); fitView(); });
+  addEventListener('keydown', e => {
+    if (e.target === q || e.target === topSel || e.metaKey || e.ctrlKey || e.altKey) return;
+    const k = e.key.toLowerCase();
+    if (e.key === ' ') { e.preventDefault(); tl ? stopReplay(false) : startReplay(); }
+    else if (k === 'g') toggleCluster();
+    else if (k === 'c') toggleCinema();
+    else if (k === 'r') { deselect(); fitView(); }
+    else if (k === 'f') { document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen?.().catch(() => {}); }
+    else if (e.key === '/') { e.preventDefault(); if (!cine) q.focus(); }
+    else if (e.key === 'Escape') { if (cine) toggleCinema(); else if (tl) stopReplay(false); else { hits = null; q.value = ''; qn.textContent = ''; deselect(); } }
+  });
+  let idleTimer = 0;
+  addEventListener('pointermove', () => { document.body.classList.remove('idle'); clearTimeout(idleTimer); idleTimer = setTimeout(() => document.body.classList.add('idle'), 1800); });
+
+  // ---------- ポインタ(点をつかむ = 引っぱる / 空をドラッグ = 回転) ----------
+  const ndc = new THREE.Vector2(), ray = new THREE.Raycaster(), plane = new THREE.Plane(), hitP = new THREE.Vector3(), tmpV = new THREE.Vector3();
+  let W = 1, H = 1, projK = 1, down = null, lastInteract = -99;
+  function pick(cx, cy) {
+    const rect = renderer.domElement.getBoundingClientRect(), mx = cx - rect.left, my = cy - rect.top;
+    let best = null, bestScore = Infinity;
+    const camDir = camera.getWorldDirection(new THREE.Vector3());
+    for (const n of nodes) {
+      if (!n.on || n.scale < .3 || n.hl < .2) continue;
+      tmpV.set(n.rx, n.ry, n.rz);
+      const depth = tmpV.clone().sub(camera.position).dot(camDir);
+      if (depth <= 0) continue;
+      tmpV.project(camera);
+      const sx = (tmpV.x + 1) / 2 * W, sy = (1 - tmpV.y) / 2 * H;
+      const rad = Math.max(9, n.size * n.scale * projK / depth * 1.35), d = Math.hypot(sx - mx, sy - my);
+      if (d > rad) continue;
+      const score = d / rad + depth * 1e-4;
+      if (score < bestScore) { bestScore = score; best = n.i; }
+    }
+    return best;
+  }
+  const setNdc = e => { const r = renderer.domElement.getBoundingClientRect(); ndc.set((e.clientX - r.left) / r.width * 2 - 1, -(e.clientY - r.top) / r.height * 2 + 1); };
+  stage.addEventListener('pointerdown', e => {
+    lastInteract = T;
+    if (e.button !== 0) return;
+    const hit = cine ? null : pick(e.clientX, e.clientY);
+    down = { x:e.clientX, y:e.clientY, hit, moved:false };
+    if (hit == null) return;
+    e.stopPropagation();
+    const n = nodes[hit];
+    plane.setFromNormalAndCoplanarPoint(camera.getWorldDirection(new THREE.Vector3()), new THREE.Vector3(n.x, n.y, n.z));
+    n.fx = { x:n.x, y:n.y, z:n.z }; dragging = hit; alphaTarget = .28; alpha = Math.max(alpha, .28);
+    stage.setPointerCapture(e.pointerId);
+  }, true);
+  stage.addEventListener('pointermove', e => {
+    if (down && Math.hypot(e.clientX - down.x, e.clientY - down.y) > 4) down.moved = true;
+    if (dragging != null) {
+      if (!down?.moved) return;
+      setNdc(e); ray.setFromCamera(ndc, camera);
+      if (ray.ray.intersectPlane(plane, hitP)) nodes[dragging].fx = { x:hitP.x, y:hitP.y, z:hitP.z };
+      return;
+    }
+    if (e.buttons || cine) return;
+    const h = pick(e.clientX, e.clientY);
+    if (h !== hover) { hover = h; applyFocus(); stage.style.cursor = h == null ? '' : 'pointer'; if (h != null) { nodes[h].flash = Math.max(nodes[h].flash, .5); } }
+  });
+  const release = e => {
+    if (dragging != null) {
+      const n = nodes[dragging]; n.fx = null; alphaTarget = 0; dragging = null;
+      if (!down?.moved) select(n.i);
+      try { stage.releasePointerCapture(e.pointerId); } catch {}
+    } else if (down && !down.moved && down.hit == null && !cine && selected != null) deselect();
+    down = null;
+  };
+  stage.addEventListener('pointerup', release);
+  stage.addEventListener('pointercancel', release);
+  stage.addEventListener('pointerleave', () => { if (hover != null && dragging == null) { hover = null; applyFocus(); } });
+  controls.addEventListener('start', () => { lastInteract = T; fly = null; clearTimeout(fitTimer); });
+  stage.addEventListener('wheel', () => { lastInteract = T; }, { passive:true });
+
+  // ---------- サイズ ----------
+  function resize() {
+    W = innerWidth; H = innerHeight;
+    renderer.setSize(W, H); composer.setSize(W, H); bloom.setSize(W * PR, H * PR);
+    camera.aspect = W / H; frameCinema();
+    projK = H / (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2));
+    glowMats.forEach(m => { m.uniforms.uScale.value = projK * PR; });
+    lineMat?.resolution.set(W, H);
+  }
+  addEventListener('resize', resize); resize();
+
+  // ---------- ラベル ----------
+  const labelsEl = $('#labels'), labelEls = new Map();
+  const cut = (s, k) => s.length > k ? s.slice(0, k - 1) + '…' : s;
+  function drawLabels() {
+    const camDir = camera.getWorldDirection(new THREE.Vector3()), cand = [];
+    for (const n of nodes) {
+      const want = n.on && n.scale > .2 && (labelSet.has(n.i) || n.showUntil > T);
+      const el = labelEls.get(n.i);
+      if (!want) { if (el && el.style.display !== 'none') el.style.display = 'none'; continue; }
+      tmpV.set(n.rx, n.ry, n.rz);
+      const depth = tmpV.clone().sub(camera.position).dot(camDir);
+      if (depth <= 1) { if (el) el.style.display = 'none'; continue; }
+      tmpV.project(camera);
+      const main = n.i === focusCenter, born = n.showUntil > T && !labelSet.has(n.i);
+      cand.push({ n, depth, main, born, sx:(tmpV.x + 1) / 2 * W, sy:(1 - tmpV.y) / 2 * H, pri:(main ? 1e4 : born ? 5e3 : 0) + (hits?.has(n.i) ? 500 : 0) + n.deg * 10 - depth * .01 });
+    }
+    cand.sort((a, b) => b.pri - a.pri);
+    const placed = [];
+    for (const c of cand) {
+      const { n, depth, main, born } = c;
+      let el = labelEls.get(n.i);
+      if (!el) { el = document.createElement('div'); el.className = 'lb'; el.textContent = cut(n.p.title, 30); labelsEl.appendChild(el); labelEls.set(n.i, el); }
+      const cls = 'lb' + (main ? ' main' : born ? ' born' : '');
+      if (el.className !== cls) { el.className = cls; el._w = 0; }
+      if (el.style.display === 'none') el.style.display = '';
+      if (!el._w) el._w = el.offsetWidth || 120;
+      const sc = main ? 1 : Math.max(.72, Math.min(1.1, 160 / depth + .6)), w = el._w * sc, h = (main ? 20 : 16) * sc;
+      const x = c.sx - w / 2, y = c.sy + n.size * n.scale * projK / depth + 5;
+      if (placed.some(r => x < r.x + r.w + 6 && x + w + 6 > r.x && y < r.y + r.h && y + h > r.y)) { el.style.display = 'none'; continue; }
+      placed.push({ x, y, w, h });
+      const fade = main ? 1 : Math.max(0, Math.min(1, 1.45 - depth / 1300)) * Math.min(1, n.hl * 1.4) * (born ? Math.min(1, (n.showUntil - T) / .6) : 1);
+      el.style.opacity = fade.toFixed(3);
+      el.style.transform = `translate(${c.sx.toFixed(1)}px,${y.toFixed(1)}px) translateX(-50%) scale(${sc.toFixed(3)})`;
+    }
+    for (const [c, el] of shelfLabels) {
+      const list = nodes.filter(n => n.on && n.col === c);
+      if (!cluster || !list.length) continue;
+      const cx = list.reduce((m, n) => m + n.x, 0) / list.length, cz = list.reduce((m, n) => m + n.z, 0) / list.length;
+      tmpV.set(cx, list.reduce((m, n) => Math.max(m, n.y), -Infinity) + 14, cz);
+      if (tmpV.clone().sub(camera.position).dot(camDir) <= 1) { el.style.transform = 'translate(-9999px,0)'; continue; }
+      tmpV.project(camera);
+      el.style.transform = `translate(${((tmpV.x + 1) / 2 * W).toFixed(1)}px,${((1 - tmpV.y) / 2 * H).toFixed(1)}px) translateX(-50%)`;
+    }
+  }
+
+  // ---------- 毎フレーム ----------
+  const dummy = new THREE.Object3D(), col = new THREE.Color(), WHITE = new THREE.Color(1, 1, 1), camQ = new THREE.Quaternion();
+  const backOut = t => { const c1 = 1.9, c3 = c1 + 1; return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2); };
+  const clock = new THREE.Clock();
+  let T = 0, spawnAcc = 0, focusAcc = 0, autoFit = 0;
+  const HP = haloGeo.attributes.position.array, HC = haloGeo.attributes.color.array, HS = haloGeo.attributes.size.array, HA = haloGeo.attributes.alpha.array;
+  const PP = pulseGeo.attributes.position.array, PC = pulseGeo.attributes.color.array, PS = pulseGeo.attributes.size.array, PA = pulseGeo.attributes.alpha.array;
+  function frame() {
+    const dt = Math.min(clock.getDelta(), .05); T += dt;
+    tick(); stepReplay(dt); stepCinema(dt);
+    if (autoFit && T > 3 && alpha < .06) { autoFit = 0; if (T - lastInteract > 3 && selected == null && !hits) fitView(2.4); }
+
+    // ノード
+    const drift = REDUCE ? 0 : .8;
+    for (const n of nodes) {
+      if (n.popT < 1 && n.born) { n.popT = Math.min(1, n.popT + dt / .7); n.scale = n.on && n.popT > 0 ? backOut(n.popT) : 0; }
+      else n.scale += ((n.on ? 1 : 0) - n.scale) * Math.min(1, dt * 5);
+      n.hl += (n.hlT - n.hl) * Math.min(1, dt * 7);
+      n.flash = Math.max(0, n.flash - dt * 1.6);
+      n.rx = n.x + Math.sin(T * .55 + n.phase) * drift; n.ry = n.y + Math.cos(T * .47 + n.phase * 1.3) * drift; n.rz = n.z + Math.sin(T * .39 + n.phase * .7) * drift;
+      const s = Math.max(1e-4, n.size * n.scale * (1 + n.flash * .55) * (n.i === focusCenter ? 1.25 : 1));
+      dummy.position.set(n.rx, n.ry, n.rz); dummy.scale.setScalar(s); dummy.updateMatrix(); coreMesh.setMatrixAt(n.i, dummy.matrix);
+      const dim = NOREF.has(n.p.status) ? .3 : (n.p.status === 'draft' ? .6 : .8) + n.imp * .3, b = n.hl * dim;  // 一時停止は暗く、未確認は少し暗く、つながりの多いページほど明るく
+      col.copy(n.color).lerp(WHITE, Math.min(.8, .22 + n.flash * .45)).multiplyScalar(Math.min(1.25, b * (1 + n.flash * .5))); coreMesh.setColorAt(n.i, col);
+      HP[n.i * 3] = n.rx; HP[n.i * 3 + 1] = n.ry; HP[n.i * 3 + 2] = n.rz;
+      HC[n.i * 3] = n.color.r; HC[n.i * 3 + 1] = n.color.g; HC[n.i * 3 + 2] = n.color.b;
+      const dc = Math.hypot(n.rx - camera.position.x, n.ry - camera.position.y, n.rz - camera.position.z);
+      HS[n.i] = s * Math.min(6.5, Math.max(3, dc / 70));  // 寄るほど光輪を控えめに(大きさ)
+      HA[n.i] = Math.min(1.1, (n.halo + n.flash * .6) * b) * Math.min(1, n.scale) * Math.min(1, dc / 260);  // 光輪 = 進行中の案件とつながりが特に多いページ、触れた瞬間だけ。寄った時は薄く（白飛び防止）
+    }
+    coreMesh.instanceMatrix.needsUpdate = true; coreMesh.instanceColor.needsUpdate = true;
+    for (const k of ['position', 'color', 'size', 'alpha']) haloGeo.attributes[k].needsUpdate = true;
+
+    // 線
+    if (E) {
+      const LP = linePos.array, LC = lineCol.array;
+      edges.forEach((e, k) => {
+        const a = nodes[e.a], b = nodes[e.b];
+        e.hl += (e.hlT - e.hl) * Math.min(1, dt * 7);
+        LP.set([a.rx, a.ry, a.rz, b.rx, b.ry, b.rz], k * 6);
+        const v = Math.min(a.scale, b.scale, 1) * e.hl * .5 * LINE_K * (NOREF.has(a.p.status) || NOREF.has(b.p.status) ? .45 : 1);
+        LC.set([a.color.r * v, a.color.g * v, a.color.b * v, b.color.r * v, b.color.g * v, b.color.b * v], k * 6);
+      });
+      linePos.needsUpdate = true; lineCol.needsUpdate = true;
+    }
+
+    // 信号: 常に少し流れ、注目点からは外へ多めに流れる。届いた先で少し連鎖する
+    const live = e => nodes[e.a].on && nodes[e.b].on && nodes[e.a].scale > .5 && nodes[e.b].scale > .5;
+    if (E && !tl) {
+      spawnAcc += dt * Math.min(E, 800) * (REDUCE ? .03 : .16) * (focusCenter != null || hits ? .35 : 1);  // 線が多くても流す光は増やしすぎない(白飛び防止)
+      while (spawnAcc >= 1) { spawnAcc--; const k = Math.floor(Math.random() * E); if (live(edges[k])) spawnPulse(k, Math.random() < .5 ? edges[k].a : edges[k].b, .55); }
+      if (focusCenter != null && !REDUCE) {
+        const inc = nodes[focusCenter].inc; focusAcc += dt * Math.min(14, 2 + inc.length * 1.4);
+        while (focusAcc >= 1 && inc.length) { focusAcc--; const k = inc[Math.floor(Math.random() * inc.length)]; if (live(edges[k])) spawnPulse(k, focusCenter, 1.15); }
+      }
+    }
+    for (let k = 0; k < MAXP; k++) {
+      const p = pulses[k];
+      if (!p.live) { PS[k] = 0; PA[k] = 0; continue; }
+      const e = edges[p.e], a = nodes[p.from], b = nodes[p.from === e.a ? e.b : e.a];
+      p.t += dt * p.sp * Math.min(2.2, 34 / Math.max(10, Math.hypot(b.x - a.x, b.y - a.y, b.z - a.z)));
+      if (p.t >= 1 || !live(e)) {
+        p.live = false; PS[k] = 0; PA[k] = 0;
+        if (p.t >= 1) {
+          b.flash = Math.min(1, b.flash + .35 * p.str);
+          if (p.str > .45 && Math.random() < (p.str > 1 ? .15 : .3)) { const nx = b.inc.filter(j => j !== p.e); if (nx.length) spawnPulse(nx[Math.floor(Math.random() * nx.length)], b.i, p.str * .72); }
+        }
+        continue;
+      }
+      const t = p.t, u = 1 - t;
+      PP[k * 3] = a.rx * u + b.rx * t; PP[k * 3 + 1] = a.ry * u + b.ry * t; PP[k * 3 + 2] = a.rz * u + b.rz * t;
+      col.copy(a.color).lerp(b.color, t).lerp(WHITE, .35);
+      PC[k * 3] = col.r; PC[k * 3 + 1] = col.g; PC[k * 3 + 2] = col.b;
+      PS[k] = (2.2 + p.str * 2.4); PA[k] = Math.sin(Math.PI * t) ** .6 * Math.min(1.3, p.str) * Math.max(.15, Math.min(a.hl, b.hl, 1.2));
+    }
+    for (const k of ['position', 'color', 'size', 'alpha']) pulseGeo.attributes[k].needsUpdate = true;
+
+    // 波紋と選択リング(カメラに正対)
+    camQ.copy(camera.quaternion);
+    for (const r of rings) {
+      if (r.t >= 1) { r.m.visible = false; continue; }
+      r.t = Math.min(1, r.t + dt / 1.3);
+      r.m.position.set(r.n.rx, r.n.ry, r.n.rz); r.m.quaternion.copy(camQ);
+      r.m.scale.setScalar(r.n.size * (1.5 + ease(r.t) * 9)); r.m.material.opacity = (1 - r.t) ** 2 * .9;
+    }
+    const sel = selected ?? (cine ? focusCenter : null);
+    selRing.visible = sel != null;
+    if (sel != null) {
+      const n = nodes[sel];
+      selRing.position.set(n.rx, n.ry, n.rz); selRing.quaternion.copy(camQ);
+      selRing.scale.setScalar(n.size * 1.25 * (2.1 + Math.sin(T * 3) * .15)); selRing.material.color.copy(n.color).lerp(WHITE, .4);
+    }
+
+    // カメラ: 飛行 → 選択中は対象にゆっくり追従 → 放置中は自動回転
+    if (fly) {
+      fly.t += dt; const k = ease(Math.min(1, fly.t / fly.dur));
+      camera.position.lerpVectors(fly.p0, fly.p1, k); controls.target.lerpVectors(fly.q0, fly.q1, k);
+      if (k >= 1) fly = null;
+    } else if (selected != null && !cine && dragging == null) {
+      const n = nodes[selected], d = new THREE.Vector3(n.rx, n.ry, n.rz).sub(controls.target).multiplyScalar(.06);
+      controls.target.add(d); camera.position.add(d);
+    }
+    controls.autoRotate = !REDUCE && dragging == null && (cine != null || tl != null || T - lastInteract > 6);
+    controls.autoRotateSpeed = cine ? .7 : tl ? .9 : .45;
+    controls.update();
+    scene.userData.stars.uniforms.uTime.value = T;
+    scene.userData.dust.rotation.y = T * .006;
+    drawLabels();
+    composer.render();
+    requestAnimationFrame(frame);
+  }
+
+  // ---------- 起動: 中心から弾けて広がり、カメラが寄っていく ----------
+  refreshOn(); applyFocus();
+  nodes.forEach((n, k) => { n.popT = -k * Math.min(.03, 1.2 / N); });
+  requestAnimationFrame(frame);
+  setTimeout(() => boot.classList.add('done'), 250);
+  const deep = unhash();
+  fitLater(1500, 2.6);
+  autoFit = index.has(deep) ? 0 : 1;
+  if (index.has(deep)) setTimeout(() => select(index.get(deep)), 4300);
+  addEventListener('hashchange', () => { const k = unhash(); if (index.has(k) && index.get(k) !== selected) select(index.get(k)); });
+}
+</script>
+</body>
+</html>

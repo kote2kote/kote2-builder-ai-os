@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{PRODUCT_NAME}} — 資料管理</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/styles.css">
+</head>
+<body class="docs-page">
+<div class="layout">
+  <aside id="app-sidebar" aria-label="メインナビゲーション"></aside>
+
+  <main id="main">
+    <p class="eyebrow">KNOWLEDGE DOCUMENTS</p>
+    <h2 class="page-title" id="kb-title">読み込み中…</h2>
+    <p class="page-sub">ここに入れた資料が、このナレッジの回答の根拠になります。</p>
+    <div class="kb-desc" id="kb-desc-box" hidden>
+      <span class="kb-desc-label">説明</span>
+      <span class="kb-desc-text" id="kb-desc-text"></span>
+      <button class="ghost" id="kb-desc-edit" type="button">説明を編集</button>
+      <form id="kb-desc-form" hidden>
+        <input type="text" id="kb-desc-input" maxlength="200" placeholder="何の資料かを 1 行で。例: A 社との定例打ち合わせ議事録" aria-label="ナレッジの説明">
+        <button type="submit">保存</button>
+        <button class="ghost" id="kb-desc-cancel" type="button">やめる</button>
+      </form>
+    </div>
+    <a class="btn chat-cta" id="chat-cta" href="#">このナレッジにチャットで質問する</a>
+
+    <div class="syncbar" id="syncbar"><span class="dot"></span><span class="t">同期状態を確認中…</span></div>
+
+    <section>
+      <h3 class="sec">資料を追加</h3>
+      <div class="dropzone" id="dropzone">
+        <strong>ここにファイルをドラッグ&ドロップ</strong><br>
+        またはクリックして選択(PDF / Word / Excel / CSV / 画像 / テキスト)
+        <div class="progress" id="progress"></div>
+      </div>
+      <input type="file" id="file-input" multiple hidden
+        accept=".pdf,.docx,.xlsx,.csv,.md,.txt,.jpg,.jpeg,.png,.webp">
+      <div class="notice quiet">
+        追加した資料が検索に反映されるまで数分かかります(その間も画面の操作はできます)。
+      </div>
+    </section>
+
+    <section>
+      <h3 class="sec">登録済みの資料</h3>
+      <table class="docs">
+        <thead>
+          <tr><th>資料名</th><th>種類</th><th class="num">ページ</th><th class="num">サイズ</th><th>登録日</th><th></th></tr>
+        </thead>
+        <tbody id="doc-rows">
+          <tr><td colspan="6">読み込み中…</td></tr>
+        </tbody>
+      </table>
+      <div class="notice quiet">
+        削除した資料も、検索結果には数分残ることがあります(索引の同期が終わると消えます)。
+      </div>
+    </section>
+
+    <footer class="meta">PDF はページ単位に分解し、資料名とページ番号を保ったまま登録します。</footer>
+  </main>
+</div>
+
+<script type="module">
+import { api, el, fmtBytes, mountSidebar, mountSyncBar, qs, withLock } from "/common.js";
+import { splitPdf } from "/pdf-ingest.js";
+
+const kbId = qs("kb");
+if (!kbId) location.href = "/";
+
+mountSidebar(document.getElementById("app-sidebar"), { current: "knowledge" });
+
+const main = document.getElementById("main");
+const title = document.getElementById("kb-title");
+const rows = document.getElementById("doc-rows");
+const dropzone = document.getElementById("dropzone");
+const fileInput = document.getElementById("file-input");
+const progress = document.getElementById("progress");
+document.getElementById("chat-cta").href = `/chat?kb=${encodeURIComponent(kbId)}`;
+
+const refreshSync = mountSyncBar(document.getElementById("syncbar"));
+let docs = [];
+
+// 説明(description): 全体チャットで「どのナレッジを見るか」の手がかり(agentic 派生ではルーティングの判断材料)。フォルダ名変更と同じインライン編集の型
+const descBox = document.getElementById("kb-desc-box");
+const descText = document.getElementById("kb-desc-text");
+const descForm = document.getElementById("kb-desc-form");
+const descInput = document.getElementById("kb-desc-input");
+let description = "";
+
+function renderDesc() {
+  descBox.hidden = false;
+  descForm.hidden = true;
+  descText.textContent = description || "まだありません(書いておくと、全体チャットでどのナレッジを見るかの手がかりになります)";
+  descText.classList.toggle("is-empty", !description);
+}
+
+document.getElementById("kb-desc-edit").addEventListener("click", () => {
+  descForm.hidden = !descForm.hidden;
+  if (!descForm.hidden) {
+    descInput.value = description;
+    descInput.focus();
+  }
+});
+document.getElementById("kb-desc-cancel").addEventListener("click", () => { descForm.hidden = true; });
+descForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  await withLock(main, async () => {
+    try {
+      const body = await api(`/api/kb/${encodeURIComponent(kbId)}`, { method: "PATCH", json: { description: descInput.value.trim() } });
+      description = body.kb.description ?? "";
+      renderDesc();
+    } catch (e) { alert(e.message); }
+  });
+});
+
+function kindLabel(doc) {
+  if (doc.kind === "pdf") {
+    return doc.scanPages > 0 ? `PDF(画像 ${doc.scanPages}p 含む)` : "PDF";
+  }
+  return doc.kind.toUpperCase();
+}
+
+function render() {
+  rows.innerHTML = "";
+  if (docs.length === 0) {
+    const tr = el("tr");
+    const td = el("td", null, "まだ資料がありません。上のドロップゾーンから追加してください。");
+    td.colSpan = 6;
+    tr.appendChild(td);
+    rows.appendChild(tr);
+    return;
+  }
+  for (const doc of docs) {
+    const tr = el("tr");
+    tr.appendChild(el("td", null, doc.name));
+    tr.appendChild(el("td", null, kindLabel(doc)));
+    const pages = el("td", "num", String(doc.pages));
+    tr.appendChild(pages);
+    tr.appendChild(el("td", "num", fmtBytes(doc.bytes)));
+    tr.appendChild(el("td", null, new Date(doc.createdAt).toLocaleDateString("ja-JP")));
+    const tdBtn = el("td");
+    const btn = el("button", "danger", "削除");
+    btn.addEventListener("click", () => removeDoc(doc));
+    tdBtn.appendChild(btn);
+    tr.appendChild(tdBtn);
+    rows.appendChild(tr);
+  }
+}
+
+async function load() {
+  try {
+    const [kbBody, docsBody] = await Promise.all([
+      api(`/api/kb/${encodeURIComponent(kbId)}`),
+      api(`/api/kb/${encodeURIComponent(kbId)}/docs`),
+    ]);
+    title.textContent = kbBody.kb.name;
+    description = kbBody.kb.description ?? "";
+    renderDesc();
+    docs = docsBody.docs;
+    render();
+  } catch (e) {
+    title.textContent = "読み込みに失敗しました";
+    rows.innerHTML = "";
+    const tr = el("tr");
+    const td = el("td", null, e.message);
+    td.colSpan = 6;
+    tr.appendChild(td);
+    rows.appendChild(tr);
+  }
+}
+
+async function uploadFile(file) {
+  const form = new FormData();
+  const isPdf = /\.pdf$/i.test(file.name);
+
+  if (isPdf) {
+    progress.textContent = `${file.name}: PDF をページに分解しています…`;
+    const pages = await splitPdf(file, (n, total) => {
+      progress.textContent = `${file.name}: ページ分解中 ${n}/${total}`;
+    });
+    form.set("meta", JSON.stringify({
+      name: file.name,
+      kind: "pdf",
+      bytes: file.size,
+      pages: pages.map((p) => ({ n: p.n, type: p.type })),
+    }));
+    for (const p of pages) {
+      form.set(`page-${p.n}`, p.blob, `p${p.n}`);
+      form.set(`thumb-${p.n}`, p.thumb);
+    }
+  } else {
+    form.set("meta", JSON.stringify({
+      name: file.name,
+      kind: file.name.split(".").pop().toLowerCase(),
+      bytes: file.size,
+    }));
+    form.set("file", file, file.name);
+  }
+
+  progress.textContent = `${file.name}: アップロード中…`;
+  const body = await api(`/api/kb/${encodeURIComponent(kbId)}/docs`, { method: "POST", body: form });
+  docs.unshift(body.doc); // 楽観更新
+  render();
+  progress.textContent = `${file.name}: 登録しました(${body.sync.message})`;
+  refreshSync();
+}
+
+async function handleFiles(fileList) {
+  await withLock(main, async () => {
+    for (const file of fileList) {
+      try {
+        await uploadFile(file);
+      } catch (e) {
+        alert(`「${file.name}」の登録に失敗しました: ${e.message}`);
+        progress.textContent = "";
+      }
+    }
+  });
+}
+
+async function removeDoc(doc) {
+  if (!confirm(`資料「${doc.name}」を削除します。よろしいですか?\n(検索結果には数分残ることがあります)`)) return;
+  await withLock(main, async () => {
+    try {
+      await api(`/api/kb/${encodeURIComponent(kbId)}/docs/${encodeURIComponent(doc.docId)}`, { method: "DELETE" });
+      docs = docs.filter((d) => d.docId !== doc.docId);
+      render();
+      refreshSync();
+    } catch (e) {
+      alert(e.message);
+    }
+  });
+}
+
+dropzone.addEventListener("click", () => fileInput.click());
+fileInput.addEventListener("change", () => {
+  if (fileInput.files.length) handleFiles([...fileInput.files]);
+  fileInput.value = "";
+});
+dropzone.addEventListener("dragover", (ev) => { ev.preventDefault(); dropzone.classList.add("over"); });
+dropzone.addEventListener("dragleave", () => dropzone.classList.remove("over"));
+dropzone.addEventListener("drop", (ev) => {
+  ev.preventDefault();
+  dropzone.classList.remove("over");
+  if (ev.dataTransfer.files.length) handleFiles([...ev.dataTransfer.files]);
+});
+
+load();
+</script>
+</body>
+</html>

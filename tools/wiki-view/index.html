@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Wiki — ワークスペース</title>
+<!-- ============================================================
+  tools/wiki-view/index.html — ワークスペースの Wiki の閲覧画面（kote2 Builder AI OS の本体。OS の更新で配る）
+  - kote2 Builder v3 の LLM Wiki の閲覧画面（templates/wiki/index.html）を写して、OS の Wiki の項目に合わせたもの。
+    Markdown の表示・2D のグラフの計算は v3 のまま。v3 の Wiki にしかないもの（毎日メモ・プロジェクトの並び・昇格候補・棚・スタック）は外した
+  - 色と枠は OS の標準テーマ（DESIGN.md。v3 のダッシュボードと同じ抹茶色: 緑の外枠・クリームの地・白い面）。ダークモードとフォントの外からの読み込みはしない。3D（graph.html）は別の見た目のまま
+  - 依存なしの単一 HTML。tools/wiki_view.py が返す ./index.json を読んで描く。読む・探す・つながりを眺める専用で、何も書かない
+  - 直すのは Sveltia（../admin/）。3D のグラフは ./graph.html（three.js を CDN から読む。オフラインならこの 2D が受け皿）
+============================================================ -->
+<style>
+  /* 標準テーマ（DESIGN.md の Olive Cream = v3 のダッシュボードの抹茶色）。--accent は線・点・大きな数字用、小さな文字の色は --link・--warn-ink */
+  :root {
+    --frame:#71804b; --bg:#f0efe2; --surface:#fff; --text:#2f3a1c; --sub:#5a6242;
+    --accent:#71804b; --accent-soft:#dde0c8; --line:#d9dcc3; --link:#4b6b2a; --dark:#333f1f;
+    --ok:#4b6b2a; --ok-bg:#e6ead4; --warn:#b05c2e; --warn-ink:#8f4521; --warn-bg:#f6e9de;
+    --info:#5a6242; --info-bg:#e9ead9; --callout-bg:#fbf9ee; --code-bg:#f6f5ea; --radius:10px;
+    /* 種類の色（2D のグラフの点・カードの上の線・凡例）。地のクリームとの差が 3:1 以上 */
+    --c-notes:#71804b; --c-projects:#b05c2e; --c-recipes:#333f1f; --c-me:#a0721f; --c-v3:#7d6b58; --c-other:#8c8878;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:"Hiragino Kaku Gothic ProN","Hiragino Sans","Yu Gothic","Noto Sans JP",sans-serif; background:var(--frame); color:var(--text); font-size:15px; line-height:1.8; }
+  a { color:var(--link); }
+  .layout { display:flex; min-height:calc(100vh - 36px); margin:18px; background:var(--bg); }
+  aside { width:300px; flex:none; background:var(--surface); border-right:1px solid var(--line); position:sticky; top:18px; height:calc(100vh - 36px); overflow-y:auto; padding:28px 22px; display:flex; flex-direction:column; gap:20px; }
+  .brand h1 { font-size:20px; font-weight:900; line-height:1.35; letter-spacing:.01em; overflow-wrap:anywhere; }
+  .brand h1 span { display:block; font-size:11px; color:var(--sub); font-weight:700; letter-spacing:.14em; margin-top:4px; }
+  .brand .tagline { font-size:13px; color:var(--sub); margin-top:10px; }
+  .actions { display:flex; gap:8px; flex-wrap:wrap; }
+  .btn { display:inline-block; font-size:12.5px; font-weight:700; padding:6px 12px; border-radius:8px; border:1px solid var(--line); background:var(--surface); color:var(--text); text-decoration:none; cursor:pointer; font-family:inherit; }
+  .btn:hover { background:var(--accent-soft); }
+  .btn.primary { background:var(--dark); color:#fff; border-color:var(--dark); }
+  .btn.primary:hover { background:#46552b; }
+  .btn:focus-visible, .tile:focus-visible, nav a:focus-visible, .card:focus-visible { outline:2px solid var(--dark); outline-offset:2px; }
+  .tiles { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .tile { border:1px solid var(--line); border-radius:var(--radius); padding:11px 12px 8px; cursor:pointer; text-decoration:none; color:inherit; display:block; }
+  .tile:hover { background:var(--accent-soft); }
+  .tile b { display:block; font-size:25px; font-weight:900; color:var(--accent); line-height:1.25; font-feature-settings:"tnum"; }
+  .tile span { font-size:11.5px; color:var(--sub); }
+  .search input { width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:8px; font:inherit; font-size:13px; background:var(--bg); color:var(--text); }
+  .search input:focus { outline:2px solid var(--accent-soft); border-color:var(--accent); }
+  nav { display:flex; flex-direction:column; }
+  nav .lbl { font-size:11px; color:var(--sub); letter-spacing:.08em; margin:6px 10px 2px; }
+  nav a { display:flex; justify-content:space-between; align-items:center; gap:8px; padding:7px 10px; border-radius:8px; color:var(--text); text-decoration:none; font-size:13.5px; font-weight:500; }
+  nav a:hover, nav a.on { background:var(--accent-soft); }
+  nav a .n { font-size:11px; color:var(--sub); background:var(--bg); border:1px solid var(--line); border-radius:99px; padding:0 8px; font-feature-settings:"tnum"; }
+  .chips { display:flex; flex-wrap:wrap; gap:6px; }
+  .side-foot { margin-top:auto; font-size:11.5px; color:var(--sub); line-height:1.8; border-top:1px solid var(--line); padding-top:12px; }
+  main { flex:1; min-width:0; padding:34px 40px 72px; max-width:1180px; }
+  section { margin-bottom:44px; }
+  .sec-head { display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; margin-bottom:14px; padding-bottom:8px; border-bottom:1px solid var(--line); }
+  .sec-head .dot { width:10px; height:10px; border-radius:3px; background:var(--accent); flex:none; align-self:center; }
+  h2 { font-size:16px; font-weight:700; letter-spacing:.04em; }
+  .sec-head .count { font-size:12px; font-weight:700; color:var(--sub); background:var(--surface); border:1px solid var(--line); border-radius:99px; padding:0 9px; }
+  .sec-head .hint { margin-left:auto; font-size:12.5px; color:var(--sub); }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:14px; }
+  .card { background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); border-top:3px solid var(--accent); padding:14px 16px; display:flex; flex-direction:column; gap:7px; text-decoration:none; color:inherit; }
+  .card:hover { border-color:var(--accent); }
+  .topic-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:12px; }
+  .topic-grid a { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:16px; border:1px solid var(--line); border-radius:var(--radius); background:var(--surface); color:var(--text); text-decoration:none; font-weight:700; }
+  .topic-grid a:hover { border-color:var(--accent); }
+  .topic-grid .n { color:var(--sub); font-size:12px; white-space:nowrap; }
+  .topic-grid .lbl { grid-column:1/-1; color:var(--sub); font-size:12px; }
+  .card.notes { border-top-color:var(--c-notes); } .card.projects { border-top-color:var(--c-projects); } .card.v3 { border-top-color:var(--c-v3); } .card.recipes { border-top-color:var(--c-recipes); } .card.me { border-top-color:var(--c-me); } .card.other { border-top-color:var(--c-other); }
+  .card .name { font-weight:700; font-size:14.5px; line-height:1.5; }
+  .card .desc { font-size:13px; color:var(--sub); flex:1; }
+  .card .meta { font-size:11.5px; color:var(--sub); font-feature-settings:"tnum"; }
+  .badges { display:flex; flex-wrap:wrap; gap:6px; }
+  .badge { font-size:11px; font-weight:700; border-radius:99px; padding:1px 9px; white-space:nowrap; text-decoration:none; }
+  .badge.gray { color:var(--sub); background:var(--code-bg); }
+  .st-active { color:var(--warn-ink); background:var(--warn-bg); } .st-done,.st-confirmed { color:var(--ok); background:var(--ok-bg); } .st-draft { color:var(--info); background:var(--info-bg); } .st-paused,.st-none { color:var(--sub); background:var(--code-bg); }
+  .badge.star { color:var(--warn-ink); background:var(--warn-bg); }
+  .notice { border:1px solid var(--warn); border-left:6px solid var(--warn); background:var(--callout-bg); color:var(--text); border-radius:var(--radius); padding:12px 16px; font-size:13.5px; margin-bottom:22px; }
+  .notice b { color:var(--warn-ink); }
+  .badge.up { color:var(--link); background:var(--accent-soft); }
+  .empty { grid-column:1/-1; border:1px dashed var(--line); border-radius:var(--radius); padding:26px; text-align:center; color:var(--sub); font-size:13.5px; }
+  /* ページ表示 */
+  .page { background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); padding:28px 32px; }
+  .page .crumbs { font-size:12.5px; color:var(--sub); margin-bottom:8px; }
+  .crumbs-top { font-size:12.5px; color:var(--sub); margin:0 0 10px 2px; }
+  .sec-head .acts { display:flex; gap:8px; align-items:center; margin-left:12px; }  /* 欄の右上のボタン(開く系は目立つ色 = btn primary) */
+  .sec-head .acts.solo { margin-left:auto; }
+  .page.has-corner { position:relative; } .page.has-corner h1 { padding-right:150px; }
+  .page .corner { position:absolute; top:24px; right:28px; display:flex; gap:8px; }
+  .page h1 { font-size:22px; font-weight:900; line-height:1.4; margin-bottom:6px; }
+  .page .summary { color:var(--sub); font-size:14px; margin-bottom:14px; }
+  .page .metabar { display:flex; flex-wrap:wrap; gap:6px; align-items:center; margin-bottom:18px; }
+  .page .metabar .k { font-size:11.5px; color:var(--sub); margin-left:6px; }
+  .tri { display:grid; gap:10px; margin:14px 0 20px; }
+  .tri .b { border:1px solid var(--line); border-left:4px solid var(--warn); border-radius:8px; padding:10px 14px; background:var(--bg); font-size:14px; }
+  .tri .b.cause { border-left-color:var(--info); } .tri .b.fix { border-left-color:var(--ok); }
+  .tri .b b { display:block; font-size:11.5px; color:var(--sub); letter-spacing:.06em; margin-bottom:2px; }
+  .md { font-size:14.5px; }
+  .md h1,.md h2,.md h3 { margin:20px 0 8px; line-height:1.5; } .md h1{font-size:19px} .md h2{font-size:17px; border-bottom:1px solid var(--line); padding-bottom:4px} .md h3{font-size:15px}
+  .md p { margin:8px 0; } .md ul,.md ol { margin:8px 0 8px 22px; } .md li { margin:2px 0; }
+  .md code { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:12.5px; background:var(--code-bg); padding:1px 6px; border-radius:4px; }
+  .md pre { background:var(--code-bg); border:1px solid var(--line); border-radius:8px; padding:12px 14px; overflow-x:auto; margin:10px 0; }
+  .md pre code { background:none; padding:0; font-size:12.5px; line-height:1.6; }
+  .md blockquote { border-left:4px solid var(--line); color:var(--sub); padding:2px 14px; margin:10px 0; }
+  .md table { border-collapse:collapse; width:100%; margin:10px 0; font-size:13.5px; display:block; overflow-x:auto; }
+  .md th,.md td { border:1px solid var(--line); padding:6px 10px; text-align:left; vertical-align:top; }
+  .md th { background:var(--accent-soft); }
+  .kv { display:grid; grid-template-columns:120px 1fr; gap:4px 12px; font-size:13px; margin-top:22px; padding-top:14px; border-top:1px solid var(--line); }
+  .kv dt { color:var(--sub); } .kv dd { word-break:break-all; }
+  .kv a.ref { display:inline-block; margin-right:8px; }
+  .toolbar { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px; align-items:center; }
+  .toolbar select,.toolbar input[type="search"] { font:inherit; font-size:12.5px; padding:5px 8px; border:1px solid var(--line); border-radius:8px; background:var(--surface); color:var(--text); max-width:100%; }
+  /* Graph View: related だけを線にする。タグ / スタックは接続を過剰に増やさない */
+  .graph-shell { background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden; }
+  .graph-tools { display:flex; gap:8px; align-items:center; flex-wrap:wrap; padding:12px 14px; border-bottom:1px solid var(--line); }
+  .graph-tools input[type="search"] { min-width:220px; flex:1; }
+  .graph-tools label { font-size:12.5px; color:var(--sub); display:flex; align-items:center; gap:5px; }
+  .graph-tools .graph-stats { margin-left:auto; font-size:12px; color:var(--sub); font-feature-settings:"tnum"; }
+  .graph-stage { position:relative; height:min(68vh,650px); min-height:440px; background:var(--bg); overflow:hidden; touch-action:none; }
+  .graph-stage svg { width:100%; height:100%; display:block; user-select:none; }
+  .graph-edge { stroke:var(--sub); stroke-opacity:.25; stroke-width:1.2; vector-effect:non-scaling-stroke; }
+  .graph-edge.lit { stroke:var(--warn); stroke-opacity:.9; stroke-width:2.2; }  /* 触れた点の線 */
+  .graph-node { cursor:pointer; outline:none; }
+  svg.inspecting .graph-node.labeled:not(:hover):not(:focus) text { opacity:0; }
+  svg.inspecting .graph-edge:not(.lit) { stroke-opacity:.07; }
+  svg.inspecting .graph-node:not(.peer):not(:hover):not(:focus) circle { opacity:.3; }
+  .graph-node circle { fill:var(--c-notes); stroke:var(--surface); stroke-width:2.2; vector-effect:non-scaling-stroke; transition:stroke-width .12s,opacity .12s; }
+  .graph-node.projects circle { fill:var(--c-projects); } .graph-node.v3 circle { fill:var(--c-v3); }
+  .graph-node.recipes circle { fill:var(--c-recipes); } .graph-node.me circle { fill:var(--c-me); } .graph-node.other circle { fill:var(--c-other); }
+  .graph-node.paused { opacity:.42; } .graph-node.draft circle { fill-opacity:.6; }
+  .graph-node.important circle { stroke:var(--dark); stroke-width:3.4; }
+  .graph-node.isolate circle { stroke-dasharray:3 3; }
+  .graph-node.peer circle { stroke:var(--warn); stroke-width:3.4; }  /* 触れた点の相手 */
+  .graph-band rect { fill:var(--surface); fill-opacity:.55; stroke:var(--sub); stroke-opacity:.45; stroke-dasharray:5 5; stroke-width:1.2; vector-effect:non-scaling-stroke; }  /* 孤立の帯(薄い面 + 破線の枠 + 見出し) */
+  .graph-band text { fill:var(--sub); font-size:14px; font-weight:700; letter-spacing:.06em; }
+  .graph-node:hover circle,.graph-node:focus circle { stroke:var(--text); stroke-width:3.5; }
+  .graph-node text { fill:var(--text); font-size:13px; font-weight:650; paint-order:stroke; stroke:var(--bg); stroke-width:3px; stroke-linejoin:round; pointer-events:none; opacity:0; }
+  .graph-node.labeled text,.graph-node:hover text,.graph-node:focus text { opacity:1; }
+  .graph-detail { min-height:46px; padding:9px 14px; border-top:1px solid var(--line); color:var(--sub); font-size:12.5px; }
+  .graph-detail b { color:var(--text); }
+  .graph-legend { display:flex; flex-wrap:wrap; gap:10px 14px; padding:9px 14px; border-top:1px solid var(--line); font-size:11.5px; color:var(--sub); }
+  .graph-legend span { display:inline-flex; align-items:center; gap:5px; }
+  .graph-legend i { width:9px; height:9px; border-radius:50%; background:var(--c-notes); }
+  .graph-legend .projects { background:var(--c-projects); } .graph-legend .v3 { background:var(--c-v3); }
+  .graph-legend .recipes { background:var(--c-recipes); } .graph-legend .me { background:var(--c-me); } .graph-legend .other { background:var(--c-other); }
+  body.no3d .to-3d { display:none; }  /* graph.html を置いていない(3D を切った)時は入口を出さない */
+  .md hr { border:0; border-top:1px solid var(--line); margin:14px 0; }
+  @media (max-width:1180px) { .dash3 { grid-template-columns:1fr; } }
+  .graph-empty { display:flex; align-items:center; justify-content:center; height:100%; color:var(--sub); font-size:13px; }
+  @media (max-width:820px) { .layout{flex-direction:column; margin:10px; min-height:calc(100vh - 20px)} aside{width:auto; height:auto; position:static; border-right:0; border-bottom:1px solid var(--line)} main{padding:22px 16px 60px} .page{padding:20px 18px} }
+  @media print { body{background:#fff} .layout{margin:0} aside{position:static; height:auto} }
+  @media (max-width:620px) { .graph-stage{min-height:390px;height:60vh}.graph-tools input[type="search"]{min-width:100%}.graph-tools .graph-stats{margin-left:0;width:100%} }
+  .project-tabs { display:flex; gap:8px; flex-wrap:wrap; margin:20px 0; border-bottom:1px solid var(--line); padding-bottom:12px; }
+  .project-tabs button { font:inherit; padding:10px 18px; border:1px solid var(--dark); border-radius:8px; background:var(--surface); color:var(--text); cursor:pointer; }
+  .project-tabs button[aria-selected="true"] { background:var(--dark); color:var(--surface); }
+  .project-tabs button:focus-visible { outline:3px solid var(--dark); outline-offset:3px; }
+  .page.project-page { background:var(--bg); border:0; padding:0; }
+  .project-panel { overflow-wrap:anywhere; }
+  .project-section { margin:0 0 24px; padding:20px; background:var(--surface); border:1px solid var(--line); border-top:3px solid var(--frame); border-radius:var(--radius); min-width:0; }
+  .project-section > :first-child { margin-top:0; }
+  .project-section table { margin-bottom:0; }
+  .project-table { overflow-x:auto; max-width:100%; }
+  .project-table table { display:table; width:100%; }
+  .proposal-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(240px,100%),1fr)); gap:14px; }
+  .proposal-card { padding:18px; background:var(--surface); border:1px solid var(--line); border-top:3px solid var(--frame); border-radius:var(--radius); overflow-wrap:anywhere; }
+  .proposal-card strong { display:block; margin-bottom:8px; }
+  .proposal-card p:last-child { background:var(--accent-soft); border-radius:6px; padding:8px 12px; }
+  .project-section:has(.proposal-grid) { background:transparent; border:0; padding:0; }
+  @media print { .project-tabs { display:none; } .project-panel[hidden] { display:block; } }
+</style>
+</head>
+<body>
+<div class="layout">
+  <aside>
+    <div class="brand">
+      <h1>Wiki<span id="brand">ワークスペース</span></h1>
+      <div class="tagline">このワークスペースの記録（wiki/）とレシピ。読む・探す・つながりを見るはここ、直すは Sveltia。</div>
+    </div>
+    <div class="actions">
+      <a class="btn primary" href="../admin/index.html" target="_blank" rel="noopener">✎ 直す（Sveltia）</a>
+      <a class="btn to-3d" href="./graph.html">✦ 3D</a>
+    </div>
+    <div class="tiles" id="tiles"></div>
+    <div class="search"><input id="q" type="search" placeholder="検索（題・要約・本文）"></div>
+    <nav id="nav"></nav>
+    <div class="side-foot" id="foot"></div>
+  </aside>
+  <main id="main"><div class="empty">読み込み中…</div></main>
+</div>
+<script>
+(() => {
+  const $ = (s, r = document) => r.querySelector(s);
+  const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const STATUS = { active:'進行中', paused:'一時停止', done:'完了', draft:'未確認', confirmed:'確かめた' };
+  let DATA = null, COL = {}, BYKEY = {}, BYPATH = {}, CUR = null;  // CUR = いま開いているページ（相対リンクを解く起点）
+  const arr = v => Array.isArray(v) ? v.map(String) : (typeof v === 'string' && v ? [v] : []);  // 壊れた値でも落ちない
+  const normalize = p => { p.collection = p.role || p.collection; p.related = arr(p.related); p.tags = arr(p.tags); p.importance = Number.isFinite(p.importance) ? p.importance : 0; p.important = p.important === true; p.fm = p.fm && typeof p.fm === 'object' ? p.fm : {}; return p; };
+  const context = p => [p.kind_label, p.origin === 'v3' ? '出どころ: v3' : '', p.previous_status ? `v3での状態: ${p.previous_status}（現在への適用確認とは別）` : ''].filter(Boolean).join(' · ');
+  const facets = (id, field, title) => `<select id="${id}" aria-label="${title}"><option value="">${title}: すべて</option>${[...new Set(DATA.pages.map(p => p[field]).filter(Boolean))].sort().map(value => `<option value="${esc(value)}">${esc(field === 'origin' ? (value === 'v3' ? 'v3の記録' : 'OS利用後の記録') : DATA.pages.find(p => p[field] === value).kind_label)}</option>`).join('')}</select>`;
+
+  const knowledge = p => p.collection === 'notes' && !p.navigation;
+  const topicMatch = (p, value) => !value || (knowledge(p) && (value === ':none' ? !p.os_topic_state && !arr(p.os_topics).length : value === ':pending' ? p.os_topic_state === 'pending' : p.os_topic_state === 'classified' && arr(p.os_topics).includes(value)));
+  const topicOptions = () => `<option value="">内容カテゴリ: すべて</option>${(DATA.topics || []).map(topic => `<option value="${esc(topic.id)}">${esc(topic.title)} (${topic.count})</option>`).join('')}<option value=":none">カテゴリなし</option><option value=":pending">確認待ち</option>`;
+  const topicFacet = id => `<select id="${id}" aria-label="内容カテゴリ">${topicOptions()}</select>`;
+  const topicLinks = p => arr(p.os_topics).map(identifier => (DATA.topics || []).find(topic => topic.id === identifier)).filter(Boolean).map(topic => `<a href="#/t/${encodeURIComponent(topic.id)}">${esc(topic.title)}</a>`).join(' · ') || (p.os_topic_state === 'pending' ? '確認待ち' : 'カテゴリなし');
+  function topicNavigation() {
+    const items = DATA.pages.filter(knowledge);
+    return `<a href="#/c/notes">知識 <span class="n">${items.length} ページ（固有）</span></a>` + (DATA.topics || []).map(topic => `<a href="#/t/${encodeURIComponent(topic.id)}"><span>${esc(topic.title)}</span><span class="n">${topic.count}</span></a>`).join('') + `<a href="#/t/:none">カテゴリなし <span class="n">${items.filter(p => topicMatch(p, ':none')).length}</span></a><a href="#/t/:pending">確認待ち <span class="n">${items.filter(p => topicMatch(p, ':pending')).length}</span></a><div class="lbl">カテゴリ件数は延べ所属数</div>`;
+  }
+
+  // ---------- 最小 Markdown レンダラ(依存なし) ----------
+  function inline(s) {
+    s = esc(s);
+    s = s.replace(/`([^`]+)`/g, (_, c) => `<code>${c}</code>`);
+    s = s.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>').replace(/(^|[^*])\*([^*\n]+)\*/g, '$1<em>$2</em>');
+    s = s.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, (_, t, u) => `<a href="${linkTo(u)}" ${/^https?:/.test(u) ? 'target="_blank" rel="noopener"' : ''}>${t}</a>`);
+    s = s.replace(/(^|\s)(https?:\/\/[^\s<]+)/g, '$1<a href="$2" target="_blank" rel="noopener">$2</a>');
+    return s;
+  }
+  const pageHref = k => '#/p/' + String(k).split('/').map(encodeURIComponent).join('/');  // キーに % や ? があっても開けるように、区切りごとに符号化する
+  const unesc = s => s.replace(/&(amp|lt|gt|quot|#39);/g, (_, e) => ({ amp:'&', lt:'<', gt:'>', quot:'"', '#39':"'" }[e]));
+  function linkTo(u) { // ページの中の相対リンクは、開いているページの場所から解いて、この画面のページへ（ページでないもの＝成果物などはそのまま）。u は esc 済み
+    const raw = unesc(u);
+    // 押せるのは http(s)・mailto・この画面の中（相対）だけ。制御文字・空白・\ を含むものと // で始まるものは、ブラウザが読み替えて javascript: や外へ向くことがあるので押せないようにする
+    if (/[\u0000-\u0020\u007f-\u009f\\]/.test(raw) || raw.startsWith('//')) return '#';
+    if (/^[a-z][a-z0-9+.-]*:/i.test(raw)) return /^(https?|mailto):/i.test(raw) ? safe(u, false) : '#';
+    if (raw.startsWith('#') || raw.startsWith('/')) return safe(u, true);
+    const parts = (CUR ? CUR.path : 'wiki/index.md').split('/').slice(0, -1);
+    for (const s of raw.split('#')[0].split('/')) { if (s === '..') parts.pop(); else if (s && s !== '.') parts.push(s); }
+    let target = parts.join('/'); try { target = decodeURIComponent(target); } catch (e) {}
+    const p = BYPATH[target];
+    return p ? esc(pageHref(p.key)) : safe(u, true);
+  }
+  function safe(u, local) { // 念のため、ブラウザ自身の読み方でも確かめる（http(s)・mailto 以外、相対なのに外へ向くものは #）
+    try { const x = new URL(unesc(u), location.href); return ['http:', 'https:', 'mailto:'].includes(x.protocol) && (!local || x.origin === location.origin) ? u : '#'; } catch (e) { return '#'; }
+  }
+  function md(src) {
+    const lines = (src || '').replace(/\r/g, '').split('\n'); const out = []; let i = 0;
+    const para = [];
+    const flush = () => { if (para.length) { out.push(`<p>${inline(para.join(' '))}</p>`); para.length = 0; } };
+    while (i < lines.length) {
+      const l = lines[i];
+      let m;
+      if ((m = l.match(/^(`{3,}|~{3,})(\w*)/))) { flush(); const fence = m[1]; const close = new RegExp('^' + fence[0] + '{' + fence.length + ',}\\s*$'); const buf = []; i++; while (i < lines.length && !close.test(lines[i])) buf.push(lines[i++]); i++; out.push(`<pre><code>${esc(buf.join('\n'))}</code></pre>`); continue; }
+      if ((m = l.match(/^(#{1,6})\s+(.*)/))) { flush(); const n = Math.min(m[1].length + 1, 4); out.push(`<h${n}>${inline(m[2])}</h${n}>`); i++; continue; }
+      if (/^\s*>/.test(l)) { flush(); const buf = []; while (i < lines.length && /^\s*>/.test(lines[i])) buf.push(lines[i++].replace(/^\s*>\s?/, '')); out.push(`<blockquote>${md(buf.join('\n'))}</blockquote>`); continue; }
+      if (/^\s*\|/.test(l) && /^\s*\|?\s*:?-{2,}/.test(lines[i + 1] || '')) { flush(); const head = l.split('|').slice(1, -1); i += 2; const rows = []; while (i < lines.length && /^\s*\|/.test(lines[i])) rows.push(lines[i++].split('|').slice(1, -1)); out.push(`<table><thead><tr>${head.map(h => `<th>${inline(h.trim())}</th>`).join('')}</tr></thead><tbody>${rows.map(r => `<tr>${r.map(c => `<td>${inline(c.trim())}</td>`).join('')}</tr>`).join('')}</tbody></table>`); continue; }
+      if ((m = l.match(/^(\s*)([-*]|\d+\.)\s+(.*)/))) { flush(); const ordered = /\d/.test(m[2]); const items = []; while (i < lines.length && (m = lines[i].match(/^(\s*)([-*]|\d+\.)\s+(.*)/))) { let t = m[3]; i++; while (i < lines.length && /^\s{2,}\S/.test(lines[i]) && !/^\s*([-*]|\d+\.)\s/.test(lines[i])) t += ' ' + lines[i++].trim(); const tk = t.match(/^\[( |x|X)\]\s*(.*)$/); if (tk && !tk[2].trim()) continue; items.push(tk ? `<li class="task${tk[1] === ' ' ? '' : ' done'}">${inline(tk[2])}</li>` : `<li>${inline(t)}</li>`); } out.push(`<${ordered ? 'ol' : 'ul'}>${items.join('')}</${ordered ? 'ol' : 'ul'}>`); continue; }
+      if (/^\s*$/.test(l)) { flush(); i++; continue; }
+      if (/^-{3,}\s*$/.test(l)) { flush(); out.push('<hr>'); i++; continue; }
+      if (/^\s*<!--/.test(l)) { while (i < lines.length && !/-->/.test(lines[i])) i++; i++; continue; }
+      para.push(l.trim()); i++;
+    }
+    flush(); return out.join('\n');
+  }
+
+  // ---------- 描画部品 ----------
+  const label = c => (COL[c] || c);
+  const badge = p => p.status ? `<span class="badge st-${esc(STATUS[p.status] ? p.status : 'none')}">${esc(STATUS[p.status] || p.status)}</span>` : '';
+  const editUrl = p => p.edit ? `../admin/index.html#/collections/${encodeURIComponent(p.edit.collection)}/entries/${p.edit.slug.split('/').map(encodeURIComponent).join('/')}` : '';
+  function card(p) {
+    return `<a class="card ${esc(p.collection)}" href="${esc(pageHref(p.key))}">
+      <div class="badges">${badge(p)}<span class="badge gray">${esc(label(p.collection))}</span></div>
+      <div class="name">${esc(p.title)}</div>
+      <div class="desc">${esc(p.summary || '')}</div><div class="meta">${esc(context(p))}</div>
+      <div class="meta">${p.updated ? `更新 ${esc(p.updated)} · ` : ''}つながり ${p.related.length + (p.backlinks || 0)}</div>
+    </a>`;
+  }
+  const grid = (items, empty = '該当なし') => `<div class="grid">${items.length ? items.map(card).join('') : `<div class="empty">${esc(empty)}</div>`}</div>`;
+  const sec = (title, count, body, hint = '', acts = '') => `<section><div class="sec-head"><span class="dot"></span><h2>${title}</h2>${count === '' ? '' : `<span class="count">${count}</span>`}${hint ? `<span class="hint">${hint}</span>` : ''}${acts ? `<span class="acts${hint ? '' : ' solo'}">${acts}</span>` : ''}</div>${body}</section>`;
+  const byUpdated = a => [...a].sort((x, y) => String(y.updated || '').localeCompare(String(x.updated || '')) || String(x.title).localeCompare(String(y.title)));
+  const byImportance = a => [...a].sort((x, y) => y.importance - x.importance || String(y.updated || '').localeCompare(String(x.updated || '')));
+  function notice() {  // 2000 ページから表示が重くなってくる（v3 と同じ目安）
+    const n = DATA.pages.length, at = DATA.card_nudge || 2000;
+    return n >= at ? `<div class="notice"><b>ページが ${n} あります。</b>${at} を超えると表示が重くなってきます。グラフは「表示: 上位」で絞れます。</div>` : '';
+  }
+
+  // ---------- 画面 ----------
+  function home() {
+    const active = byUpdated(DATA.pages.filter(p => p.important));
+    const recent = byUpdated(DATA.pages).slice(0, 8);
+    const cols = DATA.collections.map(k => `<a class="card ${esc(k.name)}" href="#/c/${esc(k.name)}"><div class="name">${esc(k.label)}</div><div class="meta">${DATA.pages.filter(p => k.name === 'notes' ? knowledge(p) : p.collection === k.name).length} ページ</div></a>`).join('');
+    return notice() + sec('知識の内容カテゴリ', DATA.pages.filter(knowledge).length, `<div class="topic-grid">${topicNavigation()}</div>`, '新旧の知識を共有・ページ数は固有、カテゴリ件数は延べ所属数') +
+      sec('進行中の案件', active.length, grid(active, '進行中の案件はありません'), '', '<a class="btn primary" href="#/graph">つながりをグラフで見る</a>') +
+      sec('最近更新したページ', recent.length, grid(recent), '更新日の新しい順') +
+      sec('種類', DATA.collections.length, `<div class="grid">${cols}</div>`);
+  }
+  function collection(name, topic = '') {
+    const items = byUpdated(DATA.pages.filter(p => name === 'v3' ? p.origin === 'v3' : name === 'notes' ? knowledge(p) : p.collection === name));
+    const filterBar = topicFacet('c-topic') + facets('c-origin', 'origin', '出どころ') + facets('c-kind', 'kind', '知識の種類');
+    setTimeout(() => { if (!$('#c-topic')) return; $('#c-topic').value = topic; const draw = () => { const origin = $('#c-origin').value, kind = $('#c-kind').value; const visible = items.filter(p => topicMatch(p, $('#c-topic').value) && (!origin || p.origin === origin) && (!kind || p.kind === kind)); $('#c-count').textContent = `${visible.length} ページ（固有）`; $('#c-items').innerHTML = grid(visible); }; ['#c-topic','#c-origin','#c-kind'].forEach(id => $(id)?.addEventListener('change', draw)); draw(); });
+    return sec(esc(name === 'v3' ? '知識（出どころ: v3）' : label(name)), items.length, `<div class="toolbar">${filterBar}<span id="c-count"></span></div><div id="c-items">${grid(items.filter(p => topicMatch(p, topic)))}</div>`);
+  }
+  function graph() {
+    const options = DATA.collections.map(c => `<option value="${esc(c.name)}">${esc(c.label)}</option>`).join('');
+    const present = [...new Set(DATA.pages.map(p => p.status).filter(s => STATUS[s]))];
+    setTimeout(initGraph);
+    const total = DATA.pages.length, tops = [1000, 500, 200].filter(k => k < total);
+    return notice() + sec('つながりのグラフ', total, `<div class="graph-shell">
+      <div class="graph-tools toolbar">
+        <input id="g-search" type="search" placeholder="題を検索（つながったページも残す）">
+        <select id="g-collection"><option value="">種類: すべて</option>${options}</select>
+        ${topicFacet('g-topic')}${facets('g-origin', 'origin', '出どころ')}${facets('g-kind', 'kind', '知識の種類')}
+        <select id="g-status"><option value="">状態: すべて</option>${present.map(s => `<option value="${s}">${esc(STATUS[s])}</option>`).join('')}</select>
+        <select id="g-top" title="つながりの多いページだけに絞る（ページが多くて重い時に）"><option value="">表示: すべて</option>${tops.map(k => `<option value="${k}">表示: 上位 ${k}</option>`).join('')}<option value="star">表示: 進行中の案件とそのつながり</option></select>
+        <label><input id="g-isolates" type="checkbox" checked> 孤立も表示</label>
+        <button class="btn" id="g-reset" type="button">全体表示</button>
+        <a class="btn primary to-3d" href="./graph.html" title="3D で見る（three.js を CDN から読むのでネット接続が要る）">✦ 3D で見る</a>
+        <span class="graph-stats" id="g-stats">計算中…</span>
+      </div>
+      <div class="graph-stage" id="g-stage"><svg id="g-svg" viewBox="0 0 1000 650" role="img" aria-label="リンクでつながった Wiki のページのグラフ"></svg></div>
+      <div class="graph-detail" id="g-detail">点に触れるかキーボードで選ぶと、その点の線と相手を強調。クリックでページを開きます。ホイールで拡大・縮小。</div>
+      <div class="graph-legend">${DATA.collections.map(c => `<span><i class="${esc(c.name)}"></i>${esc(c.label)}</span>`).join('')}<span>破線の輪 = 孤立</span><span>濃い緑の輪 = 進行中の案件</span><span>薄い = 一時停止</span><span>色が淡い = 未確認</span></div>
+    </div>`, '線 = ページの中のリンク・v3 の related・案件のレシピ（案内リンクを除く） / 色 = 種類 / 大きさ = 参照関係の数');
+  }
+  function initGraph() {
+    const svg = $('#g-svg'), stage = $('#g-stage');
+    if (!svg || !stage) return;
+    const NS = 'http://www.w3.org/2000/svg', W = 1000, H = 650;
+    const search = $('#g-search'), collectionSel = $('#g-collection'), statusSel = $('#g-status'), topSel = $('#g-top'), isolates = $('#g-isolates');
+    const originSel = $('#g-origin'), kindSel = $('#g-kind'), topicSel = $('#g-topic');
+    const stats = $('#g-stats'), detail = $('#g-detail'), reset = $('#g-reset');
+    const allNodes = DATA.pages.slice().sort((a, b) => a.key.localeCompare(b.key));
+    const allKeys = new Set(allNodes.map(n => n.key));
+    const edgeMap = new Map();
+    allNodes.forEach(n => (n.related || []).forEach(target => {
+      if (!allKeys.has(target) || target === n.key) return;
+      const pair = [n.key, target].sort(); edgeMap.set(pair.join('\u0000'), { source: pair[0], target: pair[1] });
+    }));
+    const allEdges = [...edgeMap.values()];
+    let view = { x:0, y:0, w:W, h:H }, span = { x:0, y:0, w:W, h:H }, drag = null, moved = false;  // span = 全体表示の範囲(配置のあと外接矩形に合わせる)
+    const setView = () => svg.setAttribute('viewBox', `${view.x} ${view.y} ${view.w} ${view.h}`);
+    const svgPoint = e => { const r = svg.getBoundingClientRect(); return { x:view.x + (e.clientX-r.left)*view.w/r.width, y:view.y + (e.clientY-r.top)*view.h/r.height }; };
+    function show(n, degree) {
+      detail.innerHTML = `<b>${esc(n.title)}</b> · ${esc(label(n.collection))} · ${esc(context(n))} · ${esc(STATUS[n.status] || n.status || '—')} · つながり ${degree} 本（参照された ${n.backlinks || 0}）`;
+    }
+    function draw() {
+      svg.classList.remove('inspecting');
+      while (svg.firstChild) svg.removeChild(svg.firstChild);
+      const col = collectionSel.value, st = statusSel.value, top = topSel.value, term = search.value.trim().toLowerCase();
+      let selected = allNodes.filter(n => (!col || n.collection === col) && (!st || n.status === st) && (top !== 'star' || n.important || allEdges.some(e => (e.source === n.key && BYKEY[e.target]?.important) || (e.target === n.key && BYKEY[e.source]?.important))));
+      selected = selected.filter(n => topicMatch(n, topicSel.value) && (!originSel.value || n.origin === originSel.value) && (!kindSel.value || n.kind === kindSel.value));
+      if (top && top !== 'star') { const keep = new Set(byImportance(selected).slice(0, +top).map(n => n.key)); selected = selected.filter(n => keep.has(n.key)); }
+      if (term) {
+        const hits = new Set(selected.filter(n => [n.title,n.summary,n.id].some(v => String(v || '').toLowerCase().includes(term))).map(n => n.key));
+        const context = new Set(hits); allEdges.forEach(e => { if (hits.has(e.source)) context.add(e.target); if (hits.has(e.target)) context.add(e.source); });
+        selected = selected.filter(n => context.has(n.key));
+      }
+      let visible = new Set(selected.map(n => n.key));
+      let edges = allEdges.filter(e => visible.has(e.source) && visible.has(e.target));
+      const degrees = new Map(selected.map(n => [n.key, 0])); edges.forEach(e => { degrees.set(e.source, degrees.get(e.source)+1); degrees.set(e.target, degrees.get(e.target)+1); });
+      if (!isolates.checked) { selected = selected.filter(n => degrees.get(n.key)); visible = new Set(selected.map(n => n.key)); edges = edges.filter(e => visible.has(e.source) && visible.has(e.target)); }
+      stats.textContent = `${selected.length} ページ / ${edges.length} 本の線`;
+      const idealDistance = 56, steps = selected.length > 1500 ? 120 : selected.length > 600 ? 200 : 300;
+      const aspect = stage.clientWidth && stage.clientHeight ? stage.clientWidth / stage.clientHeight : W / H;
+      const charge = -100, farDistance = idealDistance * 5, padding = 4;
+      if (!selected.length) {
+        view = { x:0, y:0, w:W, h:H }; span = { ...view }; setView();
+        const emptyObject = document.createElementNS(NS, 'foreignObject');
+        emptyObject.setAttribute('width', W); emptyObject.setAttribute('height', H);
+        const empty = document.createElement('div'); empty.className = 'graph-empty';
+        empty.textContent = '条件に合うページがありません'; emptyObject.appendChild(empty); svg.appendChild(emptyObject); return;
+      }
+      const adjacent = new Map(selected.map(node => [node.key, []]));
+      edges.forEach(edge => { adjacent.get(edge.source).push(edge.target); adjacent.get(edge.target).push(edge.source); });
+      const unseen = new Set(selected.map(node => node.key)), components = [];
+      while (unseen.size) {
+        const start = unseen.values().next().value, stack = [start], keys = []; unseen.delete(start);
+        while (stack.length) {
+          const key = stack.pop(); keys.push(key);
+          adjacent.get(key).forEach(neighbor => { if (unseen.delete(neighbor)) stack.push(neighbor); });
+        }
+        components.push(keys.sort());
+      }
+      components.sort((first, second) => second.length - first.length || first[0].localeCompare(second[0]));
+      const componentOf = new Map(); components.forEach((keys, index) => keys.forEach(key => componentOf.set(key, index)));
+      const connectedComponents = components.filter(keys => keys.length > 1), singles = components.filter(keys => keys.length === 1);
+      const nodes = selected.map((page, index) => {
+        const degree = degrees.get(page.key) || 0;
+        return { ...page, index, x:0, y:0, vx:0, vy:0, degree, radius:6 + Math.min(5, Math.sqrt(degree) * 1.6) + page.importance / 100 * 8 };
+      });
+      const byKey = new Map(nodes.map(node => [node.key, node])), linksOf = new Map();
+      edges.forEach(edge => {
+        const index = componentOf.get(edge.source);
+        if (!linksOf.has(index)) linksOf.set(index, []);
+        linksOf.get(index).push({ source:byKey.get(edge.source), target:byKey.get(edge.target) });
+      });
+      function repel(componentNodes, alpha) {
+        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+        componentNodes.forEach(node => { minX = Math.min(minX, node.x); minY = Math.min(minY, node.y); maxX = Math.max(maxX, node.x); maxY = Math.max(maxY, node.y); });
+        const cell = (left, top, size) => ({ left, top, size, count:0, sumX:0, sumY:0, node:null, children:null });
+        const root = cell(minX, minY, Math.max(maxX - minX, maxY - minY) + 1);
+        const child = (branch, node) => {
+          const half = branch.size / 2, index = (node.x >= branch.left + half ? 1 : 0) + (node.y >= branch.top + half ? 2 : 0);
+          return branch.children[index] || (branch.children[index] = cell(branch.left + (index & 1 ? half : 0), branch.top + (index & 2 ? half : 0), half));
+        };
+        componentNodes.forEach(node => {
+          let branch = root;
+          for (let depth = 0; ; depth++) {
+            branch.count++; branch.sumX += node.x; branch.sumY += node.y;
+            if (depth >= 24) return;
+            if (branch.children) { branch = child(branch, node); continue; }
+            if (!branch.node) { branch.node = node; return; }
+            const previous = branch.node; branch.node = null; branch.children = [];
+            const previousChild = child(branch, previous);
+            previousChild.count = 1; previousChild.sumX = previous.x; previousChild.sumY = previous.y; previousChild.node = previous;
+            branch = child(branch, node);
+          }
+        });
+        componentNodes.forEach(node => {
+          const stack = [root];
+          while (stack.length) {
+            const branch = stack.pop();
+            let deltaX = branch.sumX / branch.count - node.x, deltaY = branch.sumY / branch.count - node.y;
+            let distanceSquared = deltaX * deltaX + deltaY * deltaY;
+            const contains = node.x >= branch.left && node.x < branch.left + branch.size && node.y >= branch.top && node.y < branch.top + branch.size;
+            if (branch.children && (contains || branch.size * branch.size / .81 >= distanceSquared)) {
+              branch.children.forEach(descendant => { if (descendant) stack.push(descendant); }); continue;
+            }
+            if (branch.node === node && branch.count === 1 || distanceSquared >= farDistance * farDistance) continue;
+            if (distanceSquared < 1e-6) { deltaX = Math.cos(node.index) * .1; deltaY = Math.sin(node.index) * .1; distanceSquared = .01; }
+            if (distanceSquared < 1) distanceSquared = Math.sqrt(distanceSquared);
+            const weight = charge * alpha * (branch.node === node ? branch.count - 1 : branch.count) / distanceSquared;
+            node.vx += deltaX * weight; node.vy += deltaY * weight;
+          }
+        });
+      }
+      function separate(componentNodes, cellSize, strength) {
+        const grid = new Map(), gridKey = (column, row) => `${column},${row}`;
+        let maxOverlap = 0;
+        componentNodes.forEach(node => {
+          const key = gridKey(Math.floor((node.x + node.vx) / cellSize), Math.floor((node.y + node.vy) / cellSize));
+          if (!grid.has(key)) grid.set(key, []);
+          grid.get(key).push(node);
+        });
+        componentNodes.forEach(first => {
+          const firstX = first.x + first.vx, firstY = first.y + first.vy;
+          const column = Math.floor(firstX / cellSize), row = Math.floor(firstY / cellSize);
+          for (let nearColumn = column - 1; nearColumn <= column + 1; nearColumn++) for (let nearRow = row - 1; nearRow <= row + 1; nearRow++) {
+            for (const second of grid.get(gridKey(nearColumn, nearRow)) || []) {
+              if (second.index <= first.index) continue;
+              let deltaX = second.x + second.vx - firstX, deltaY = second.y + second.vy - firstY;
+              let distanceSquared = deltaX * deltaX + deltaY * deltaY;
+              const minDistance = first.radius + second.radius + padding;
+              if (distanceSquared >= minDistance * minDistance) continue;
+              if (distanceSquared < 1e-6) { deltaX = Math.cos(first.index) * .1; deltaY = Math.sin(first.index) * .1; distanceSquared = .01; }
+              const distance = Math.sqrt(distanceSquared), factor = (distance - minDistance) / distance * strength;
+              maxOverlap = Math.max(maxOverlap, minDistance - distance);
+              const weight = second.radius * second.radius / (first.radius * first.radius + second.radius * second.radius);
+              deltaX *= factor; deltaY *= factor;
+              first.vx += deltaX * weight; first.vy += deltaY * weight;
+              second.vx -= deltaX * (1 - weight); second.vy -= deltaY * (1 - weight);
+            }
+          }
+        });
+        return maxOverlap;
+      }
+      function simulate(componentNodes, links, componentIndex) {
+        const hub = componentNodes.reduce((first, second) => second.degree > first.degree ? second : first);
+        const near = new Map(componentNodes.map(node => [node.key, []]));
+        links.forEach(({ source, target }) => { near.get(source.key).push(target); near.get(target.key).push(source); });
+        const order = [hub], seen = new Set([hub.key]);
+        for (let index = 0; index < order.length; index++) near.get(order[index].key).forEach(neighbor => { if (!seen.has(neighbor.key)) { seen.add(neighbor.key); order.push(neighbor); } });
+        order.forEach((node, index) => {
+          const angle = index * 2.3999632297 + componentIndex * 1.1, distance = idealDistance * .5 * Math.sqrt(index);
+          node.x = Math.cos(angle) * distance; node.y = Math.sin(angle) * distance;
+        });
+        links.forEach(link => { link.strength = 1 / Math.min(link.source.degree, link.target.degree); link.bias = link.source.degree / (link.source.degree + link.target.degree); });
+        const decay = 1 - Math.pow(.001, 1 / steps), cellSize = 2 * Math.max(...componentNodes.map(node => node.radius)) + padding + 1;
+        for (let step = 0, alpha = 1; step < steps; step++) {
+          alpha -= alpha * decay; repel(componentNodes, alpha);
+          links.forEach(({ source, target, strength, bias }) => {
+            let deltaX = target.x + target.vx - source.x - source.vx, deltaY = target.y + target.vy - source.y - source.vy;
+            const distance = Math.hypot(deltaX, deltaY) || 1e-6, factor = (distance - idealDistance) / distance * alpha * strength;
+            deltaX *= factor; deltaY *= factor;
+            target.vx -= deltaX * bias; target.vy -= deltaY * bias; source.vx += deltaX * (1 - bias); source.vy += deltaY * (1 - bias);
+          });
+          componentNodes.forEach(node => { node.vx -= node.x * .022 * alpha; node.vy -= node.y * .05 * alpha; });
+          separate(componentNodes, cellSize, .7);
+          componentNodes.forEach(node => { node.vx *= .6; node.vy *= .6; node.x += node.vx; node.y += node.vy; });
+        }
+        for (let pass = 0; pass < 256; pass++) {
+          componentNodes.forEach(node => { node.vx = node.vy = 0; });
+          const overlap = separate(componentNodes, cellSize, 1);
+          componentNodes.forEach(node => { node.x += node.vx; node.y += node.vy; });
+          if (pass >= 7 && overlap <= padding / 2) break;
+        }
+      }
+      const gap = 40, isolateSpacing = 32;
+      const boxes = connectedComponents.map((keys, index) => {
+        const componentNodes = keys.map(key => byKey.get(key)); simulate(componentNodes, linksOf.get(componentOf.get(keys[0])) || [], index);
+        const box = { nodes:componentNodes, minX:Infinity, minY:Infinity, maxX:-Infinity, maxY:-Infinity };
+        componentNodes.forEach(node => { box.minX = Math.min(box.minX, node.x - node.radius); box.minY = Math.min(box.minY, node.y - node.radius); box.maxX = Math.max(box.maxX, node.x + node.radius); box.maxY = Math.max(box.maxY, node.y + node.radius); });
+        box.width = box.maxX - box.minX; box.height = box.maxY - box.minY; return box;
+      });
+      const area = boxes.reduce((total, box) => total + (box.width + gap) * (box.height + gap), 0) + singles.length * isolateSpacing * isolateSpacing * 1.3;
+      const rowWidth = Math.max(Math.sqrt(area * aspect), ...boxes.map(box => box.width));
+      let nextX = 0, nextY = 0, rowHeight = 0, columnX = 0, columnY = 0, columnWidth = 0, usedWidth = 0;
+      boxes.forEach(box => {
+        if (!(columnWidth && box.width <= columnWidth && columnY + box.height <= nextY + rowHeight)) {
+          nextX += columnWidth ? columnWidth + gap : 0;
+          if (nextX && nextX + box.width > rowWidth) { nextX = 0; nextY += rowHeight + gap; rowHeight = 0; }
+          columnX = nextX; columnY = nextY; columnWidth = box.width; rowHeight = Math.max(rowHeight, box.height);
+        }
+        box.nodes.forEach(node => { node.x += columnX - box.minX; node.y += columnY - box.minY; });
+        columnY += box.height + gap; usedWidth = Math.max(usedWidth, columnX + box.width);
+      });
+      const islandsHeight = boxes.length ? nextY + rowHeight : 0;
+      let bandBounds = null;
+      if (singles.length) {
+        const columns = Math.max(1, Math.floor(Math.max(usedWidth, rowWidth) / isolateSpacing)), rows = Math.ceil(singles.length / columns);
+        const top = islandsHeight ? islandsHeight + gap + 8 : 0, bandWidth = Math.max(usedWidth, Math.min(singles.length, columns) * isolateSpacing);
+        singles.forEach((keys, index) => { const node = byKey.get(keys[0]); node.x = isolateSpacing / 2 + index % columns * isolateSpacing; node.y = top + 40 + Math.floor(index / columns) * isolateSpacing; });
+        const band = document.createElementNS(NS, 'g'); band.setAttribute('class', 'graph-band'); band.setAttribute('aria-hidden', 'true');
+        const background = document.createElementNS(NS, 'rect'); background.setAttribute('x', String(-isolateSpacing / 2)); background.setAttribute('y', String(top)); background.setAttribute('width', String(bandWidth + isolateSpacing)); background.setAttribute('height', String(40 + rows * isolateSpacing)); background.setAttribute('rx', '10');
+        const heading = document.createElementNS(NS, 'text'); heading.setAttribute('x', '0'); heading.setAttribute('y', String(top + 19)); heading.textContent = `表示中の条件で線のないページ ${singles.length}`;
+        band.append(background, heading); svg.appendChild(band);
+        bandBounds = { minX:-isolateSpacing / 2, minY:top, maxX:bandWidth + isolateSpacing / 2, maxY:top + 40 + rows * isolateSpacing };
+      }
+      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+      nodes.forEach(node => { minX = Math.min(minX, node.x - node.radius); minY = Math.min(minY, node.y - node.radius); maxX = Math.max(maxX, node.x + node.radius); maxY = Math.max(maxY, node.y + node.radius + 20); });
+      if (bandBounds) { minX = Math.min(minX, bandBounds.minX); minY = Math.min(minY, bandBounds.minY); maxX = Math.max(maxX, bandBounds.maxX); maxY = Math.max(maxY, bandBounds.maxY); }
+      const margin = Math.max(40, Math.max(W, maxX - minX, (maxY - minY) * aspect) * .06);
+      const viewWidth = Math.max(W, maxX - minX + margin * 2, (maxY - minY + margin * 2) * aspect), viewHeight = viewWidth / aspect;
+      view = { x:(minX + maxX) / 2 - viewWidth / 2, y:(minY + maxY) / 2 - viewHeight / 2, w:viewWidth, h:viewHeight }; span = { ...view }; setView();
+      const rank=n=>n.importance*10+Math.min(9,n.degree);  // 名前を出すのは重要度(同点は接続数)の上位だけ
+      const labeled=new Set([...nodes].sort((a,b)=>rank(b)-rank(a)).slice(0,Math.max(6,Math.min(14,Math.round(nodes.length*.14)))).filter(n=>rank(n)>0).map(n=>n.key));
+      const edgeLayer=document.createElementNS(NS,'g'), nodeLayer=document.createElementNS(NS,'g'); svg.append(edgeLayer,nodeLayer);
+      const edgeEls = edges.map(e => { const line=document.createElementNS(NS,'line'); line.setAttribute('class','graph-edge'); edgeLayer.appendChild(line); return [line,byKey.get(e.source),byKey.get(e.target)]; });
+      const edgesOf=new Map(); edgeEls.forEach(el=>{ [el[1].key,el[2].key].forEach(k=>{ (edgesOf.get(k)||edgesOf.set(k,[]).get(k)).push(el); }); });
+      let hovered=null, focused=null;
+      const lit=()=>{
+        const active=hovered||focused, peers=new Set();
+        for(const [element,source,target] of edgeEls){
+          const on=!!active&&(source===active||target===active);
+          element.classList.toggle('lit',on);
+          if(on){peers.add(source.key);peers.add(target.key);}
+        }
+        for(const node of nodes) node.el.classList.toggle('peer',peers.has(node.key));
+        svg.classList.toggle('inspecting',!!active);
+        if(active) show(active,active.degree);
+      };
+      const nodeEls = nodes.map(n => {
+        const r=n.radius;
+        const g=document.createElementNS(NS,'g'); g.setAttribute('class',`graph-node ${n.collection} ${n.status?n.status+' ':''}${n.important?'important ':''}${n.degree?'':'isolate '}${labeled.has(n.key)?'labeled':''}`); g.setAttribute('data-key',n.key); g.setAttribute('role','link'); g.setAttribute('tabindex','0'); g.setAttribute('aria-label',`${n.title}、${label(n.collection)}、つながり ${n.degree} 本`);
+        const circle=document.createElementNS(NS,'circle'); circle.setAttribute('r', String(r));
+        const title=document.createElementNS(NS,'title'); title.textContent=`${n.title}\n${label(n.collection)} / ${STATUS[n.status] || n.status || '—'} / つながり ${n.degree} 本`;
+        const text=document.createElementNS(NS,'text'); text.setAttribute('text-anchor','middle'); text.setAttribute('y',String(12+r)); text.textContent=n.title.length>22?n.title.slice(0,21)+'…':n.title;
+        g.append(circle,title,text); nodeLayer.appendChild(g); n.el=g;
+        const open=()=>{ if(!moved) location.hash=pageHref(n.key); };
+        g.addEventListener('click',open); g.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();open();}});
+        g.addEventListener('mouseenter',()=>{hovered=n;lit();}); g.addEventListener('focus',()=>{hovered=null;focused=n;lit();});
+        g.addEventListener('mouseleave',()=>{hovered=null;lit();}); g.addEventListener('blur',()=>{focused=null;lit();});
+        g.addEventListener('pointerdown',e=>{e.preventDefault();drag={n,g,start:svgPoint(e)};moved=false;g.setPointerCapture(e.pointerId);});
+        return [g,n];
+      });
+      const line=([el,a,b])=>{el.setAttribute('x1',a.x);el.setAttribute('y1',a.y);el.setAttribute('x2',b.x);el.setAttribute('y2',b.y);};
+      const position=()=>{ edgeEls.forEach(line); nodeEls.forEach(([el,n])=>el.setAttribute('transform',`translate(${n.x} ${n.y})`)); };
+      position();
+      const occupied=[];
+      for(const node of [...nodes].sort((first,second)=>rank(second)-rank(first))){
+        if(!labeled.has(node.key)) continue;
+        const text=node.el.querySelector('text'), bounds=text.getBBox();
+        const box={left:node.x+bounds.x-8,top:node.y+bounds.y-5,right:node.x+bounds.x+bounds.width+8,bottom:node.y+bounds.y+bounds.height+5};
+        if(occupied.some(other=>box.left<other.right&&box.right>other.left&&box.top<other.bottom&&box.bottom>other.top)) node.el.classList.remove('labeled');
+        else occupied.push(box);
+      }
+      svg.onpointermove=e=>{if(!drag)return;const p=svgPoint(e);if(Math.hypot(p.x-drag.start.x,p.y-drag.start.y)>4)moved=true;drag.n.x=p.x;drag.n.y=p.y;drag.g.setAttribute('transform',`translate(${p.x} ${p.y})`);(edgesOf.get(drag.n.key)||[]).forEach(line);};  // 動かした点とその線だけ描き直す
+      svg.onpointerup=svg.onpointercancel=()=>{drag=null;setTimeout(()=>{moved=false;});};
+    }
+    [search,collectionSel,statusSel,topSel,isolates,originSel,kindSel,topicSel].forEach(el => el.addEventListener(el===search?'input':'change',draw));
+    reset.addEventListener('click',()=>{view={...span};setView();draw();});
+    svg.addEventListener('wheel',e=>{e.preventDefault();const p=svgPoint(e),factor=e.deltaY>0?1.13:.885,nw=Math.max(300,Math.min(Math.max(1800,span.w*1.15),view.w*factor)),nh=nw*view.h/view.w;view={x:p.x-(p.x-view.x)*nw/view.w,y:p.y-(p.y-view.y)*nh/view.h,w:nw,h:nh};setView();},{passive:false});
+    setView(); draw();
+  }
+  function projectBody(body) {
+    const container = document.createElement('div');
+    container.innerHTML = md(body);
+    const nodes = [...container.children];
+    const readmeIndex = nodes.findIndex(node => node.tagName === 'H3' && node.textContent.trim() === 'README');
+    const dashboard = nodes.slice(0, readmeIndex < 0 ? nodes.length : readmeIndex).filter(node => !(node.tagName === 'H3' && node.textContent.trim() === 'ダッシュボード'));
+    const readme = readmeIndex < 0 ? [] : nodes.slice(readmeIndex + 1);
+    const cards = parts => {
+      const wrapper = document.createElement('div');
+      let section;
+      for (const node of parts) {
+        if (!section || /^H[234]$/.test(node.tagName)) {
+          section = document.createElement('section'); section.className = 'project-section'; wrapper.append(section);
+        }
+        section.append(node);
+      }
+      for (const section of wrapper.children) {
+        if (/全データ（移行時点）|旧画面の補足/.test(section.firstElementChild?.textContent || '')) {
+          const details = document.createElement('details'); const summary = document.createElement('summary');
+          summary.textContent = '移行時点の記録を確認'; details.append(summary, ...[...section.children].slice(1)); section.append(details);
+        }
+        if (!section.firstElementChild?.textContent.includes('今のあなたへの提案')) continue;
+        const table = section.querySelector('table');
+        if (!table || table.querySelectorAll('thead th').length !== 3) continue;
+        const grid = document.createElement('div'); grid.className = 'proposal-grid';
+        for (const row of table.querySelectorAll('tbody tr')) {
+          const card = document.createElement('article'); card.className = 'proposal-card';
+          [...row.children].forEach((cell, index) => { const item = document.createElement(index ? 'p' : 'strong'); item.append(...cell.childNodes); card.append(item); });
+          grid.append(card);
+        }
+        table.replaceWith(grid);
+      }
+      for (const table of wrapper.querySelectorAll('table')) {
+        const scroll = document.createElement('div'); scroll.className = 'project-table'; scroll.tabIndex = 0; scroll.setAttribute('role', 'region'); scroll.setAttribute('aria-label', '案件の表（横にスクロールできます）');
+        table.replaceWith(scroll); scroll.append(table);
+      }
+      return wrapper.innerHTML;
+    };
+    const requested = new URLSearchParams(location.hash.split('?')[1] || '').get('tab');
+    const selected = requested === 'readme' ? 'readme' : 'dashboard';
+    return `<div class="project-tabs" role="tablist" aria-label="案件の表示">${[['dashboard','ダッシュボード'],['readme','README']].map(([id,title]) => `<button type="button" role="tab" id="tab-${id}" aria-controls="panel-${id}" aria-selected="${selected === id}" tabindex="${selected === id ? 0 : -1}" data-project-tab="${id}">${title}</button>`).join('')}</div>
+      <div class="md project-panel" role="tabpanel" id="panel-dashboard" aria-labelledby="tab-dashboard" tabindex="0" ${selected !== 'dashboard' ? 'hidden' : ''}>${cards(dashboard)}</div>
+      <div class="md project-panel" role="tabpanel" id="panel-readme" aria-labelledby="tab-readme" tabindex="0" ${selected !== 'readme' ? 'hidden' : ''}>${cards(readme) || '<section class="project-section"><h3>READMEは未統合です</h3><p>旧READMEを確認し、案件Wikiへ統合してください。OS更新だけでは本人の案件記録は変更しません。</p></section>'}</div>`;
+  }
+  function page(key) {
+    const p = BYKEY[key];
+    if (!p) return `<div class="empty">ページが見つかりません: ${esc(key)}</div>`;
+    CUR = p;
+    const link = k => BYKEY[k] ? `<a class="ref" href="${esc(pageHref(k))}">${esc(BYKEY[k].title)}</a>` : `<code>${esc(k)}</code>`;
+    const refs = p.related.map(link).join('');
+    const backrefs = DATA.pages.filter(q => q.related.includes(key)).map(q => link(q.key)).join('');
+    const known = ['status', 'updated', 'path', 'recipe', 'next', 'related'];
+    const rest = Object.entries(p.fm).filter(([k]) => !known.includes(k)).map(([k, v]) => [esc(k), esc(Array.isArray(v) ? v.join(', ') : v)]);
+    const recipe = p.fm.recipe ? (() => { const candidates = DATA.pages.filter(q => q.collection === 'recipes' && q.id === String(p.fm.recipe).split('@')[0]); return candidates.length === 1 ? `${link(candidates[0].key)} <span class="k">${esc(p.fm.recipe)}</span>` : esc(p.fm.recipe) + (candidates.length > 1 ? '（同名で曖昧）' : '（参照先なし）'); })() : '';
+    const kv = [['状態', p.status ? `${badge(p)} <span class="k">${esc(p.status)}</span>` : '—'], ['更新', esc(p.updated || '—')],
+      ...(p.fm.next ? [['次の一手', esc(p.fm.next)]] : []), ...(p.fm.path ? [['成果物の場所', `<code>${esc(p.fm.path)}</code>`]] : []), ...(recipe ? [['レシピ', recipe]] : []),
+      ...(knowledge(p) ? [['内容カテゴリ', topicLinks(p)], ['分類の確認', arr(p.topic_issues).map(esc).join(' · ') || '—']] : []),
+      ['種類・出どころ', esc(context(p) || '—')], ['つながり（採用・成功の印ではない）', refs || '—'], ['案内', arr(p.navigation_related).map(link).join('') || '—'], ['参照された', backrefs || '—'], ...rest, ['ファイル', `<code>${esc(p.path)}</code>`]];
+    const topic = (DATA.topics || []).find(item => item.key === p.key);
+    const members = topic ? sec('この内容カテゴリの知識', topic.count, grid(byUpdated(DATA.pages.filter(item => topicMatch(item, topic.id)))), '所属による案内・参照数には含めません') : '';
+    const edit = p.edit ? `<a class="btn primary" href="${editUrl(p)}" target="_blank" rel="noopener">✎ Sveltia で直す</a>` : '';
+    return `<div class="crumbs-top"><a href="#/">Wiki</a> › <a href="#/c/${esc(p.collection)}">${esc(label(p.collection))}</a></div>
+      <div class="page${p.collection === 'projects' && !p.navigation ? ' project-page' : ''}">
+      <h1>${esc(p.title)}</h1>
+      <div class="summary">${esc(p.summary || '')}</div>
+      <div class="metabar">${badge(p)}<span class="badge gray">${esc(label(p.collection))}</span><span style="margin-left:auto"></span><a class="btn to-3d" href="./graph.html${esc(pageHref(p.key))}" title="3D のグラフでこのページの位置とつながりを見る">✦ 3D で位置を見る</a>${edit}</div>
+      ${p.collection === 'projects' && !p.navigation ? projectBody(p.body) : `<div class="md">${md(topic ? p.body.replace(/<!-- os-topics:begin -->[\s\S]*?<!-- os-topics:end -->/g, '') : p.body) || '<p style="color:var(--sub)">（本文なし）</p>'}</div>`}
+      ${members}
+      <dl class="kv">${kv.map(([k, v]) => `<dt>${k}</dt><dd>${v ?? '—'}</dd>`).join('')}</dl>
+    </div>`;
+  }
+  function search(q) {
+    const t = q.toLowerCase();
+    const hit = p => [p.title, p.summary, p.body, p.id, ...p.tags].filter(Boolean).some(v => String(v).toLowerCase().includes(t));
+    const items = byUpdated(DATA.pages.filter(hit));
+    return sec(`検索: ${esc(q)}`, items.length, grid(items, '見つかりませんでした'));
+  }
+
+  // ---------- サイドバー ----------
+  function sidebar(route) {
+    const n = f => DATA.pages.filter(f).length;
+    const edges = new Set(); DATA.pages.forEach(p => p.related.forEach(k => { if (BYKEY[k]) edges.add([p.key, k].sort().join('\u0000')); }));
+    $('#tiles').innerHTML = [[DATA.pages.length, 'ページ', '#/'], [n(p => p.important), '進行中の案件', '#/st/active'], [edges.size, 'つながり', '#/graph'], [n(p => p.status === 'draft'), '未確認', '#/st/draft']].map(([v, l, h]) => `<a class="tile" href="${h}"><b>${v}</b><span>${l}</span></a>`).join('');
+    $('#nav').innerHTML = `<a href="#/" class="${route === '' ? 'on' : ''}">ホーム</a><a href="#/graph" class="${route === 'graph' ? 'on' : ''}">グラフ</a><div class="lbl">知識の内容カテゴリ</div>` + topicNavigation() + `<div class="lbl">種類</div>` +
+      DATA.collections.filter(k => k.name !== 'notes' && k.name !== 'v3').map(k => `<a href="#/c/${esc(k.name)}" class="${route === 'c/' + k.name ? 'on' : ''}"><span>${esc(k.label)}</span><span class="n">${n(p => p.collection === k.name)}</span></a>`).join('') + `<div class="lbl">移行履歴</div><a href="#/c/v3">出どころ: v3</a>`;
+    $('#brand').textContent = DATA.root_name || 'ワークスペース';
+    $('#foot').innerHTML = `データ ${esc((DATA.generated || '').replace('T', ' '))}<br>Sveltia で直したら、このタブに戻ると最新になります<br>直したものは、次に AI と話すときに AI が中身を見て記録（commit）します`;
+  }
+
+  // ---------- ルーティング ----------
+  function render(keepScroll) {
+    const [path] = location.hash.replace(/^#\/?/, '').split('?');
+    const seg = path.split('/').map(x => { try { return decodeURIComponent(x); } catch (e) { return x; } });  // 区切りごとに戻す（キーの中の % や ? で壊れない）
+    let html, route = path;
+    CUR = null;
+    if (!path) html = home();
+    else if (seg[0] === 'c') html = collection(seg[1]), route = 'c/' + seg[1];
+    else if (seg[0] === 't') html = [':none', ':pending', ...(DATA.topics || []).map(topic => topic.id)].includes(seg[1]) ? collection('notes', seg[1]) : '<div class="empty">カテゴリが見つかりません</div>';
+    else if (seg[0] === 'p') html = page(seg.slice(1).join('/'));
+    else if (seg[0] === 'graph') html = graph();
+    else if (seg[0] === 'q') html = search(seg.slice(1).join('/'));
+    else if (seg[0] === 'st') { const items = byUpdated(DATA.pages.filter(p => p.status === seg[1] && (seg[1] !== 'active' || p.collection === 'projects'))); html = sec(`状態: ${esc(STATUS[seg[1]] || seg[1])}`, items.length, grid(items)); }
+    else html = home();
+    $('#main').innerHTML = html; sidebar(route); if (!keepScroll) window.scrollTo(0, 0);
+    const tabs = [...document.querySelectorAll('[data-project-tab]')];
+    tabs.forEach((tab, index) => {
+      tab.addEventListener('click', () => { location.hash = location.hash.split('?')[0] + '?tab=' + tab.dataset.projectTab; });
+      tab.addEventListener('keydown', event => {
+        const next = event.key === 'Home' ? 0 : event.key === 'End' ? tabs.length - 1 : event.key === 'ArrowRight' ? (index + 1) % tabs.length : event.key === 'ArrowLeft' ? (index + tabs.length - 1) % tabs.length : -1;
+        if (next < 0) return;
+        event.preventDefault(); tabs[next].click();
+      });
+    });
+    document.title = (seg[0] === 'p' && BYKEY[seg.slice(1).join('/')] ? BYKEY[seg.slice(1).join('/')].title + ' — ' : '') + 'Wiki — ワークスペース';
+  }
+  let probed3d = false;
+  async function load() {
+    if (!probed3d) { probed3d = true; fetch('./graph.html', { method:'HEAD', cache:'no-store' }).then(r => { if (!r.ok) document.body.classList.add('no3d'); }).catch(() => document.body.classList.add('no3d')); }
+    try {
+      const r = await fetch('./index.json', { cache: 'no-store' });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      DATA = await r.json();
+    } catch (e) {
+      $('#main').innerHTML = `<div class="empty">データを読み込めませんでした（${esc(e.message)}）。<br>この画面は、ワークスペースのいちばん上で <code>python3 tools/wiki_view.py open view</code> を実行して開いてください<br>（ファイルを直接開くと動きません）</div>`; return;
+    }
+    DATA.pages = (Array.isArray(DATA.pages) ? DATA.pages : []).map(normalize);
+    DATA.collections = DATA.display_collections || DATA.collections;
+    COL = Object.fromEntries(DATA.collections.map(k => [k.name, k.label]));
+    BYKEY = Object.fromEntries(DATA.pages.map(p => [p.key, p]));
+    BYPATH = Object.fromEntries(DATA.pages.map(p => [p.path, p]));
+    render(true);
+  }
+  $('#q').addEventListener('keydown', e => { if (e.key === 'Enter') { const v = e.target.value.trim(); location.hash = v ? `#/q/${encodeURIComponent(v)}` : '#/'; } });
+  window.addEventListener('hashchange', event => {
+    const samePage = event.oldURL.split('?')[0] === event.newURL.split('?')[0];
+    render(samePage);
+    if (samePage) document.querySelector('[role="tab"][aria-selected="true"]')?.focus();
+  });
+  window.addEventListener('focus', () => { if (DATA && location.hash.replace(/^#\/?/, '').split('/')[0] !== 'graph') load(); });  // タブに戻ったら最新に（Sveltia で直したあと）。グラフは動かしている途中なので読み直さない
+  load();
+})();
+</script>
+</body>
+</html>

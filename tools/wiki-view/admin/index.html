@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="robots" content="noindex" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Wiki を直す（Sveltia CMS）</title>
+    <!-- tools/wiki-view/admin/index.html — ワークスペースの Wiki を本人が画面で直すための Sveltia CMS（kote2 Builder v3 の admin/index.html を写したもの）。
+         設定は同じフォルダの config.yml。開き方: ワークスペースのいちばん上で python3 tools/wiki_view.py open edit →
+         Chrome / Edge で「ローカルリポジトリで作業」（Work with Local Repository）→ ワークスペースのフォルダ（wiki/ と .git があるフォルダ）を選ぶ。
+         Sveltia は版を固定して CDN から読む（保存したときの書き方を試験で確かめた版。上げるときは tests/wiki/ を流し直す） -->
+    <link href="./config.yml" type="application/yaml" rel="cms-config-url" />
+    <!-- Sveltia の本体と、あとから読む部品（chunks）は中身も固定する（integrity。CDN の中身が違えば読み込まない）。版を上げるときは dist/ の全部の .js のハッシュを作り直す。
+         tools/wiki_view.py が CSP で、ここに書いたスクリプトと固定したファイルのほかは動かさない（Sveltia が機能によってあとから読む別の部品＝コードの色分け・PDF・地図などは読み込まれず、その機能は使えない） -->
+    <script type="importmap">
+    { "integrity": {
+      "https://unpkg.com/@sveltia/cms@0.252.0/dist/chunks/assets/rolldown-runtime-BWaJ3C7D.js": "sha384-7vIF446a/nrkmdkbG0UCqpzxmr7dgn1ps98x83+CaZwONmApQ95h/8JwScU4qcK8",
+      "https://unpkg.com/@sveltia/cms@0.252.0/dist/chunks/git.js": "sha384-piLrrrafMO/zGpV45YFQ9XnfpVCb/ToWNtVlgoz3XbLLtDTLusNM2SoeUWm0N/Wn",
+      "https://unpkg.com/@sveltia/cms@0.252.0/dist/chunks/qrcode.js": "sha384-52Igv7aGjL0somNepYUanQFF2SiP7DjXgxleuodLkMr5C8WtOtRPyX512jZpv7cE",
+      "https://unpkg.com/@sveltia/cms@0.252.0/dist/chunks/react-dom.js": "sha384-XZuiLutXYn4xvlQJ9E8hvoQK+izqa57MW/3PxZ1cOEXeROPk7FlraIqkHYya8kW1"
+    } }
+    </script>
+  </head>
+  <body>
+    <script src="https://unpkg.com/@sveltia/cms@0.252.0/dist/sveltia-cms.js" integrity="sha384-1lhFs8+tXG4MV80L+/4enmKGio3aT9qrPGfM8/OTuo7Td7z+PW/8eOZBUXgXwRRc" crossorigin="anonymous"></script>
+  </body>
+</html>

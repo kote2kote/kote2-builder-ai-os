@@ -1,0 +1,64 @@
+// 説明映像の絵(アイコン)集。名前 → [意味, SVG の中身(viewBox 0 0 64 64)]。scene.js では名前で指す(書き方は references/scene-format.md「絵」)。
+// 塗りはクラスで指定する(色は engine/explainer.css の変数に追従。theme で色を変えると絵も変わる):
+//   f-frame 緑 / f-leaf 薄緑 / f-accent 錆色 / f-wood 段ボール色 / f-sun 黄 / f-sky 灰青 / f-paper クリーム / f-card 白 / f-ink 濃い色
+//   ol = 塗りの輪郭線 / ln = 線だけ(既定は濃い色。w 白 / g 緑 / o 錆色 / d 段ボール色 / s 黄)
+// 一覧の画像: node engine/render-video.mjs references/icon-catalog/index.html --stills 1 --stills-dir {一時フォルダ}
+window.EXPLAINER_ICONS = {
+  // 人
+  person: ['人・あなた', '<circle class="f-wood ol" cx="32" cy="21" r="11"/><path class="f-frame ol" d="M11 57c0-12.5 9.4-20 21-20s21 7.5 21 20z"/>'],
+  people: ['みんな・チーム', '<circle class="f-leaf ol" cx="43" cy="19" r="8.5"/><path class="f-leaf ol" d="M29 51c0-10 6.3-16 14-16s14 6 14 16z"/><circle class="f-wood ol" cx="24" cy="24" r="10"/><path class="f-frame ol" d="M5 57c0-11.5 8.5-18 19-18s19 6.5 19 18z"/>'],
+  ai: ['AI・アシスタント', '<path class="ln" d="M32 14V9"/><circle class="f-accent ol" cx="32" cy="7" r="3.5"/><rect class="f-frame ol" x="6" y="26" width="6" height="12" rx="2"/><rect class="f-frame ol" x="52" y="26" width="6" height="12" rx="2"/><rect class="f-leaf ol" x="12" y="14" width="40" height="36" rx="11"/><rect class="f-card ol" x="18" y="22" width="28" height="15" rx="7.5"/><circle class="f-ink" cx="26" cy="29.5" r="2.8"/><circle class="f-ink" cx="38" cy="29.5" r="2.8"/><path class="ln" d="M27 43h10"/>'],
+  cat: ['猫', '<path class="f-wood ol" d="M10 7l18 11-12 11zM54 7 36 18l12 11z"/><ellipse class="f-wood ol" cx="32" cy="36" rx="22" ry="19"/><path class="ln o" style="stroke-width:3" d="M32 19v6M26 20l1 5M38 20l-1 5"/><circle class="f-ink" cx="24" cy="36" r="3"/><circle class="f-ink" cx="40" cy="36" r="3"/><path class="ln" d="M28.5 43l3.5 2.5 3.5-2.5"/>'],
+  // 機械・場所
+  pc: ['パソコン', '<rect class="f-frame ol" x="11" y="11" width="42" height="30" rx="3.5"/><rect class="f-sky" x="15.5" y="15.5" width="33" height="21" rx="1.5"/><path class="f-leaf ol" d="M4 46h56l-4 8H8z"/><path class="ln" d="M27 50h10"/>'],
+  phone: ['スマホ', '<rect class="f-frame ol" x="17" y="5" width="30" height="54" rx="6"/><rect class="f-sky" x="21.5" y="12" width="21" height="36" rx="2"/><circle class="f-paper" cx="32" cy="53.5" r="2.3"/>'],
+  server: ['サーバー', '<rect class="f-frame ol" x="9" y="7" width="46" height="15" rx="3"/><rect class="f-frame ol" x="9" y="25" width="46" height="15" rx="3"/><rect class="f-frame ol" x="9" y="43" width="46" height="15" rx="3"/><circle class="f-sun" cx="17" cy="14.5" r="2.5"/><circle class="f-sun" cx="17" cy="32.5" r="2.5"/><circle class="f-sun" cx="17" cy="50.5" r="2.5"/><path class="ln w" d="M30 14.5h17M30 32.5h17M30 50.5h17"/>'],
+  cloud: ['クラウド・ネットの向こう', '<path class="f-sky ol" d="M17 49h31a10 10 0 0 0 1.5-19.9A14 14 0 0 0 23 25.5 11.8 11.8 0 0 0 17 49z"/>'],
+  database: ['データベース・保管庫', '<path class="f-frame ol" d="M12 15v34c0 4.4 9 8 20 8s20-3.6 20-8V15"/><path class="ln w" d="M12 27c0 4.4 9 8 20 8s20-3.6 20-8M12 39c0 4.4 9 8 20 8s20-3.6 20-8"/><ellipse class="f-leaf ol" cx="32" cy="15" rx="20" ry="8"/>'],
+  globe: ['ウェブ・インターネット', '<circle class="f-sky ol" cx="32" cy="32" r="25"/><path class="ln" d="M7 32h50M11 19h42M11 45h42M32 7c-8 7-11.5 15.5-11.5 25S24 50 32 57c8-7 11.5-15.5 11.5-25S40 14 32 7z"/>'],
+  home: ['家・自宅', '<path class="f-card ol" d="M13 30v27h38V30"/><path class="f-accent ol" d="M4 33 32 8l28 25-5 5-23-20.5L9 38z"/><rect class="f-wood ol" x="26" y="39" width="12" height="18" rx="1.5"/>'],
+  shop: ['お店', '<rect class="f-card ol" x="9" y="24" width="46" height="33"/><path class="f-accent ol" d="M6 9h52l3 15H3z"/><path class="f-card" d="M16.4 10.3h10.4l-.6 12.4H14.6zM37.2 10.3h10.4l1.8 12.4H37.8z"/><rect class="f-sky ol" x="15" y="32" width="15" height="12" rx="1"/><rect class="f-wood ol" x="36" y="34" width="12" height="23"/>'],
+  pin: ['場所', '<path class="f-accent ol" d="M32 58S13 38 13 25a19 19 0 0 1 38 0c0 13-19 33-19 33z"/><circle class="f-card ol" cx="32" cy="25" r="7"/>'],
+  // 書類・中身
+  file: ['ファイル', '<path class="f-card ol" d="M14 5h24l12 12v42H14z"/><path class="f-leaf ol" d="M38 5v12h12"/>'],
+  doc: ['文書・ページ', '<path class="f-card ol" d="M14 5h24l12 12v42H14z"/><path class="f-leaf ol" d="M38 5v12h12"/><path class="ln g" d="M21 28h22M21 36h22M21 44h14"/>'],
+  folder: ['フォルダ', '<path class="f-wood ol" d="M5 15a3 3 0 0 1 3-3h15l5 6h28a3 3 0 0 1 3 3v31a3 3 0 0 1-3 3H8a3 3 0 0 1-3-3z"/><path class="f-sun ol" d="M5 25h54v27a3 3 0 0 1-3 3H8a3 3 0 0 1-3-3z"/>'],
+  memo: ['メモ', '<path class="f-sun ol" d="M9 9h46v32L41 55H9z"/><path class="f-wood ol" d="M41 55V41h14"/><path class="ln" d="M17 21h30M17 30h30M17 39h16"/>'],
+  book: ['本・説明書', '<path class="f-frame ol" d="M4 16v38c11-1.5 20 0 28 4 8-4 17-5.5 28-4V16"/><path class="f-card ol" d="M32 15c-6-4.5-14-6-24-5v40c10-1 18 .5 24 5 6-4.5 14-6 24-5V10c-10-1-18 .5-24 5z"/><path class="ln" d="M32 15v40"/>'],
+  list: ['やること・チェックリスト', '<rect class="f-wood ol" x="10" y="8" width="44" height="52" rx="4"/><rect class="f-card ol" x="15" y="14" width="34" height="41" rx="2"/><rect class="f-frame ol" x="23" y="4" width="18" height="8" rx="2.5"/><path class="ln g" style="stroke-width:3.5" d="M20 25l3 3 5-6M20 36l3 3 5-6"/><path class="ln" d="M32 25h11M32 36h11M32 46h11"/><rect class="ln" x="20.5" y="43" width="6" height="6" rx="1"/>'],
+  image: ['画像・写真', '<rect class="f-card ol" x="6" y="11" width="52" height="42" rx="4"/><circle class="f-sun" cx="21" cy="24" r="5.5"/><path class="f-leaf ol" d="M8.5 51 24 34l9 9 8-7 15 15z"/>'],
+  video: ['動画', '<rect class="f-frame ol" x="5" y="11" width="54" height="38" rx="6"/><path class="f-card" d="M27 21.5 41 30l-14 8.5z"/><path class="ln" d="M20 56h24"/>'],
+  chart: ['グラフ・集計', '<path class="ln" d="M8 7v49h50"/><rect class="f-leaf ol" x="15" y="35" width="9" height="20" rx="1.5"/><rect class="f-frame ol" x="29" y="25" width="9" height="30" rx="1.5"/><rect class="f-accent ol" x="43" y="13" width="9" height="42" rx="1.5"/>'],
+  code: ['プログラム', '<rect class="f-frame ol" x="5" y="10" width="54" height="44" rx="6"/><path class="ln w" style="stroke-width:4.5" d="M24 23l-9 9 9 9M40 23l9 9-9 9M35 20l-6 24"/>'],
+  box: ['荷物・段ボール', '<path class="f-wood ol" d="M14 20h36l4 6H10z"/><path class="f-ink" opacity=".25" d="M14 20h36l4 6H10z"/><path class="f-wood ol" d="M14 20 3 13l-2 9 9 4z"/><path class="f-wood ol" d="M50 20l11-7 2 9-9 4z"/><rect class="f-wood ol" x="10" y="26" width="44" height="31" rx="2"/><rect class="f-paper" x="29" y="27.3" width="6" height="12"/>'],
+  // 連絡・つながり
+  mail: ['メール', '<rect class="f-card ol" x="6" y="14" width="52" height="36" rx="4"/><path class="ln" d="M8 17l24 18 24-18"/>'],
+  chat: ['チャット・会話', '<path class="f-frame ol" d="M10 10h44a5 5 0 0 1 5 5v24a5 5 0 0 1-5 5H28l-11 9v-9h-7a5 5 0 0 1-5-5V15a5 5 0 0 1 5-5z"/><circle class="f-card" cx="21" cy="27" r="3.5"/><circle class="f-card" cx="32" cy="27" r="3.5"/><circle class="f-card" cx="43" cy="27" r="3.5"/>'],
+  send: ['送る', '<path class="f-card ol" d="M5 30 59 6 47 54 30 42z"/><path class="f-leaf ol" d="M30 42 59 6 25 39l3 16z"/>'],
+  bell: ['通知', '<path class="f-sun ol" d="M32 7a4 4 0 0 1 4 4v1.5c7.5 2 12 8.5 12 16.5v10l5 8H11l5-8V29c0-8 4.5-14.5 12-16.5V11a4 4 0 0 1 4-4z"/><path class="f-wood ol" d="M25.5 47a6.5 6.5 0 0 0 13 0z"/>'],
+  link: ['リンク・つなぐ', '<g transform="rotate(-45 32 32)"><rect class="ln g" style="stroke-width:6" x="5" y="23" width="30" height="18" rx="9"/><rect class="ln o" style="stroke-width:6" x="29" y="23" width="30" height="18" rx="9"/></g>'],
+  plug: ['差し込み口・接続', '<path class="ln" style="stroke-width:5" d="M32 47v5c0 4-3 6-7 6h-9"/><path class="ln" style="stroke-width:4.5" d="M25 8v12M39 8v12"/><path class="f-frame ol" d="M17 20h30v12a15 15 0 0 1-30 0z"/>'],
+  sync: ['同期・くり返し', '<path class="ln g" style="stroke-width:5.5" d="M49 26A19 19 0 0 0 16 21"/><path class="f-frame" d="M9 13l3 18 15-8z"/><path class="ln o" style="stroke-width:5.5" d="M15 38a19 19 0 0 0 33 5"/><path class="f-accent" d="M55 51l-3-18-15 8z"/>'],
+  // 時間
+  clock: ['時刻・時間', '<circle class="f-frame ol" cx="32" cy="32" r="26"/><circle class="f-card" cx="32" cy="32" r="20"/><path class="ln" style="stroke-width:3.5" d="M32 19v13l8 6"/><circle class="f-accent" cx="32" cy="32" r="2.6"/>'],
+  calendar: ['予定・日付', '<rect class="f-card ol" x="7" y="11" width="50" height="46" rx="5"/><path class="f-accent ol" d="M7 16a5 5 0 0 1 5-5h40a5 5 0 0 1 5 5v9H7z"/><path class="ln" style="stroke-width:4" d="M20 6v10M44 6v10"/><rect class="f-leaf" x="14" y="32" width="8" height="7" rx="1.5"/><rect class="f-leaf" x="28" y="32" width="8" height="7" rx="1.5"/><rect class="f-frame" x="42" y="32" width="8" height="7" rx="1.5"/><rect class="f-leaf" x="14" y="44" width="8" height="7" rx="1.5"/><rect class="f-leaf" x="28" y="44" width="8" height="7" rx="1.5"/>'],
+  // 安全・判定
+  key: ['鍵・合言葉', '<path class="f-sun ol" d="M30 28h26v8h-5v7h-7v-7h-4v5h-7v-5h-3z"/><circle class="f-sun ol" cx="19" cy="32" r="13"/><circle class="f-paper ol" cx="15" cy="32" r="4.5"/>'],
+  lock: ['ロック・守られている', '<path class="ln" style="stroke-width:5.5" d="M21 29v-8a11 11 0 0 1 22 0v8"/><rect class="f-sun ol" x="12" y="28" width="40" height="29" rx="5"/><path class="f-ink" d="M32 36a4.5 4.5 0 0 0-2.2 8.4V50h4.4v-5.6A4.5 4.5 0 0 0 32 36z"/>'],
+  shield: ['守る・安全', '<path class="f-frame ol" d="M32 5l22 8v15c0 15-9 25-22 31C19 53 10 43 10 28V13z"/><path class="ln w" style="stroke-width:4.5" d="M22 31l7 7 13-14"/>'],
+  warning: ['注意', '<path class="f-sun ol" d="M32 6 60 55H4z"/><path class="ln" style="stroke-width:5" d="M32 23v15"/><circle class="f-ink" cx="32" cy="46" r="3"/>'],
+  check: ['OK・できた', '<circle class="f-frame ol" cx="32" cy="32" r="25"/><path class="ln w" style="stroke-width:6" d="M20 33l8 8 16-17"/>'],
+  ng: ['だめ・止まる', '<circle class="f-accent ol" cx="32" cy="32" r="25"/><path class="ln w" style="stroke-width:6" d="M23 23l18 18M41 23 23 41"/>'],
+  // 道具・動き
+  gear: ['設定・しくみ', '<path class="f-frame ol" d="M52.2 28.6 57.8 28.9 57.8 35.1 52.2 35.4 52 36.6 48.7 43.9 52.4 48.1 48.1 52.4 43.9 48.7 42.8 49.4 35.4 52.2 35.1 57.8 28.9 57.8 28.6 52.2 27.4 52 20.1 48.7 15.9 52.4 11.6 48.1 15.3 43.9 14.6 42.8 11.8 35.4 6.2 35.1 6.2 28.9 11.8 28.6 12 27.4 15.3 20.1 11.6 15.9 15.9 11.6 20.1 15.3 21.2 14.6 28.6 11.8 28.9 6.2 35.1 6.2 35.4 11.8 36.6 12 43.9 15.3 48.1 11.6 52.4 15.9 48.7 20.1 49.4 21.2z"/><circle class="f-paper ol" cx="32" cy="32" r="8"/>'],
+  tool: ['道具', '<path class="ln" style="stroke-width:4.5" d="M23 21v-7h18v7"/><rect class="f-accent ol" x="7" y="21" width="50" height="34" rx="4"/><path class="ln" d="M7 34h50"/><rect class="f-sun ol" x="28" y="30" width="8" height="8" rx="1.5"/>'],
+  search: ['さがす・調べる', '<path class="ln" style="stroke-width:10" d="M42 42l13 13"/><path class="ln d" style="stroke-width:5" d="M42 42l13 13"/><circle class="f-sky ol" cx="27" cy="27" r="17"/><path class="ln w" style="stroke-width:3" d="M18 23a10 10 0 0 1 7-7"/>'],
+  eye: ['見る・確かめる', '<path class="f-card ol" d="M4 32c8-12.5 17-19 28-19s20 6.5 28 19c-8 12.5-17 19-28 19S12 44.5 4 32z"/><circle class="f-frame ol" cx="32" cy="32" r="11"/><circle class="f-ink" cx="32" cy="32" r="4.5"/><circle class="f-card" cx="36" cy="28" r="2.2"/>'],
+  pen: ['書く', '<g transform="rotate(45 32 32)"><rect class="f-sun ol" x="25" y="10" width="14" height="34"/><path class="f-wood ol" d="M25 44h14l-7 15z"/><path class="f-ink" d="M29.7 54h4.6L32 59z"/><rect class="f-accent ol" x="25" y="3" width="14" height="8" rx="2.5"/></g>'],
+  bulb: ['ひらめき・アイデア', '<path class="f-sun ol" d="M32 6a17 17 0 0 0-10.5 30.4c2.3 1.9 3.5 4.3 3.5 7.6h14c0-3.3 1.2-5.7 3.5-7.6A17 17 0 0 0 32 6z"/><path class="ln o" d="M28 31l4 4 4-4M32 35v9"/><rect class="f-leaf ol" x="24" y="44" width="16" height="6" rx="2"/><rect class="f-leaf ol" x="26.5" y="50" width="11" height="6" rx="2.5"/>'],
+  trash: ['消す・捨てる', '<path class="ln" style="stroke-width:3.5" d="M26 12V8h12v4"/><path class="f-leaf ol" d="M14 18h36l-3 37a3 3 0 0 1-3 3H20a3 3 0 0 1-3-3z"/><rect class="f-frame ol" x="9" y="12" width="46" height="7" rx="3"/><path class="ln" d="M26 27v22M38 27v22"/>'],
+  cart: ['買い物', '<path class="f-leaf ol" d="M15 17h43l-6 23H20z"/><path class="ln" style="stroke-width:4" d="M4 9h8l8 31h32"/><circle class="f-frame ol" cx="24" cy="50" r="5"/><circle class="f-frame ol" cx="47" cy="50" r="5"/>'],
+  coin: ['お金・料金', '<circle class="f-sun ol" cx="32" cy="32" r="25"/><circle class="ln d" cx="32" cy="32" r="19"/><path class="ln" style="stroke-width:3.5" d="M24 19l8 12 8-12M32 31v15M25 33h14M25 40h14"/>'],
+  star: ['お気に入り・大事', '<path class="f-sun ol" d="M32 6l7.6 16.2 17.4 2.1-12.8 12 3.4 17.3L32 45l-15.6 8.6 3.4-17.3L7 24.3l17.4-2.1z"/>'],
+  sprout: ['育つ・ふえる', '<path class="ln g" style="stroke-width:4" d="M32 40V21"/><path class="f-leaf ol" d="M32 28c-1.5-9-8.5-14-19-13 .5 10 8 15 19 13z"/><path class="f-frame ol" d="M32 23c2-10 9.5-15 20-14-.5 10.5-8.5 16-20 14z"/><path class="f-accent ol" d="M17 39h30l-4 18H21z"/>'],
+};

@@ -1,0 +1,2 @@
+# 管理コマンド用のダミー設定(~/.cloudflared/config.yml を読ませないため。中身はこれだけ)
+no-autoupdate: true

@@ -1,0 +1,174 @@
+{
+  "schema": 2,
+  "id": "ai-search-knowledge",
+  "name": "AI Searchナレッジ",
+  "summary": "画面からナレッジを作り PDF / Word / Excel / 画像を放り込むと Cloudflare AI Search がチャンク分割・埋め込み・ハイブリッド検索・rerank・回答生成を全部やる Dify ライクなナレッジ RAG(回答にヒット資料一覧 + PDF ページのサムネイル根拠付き・外部 API キー不要)",
+  "usecase": "web",
+  "category": "official/web",
+  "version": "1.4.0",
+  "builder_min_version": "3.32",
+  "status": "verified",
+  "tested": {
+    "mac": "pass",
+    "win": "pass"
+  },
+  "signoff": {
+    "by": "distributor",
+    "date": "2026-09-21"
+  },
+  "provenance": {
+    "migrated_from": "v1",
+    "v1_path": "recipes/official/web/ai-search-knowledge.md(v2 昇格 2026-09-04 と同一コミットで削除)",
+    "v1_status": "verified",
+    "v1_tested": {
+      "mac": "pass",
+      "win": "pass"
+    },
+    "v1_tested_note": "tested の値は v1(実ビルド mac 2026-08-29〜30 / win 2026-08-31〜09-01)の実績。win は Win 検証済み UI を一方向昇格した templates/ui が根拠(v2 パッケージからの Win 再生成は未実施)",
+    "v1_signoff": "2026-08-31",
+    "v2_verified_on": "2026-09-04",
+    "v2_verified_note": "配布 ZIP から recipe-test.sh --candidate(mac・claude -p)でパッケージ再生: templates.ui 6 ファイルがコピーされ UI 動作テスト 6/6 PASS・忠実度チェック 7 画面全項目一致・validate 25/0・validate-codex 36/0・auto matrix 6/6(TEST-002 は grep -L → ! grep -q の移植性修正後に PASS)。範囲は Cloudflare リソース作成なしのスモーク。実 AI Search 投入〜削除反映は v1 実ビルド(win 2026-09-01)が根拠",
+    "migrated_on": "2026-09-04",
+    "migrated_by": "hand(Round 41 パイロット。migrate スクリプトは未使用)",
+    "ui_source": "output/ai-search-knowledge-win/public (win 2026-09-01)",
+    "ui_source_note": "Win 実機で総合検証済みの public/ 6 ファイルを 2026-09-04 に一方向昇格。生成先で Cloudflare Workers Assets の canonical URL になるよう、明示 .html リンクだけ /docs /chat へ正規化し、製品名を {{PRODUCT_NAME}} 化した。それ以外は Win 検証版を維持",
+    "core_source": "output/ai-search-knowledge/src/search.ts (mac 2026-08-29。chatCompletions + 新形フィルタ)",
+    "v1_2_1_note": "2026-09-06: §5 Phase 1 / §6 PIT 13〜21 / §9 / §10 TEST-022 の文章変更のみ(templates・tests・screens 不変)。パッチ",
+    "v1_2_2_note": "2026-09-07: §5 Phase 1 の順序固定(Round 50)+ 一覧の解釈失敗を「既存なし」に倒さない規則(Round 51 Codex 指摘)+ TEST-022 の状態 (5)。templates・tests・screens 不変。子 pro は規約どおり experimental → 再検証",
+    "v1_3_0_note": "2026-09-07: templates/core にセットアップスクリプト(Mac 再生で本物の wrangler 4.127 + 疑似 CLI 境界テスト + 実アカウント TEST-022 を通した版)を同梱し、tests/setup-cloudflare-boundary.sh で TEST-022 を auto 化。契機 = Win 2026-09-07 の Free 再生で §5 の文章から『kv namespace create REGISTRY』が再導出され旧 KV と衝突(散文再導出の限界)。§6 に PIT-AISEARCH-010 と NOTE 2 件(Win 買い手側の実運用 2026-09-07)",
+    "v1_3_1_note": "2026-09-07(Round 55): Codex Round 54 の P1 — templates/core の setup-cloudflare.sh が wrangler.jsonc を行形式(binding と id が同じ行・REGISTRY → id の順)に依存して読み書きしていたため、内容不変で複数行 JSON に整形すると KV id を書けず作成後に停止。JSONC を字句解析して読む・REGISTRY 要素の id だけを置換(コメント・整形保持)・作成前に書込予行・書込後に読み直し照合へ修正。tests/setup-cloudflare-boundary.sh も形式非依存にし fixtures/wrangler-jsonc.mjs を追加、形式 6 ケース + 負例 2 ケースで 28/28(旧スクリプトは 7 FAIL)。RECIPE.md §5 Phase 1 / §10 TEST-022 更新。UI・screens 不変(パッチ)",
+    "v1_3_2_note": "2026-09-17: §6 に PIT-AISEARCH-011(プレイグラウンド既定は再ランク OFF・閾値 0.4 で日本語質問が 0 件)/ PIT-AISEARCH-012(0 件は 2 回投げてから判定。同期後 15 分の揺れ + 初回の言い回しだけ 0 件)/ PIT-AISEARCH-013(類似キャッシュ 48 時間はアプリにも効く・filters は鍵に含む・0 件は非保存)/ PIT-WRANGLER-004(双子の dev が 8787 を掴むと同梱スクリプトが双子へ向く)、§10 に TEST-024(manual)を追加。出典 = output/ai-search-knowledge-pro-note(mac 2026-09-16〜17、pro 1.1.5 からの再生・91 ページ日本語 PDF の実運用)。templates・tests・screens 不変(パッチ)。候補再生テストは未実施(文章のみの変更のため)",
+    "v1_4_0_note": "2026-09-21(マイナー): FEAT-04 ナレッジの説明欄。出典 = output/ai-search-knowledge-pro-note(pro 1.1.5 再生の講座版)の実運用で「API は description を受けるのに画面に入力・表示・編集が無い」穴を発見し生成物側で修正 → 一方向昇格。templates/ui の index.html(作成フォームの任意欄 + ヒント / カードに 2 行クランプ表示)/ docs.html(見出し下の説明行 + インライン編集 → PATCH)/ styles.css(.create-form / .field-hint / .card .desc / .kb-desc*)を更新、tests/fixtures/mock-api.mjs の PATCH を実 API と同じ「送られたキーだけ変える」に修正、tests/ui/kb-description-editable.mjs(TEST-025)を追加。§1 FEAT-04 / §4 / §5 Phase 6 + 画面仕様 1・2 / §10 TEST-025 を追記。assets/screens は 7 枚とも再撮影(01-list / 02-docs / 04-empty の見た目が変わる。03-chat は不変)。検証 = パッケージ合成(テンプレ + tests)を Chrome で直接実行し UI 動作テスト 7/7(TEST-013〜018 + 025)PASS、templates/ui は出典生成物の public/ と製品名以外バイト一致(生成物側は typecheck 0 / UI 9/9 / 1280・390 のスクショ確認済み)。配布 ZIP からの再生テスト = 同日 recipe-test.sh ai-search-knowledge-pro(pro / smoke / mac)PASS: 親として同梱解決・validate 25/0・auto 6 PASS、生成物の public/ 6 ファイルがテンプレとバイト一致、生成物で UI 8/8(TEST-025 含む)PASS"
+  },
+  "extends": null,
+  "parts": {
+    "required": [],
+    "optional": []
+  },
+  "runtime": {
+    "node": ">=22",
+    "pnpm": ">=9",
+    "wrangler": ">=4",
+    "playwright": ">=1.45"
+  },
+  "placeholders": [
+    "PRODUCT_NAME"
+  ],
+  "templates": {
+    "ui": [
+      {
+        "from": "templates/ui/index.html",
+        "to": "public/index.html"
+      },
+      {
+        "from": "templates/ui/docs.html",
+        "to": "public/docs.html"
+      },
+      {
+        "from": "templates/ui/chat.html",
+        "to": "public/chat.html"
+      },
+      {
+        "from": "templates/ui/common.js",
+        "to": "public/common.js"
+      },
+      {
+        "from": "templates/ui/pdf-ingest.js",
+        "to": "public/pdf-ingest.js"
+      },
+      {
+        "from": "templates/ui/styles.css",
+        "to": "public/styles.css"
+      }
+    ],
+    "core": [
+      {
+        "from": "templates/core/search.ts",
+        "to": "src/search.ts",
+        "reason": [
+          "PIT-AISEARCH-006",
+          "TEST-012"
+        ]
+      },
+      {
+        "from": "templates/core/scripts/setup-cloudflare.sh",
+        "to": "scripts/setup-cloudflare.sh",
+        "reason": [
+          "PIT-MULTIBUILD-001",
+          "PIT-SETUP-KV-001",
+          "TEST-022"
+        ]
+      }
+    ],
+    "remove": []
+  },
+  "screens": [
+    {
+      "file": "assets/screens/01-list-pc.webp",
+      "shows": "ナレッジ一覧(PC 1280px): 名前入力 + 作成ボタン、その下に説明欄(任意)、カード一覧",
+      "checks": [
+        "左サイドバー(オリーブ背景・現在地はクリーム反転)に「ナレッジ一覧」「全体チャット」の 2 項目",
+        "作成フォーム = 名前 + 作成ボタンの行、その下に説明欄(任意。プレースホルダに例文)と 1 行のヒント文",
+        "カード = 名前・説明(あれば名前の下に小さめの文字で 2 行まで)・作成日・主操作「開く」(下部横幅いっぱい)・危険操作「削除」(アクセントのアウトライン)",
+        "トップカードから個別チャットへ直接飛ぶ導線が無い",
+        "白カード + 細枠線・角丸、影を使わない",
+        "セクション見出しは左オリーブ線"
+      ]
+    },
+    {
+      "file": "assets/screens/01-list-mobile.webp",
+      "shows": "ナレッジ一覧(モバイル 390px)",
+      "checks": [
+        "サイドバーのナビが上部へ変形する",
+        "カードが 1 列になる",
+        "横スクロールが出ない"
+      ]
+    },
+    {
+      "file": "assets/screens/02-docs-pc.webp",
+      "shows": "資料一覧(PC): 見出し → 説明行(「説明を編集」)→ アクセント CTA → 同期状態 / D&D アップロード / 資料テーブル",
+      "checks": [
+        "見出し(ナレッジ名)の下に「説明」バッジ + 説明文 + ゴーストの「説明を編集」ボタンの 1 行、その直下にアクセント色の「このナレッジにチャットで質問する」CTA",
+        "その下に D&D アップロード領域(破線枠)",
+        "登録済みの資料が行で並び、各行に「削除」",
+        "索引反映の時差を文言で示している"
+      ]
+    },
+    {
+      "file": "assets/screens/02-docs-mobile.webp",
+      "shows": "資料一覧(モバイル 390px)",
+      "checks": [
+        "CTA が見出し直下で押しやすい大きさ",
+        "横スクロールが出ない"
+      ]
+    },
+    {
+      "file": "assets/screens/03-chat-pc.webp",
+      "shows": "個別チャット(PC): 右寄せ質問バブル / 左寄せ回答カード + 根拠ページ画像 + sources 折りたたみ",
+      "checks": [
+        "タイトルにナレッジ名、スコープバッジ「このナレッジだけを検索します」、戻りリンクがある",
+        "質問は右寄せ、回答は左寄せカード",
+        "回答の下に根拠ページ画像(Page N ラベル付き・最大 3 枚)",
+        "「N sources」の折りたたみがある",
+        "入力欄と送信ボタンが回答の下にある"
+      ]
+    },
+    {
+      "file": "assets/screens/03-chat-mobile.webp",
+      "shows": "個別チャット(モバイル 390px)",
+      "checks": [
+        "質問バブル・回答カードが 390px 幅に収まり、根拠画像はモバイル横スクロール + scroll snap で横に並ぶ",
+        "上部ナビはサイドバーが変形したもの(はみ出した項目はナビ内で横スクロール)",
+        "横スクロールがページ全体には出ない"
+      ]
+    },
+    {
+      "file": "assets/screens/04-empty-list-pc.webp",
+      "shows": "ナレッジが 0 件の空状態(PC)",
+      "checks": [
+        "カードの代わりに破線枠の案内文「まだナレッジがありません…」が出る",
+        "作成フォーム(名前 + 説明欄)はそのまま使える"
+      ]
+    }
+  ]
+}

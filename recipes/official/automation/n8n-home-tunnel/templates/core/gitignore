@@ -1,0 +1,14 @@
+# 秘密情報
+.env
+.env.local
+.env.*.local
+
+# このマシン専用のトンネル設定(setup.sh が生成。トンネル ID と認証ファイルの場所を含む)
+cloudflared/config.yml
+cloudflared/run/
+
+# OS / エディタ
+.DS_Store
+
+# Claude Code 固有の一時ファイル
+.claude/.tmp/

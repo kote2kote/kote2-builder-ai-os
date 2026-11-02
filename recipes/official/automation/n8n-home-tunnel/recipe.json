@@ -1,0 +1,171 @@
+{
+  "schema": 2,
+  "id": "n8n-home-tunnel",
+  "name": "自宅 n8n 公開キット",
+  "summary": "手元の Docker で n8n を動かし、マシン専用の名前付きトンネルで自分のドメインに公開する(マシン別・ユーザー別の値は .env だけ。Claude Code から MCP で直接操作)",
+  "usecase": "automation",
+  "category": "official/automation",
+  "version": "1.0.0",
+  "builder_min_version": "3.38.0",
+  "status": "verified",
+  "tested": {
+    "mac": "pass",
+    "win": "pass"
+  },
+  "signoff": {
+    "by": "distributor",
+    "date": "2026-09-25"
+  },
+  "provenance": {
+    "source_build": "n8n-mac-mini(builder 3.38.0 の通常生成 mac 2026-09-25)",
+    "crystallized_on": "2026-09-25",
+    "verified_note": "mac 2026-09-25: setup(トンネル作成・DNS 登録・上書きなし)→ up 1 回目でオーナー作成ゲートが停止 → ブラウザでオーナー作成 → up 2 回目で公開 → MCP を有効化し Claude Code から認証してテスト用ワークフローを作成・テスト実行(ユーザー実走)。マシン別の値を .env に集約した後にコンテナを作り直し、データ(オーナー)と公開 URL と MCP が維持されることを確認。recipe-tests の auto 6 行(TEST-001〜004・006・007)を生成物で PASS",
+    "not_verified": "FEAT-02(wf.mjs の書き出し・読み込み)/ FEAT-03(teardown.sh)は mac・Windows とも実走なし(既定 OFF)/ setup.sh で DNS が明示レコードと衝突した時の停止(PIT-CFTUNNEL-005 の後半)",
+    "per_machine_note": "マシン別の値(ホスト名・トンネル名・MCP 名・コンテナ名・ボリューム名・ポート・版)は .env.example の {{...}} だけ。スクリプト・compose・スキルは値を持たない(TEST-002)。2 台目は別の値で新しく建てる",
+    "distribution": "free-and-pro(build-dist の FREE_RECIPES と PRO_RECIPES の両方 = kote2 決定 2026-09-25)",
+    "win_verified_note": "win 2026-09-25: builder 3.38.0 が候補パッケージ 1.0.0 から再生(MCP = ON / FEAT-02・03 = 既定 OFF)。winget で cloudflared 2026.9.3・n8n 2.40.7・Git Bash・OneDrive 配下。validate-output 24 PASS / validate-codex 36 PASS / check-sync 4 PASS。TEST-001〜004・006・007 PASS、TEST-005(オーナー作成ゲート)PASS、setup.sh 再実行で「作成済み」だけ、down → up でデータ維持と cloudflared.exe の kill を確認。TEST-008(Claude Code の /mcp で認証 → テスト用ワークフロー作成・実行)はユーザー実走で開通を報告。scripts / compose / tests は候補とバイト一致(改行除く)",
+    "promoted_on": "2026-09-25",
+    "promoted_note": "recipes-candidates/ から recipes/official/automation/ へ昇格(kote2 サインオフ = 配布元検証 ✅)。昇格時に RECIPE.md の状態行と §9 Windows を実走結果で更新(文章のみ。templates / tests は候補時点から不変)"
+  },
+  "extends": null,
+  "parts": {
+    "required": [],
+    "optional": []
+  },
+  "runtime": {
+    "docker": ">=28",
+    "cloudflared": ">=2026.7",
+    "n8n": ">=2.13",
+    "node": ">=20"
+  },
+  "placeholders": [
+    "N8N_HOST",
+    "TUNNEL_NAME",
+    "MCP_NAME",
+    "N8N_INSTANCE",
+    "N8N_VOLUME",
+    "N8N_LOCAL_PORT",
+    "N8N_VERSION"
+  ],
+  "templates": {
+    "ui": [],
+    "core": [
+      {
+        "from": "templates/core/compose.yaml",
+        "to": "compose.yaml",
+        "reason": [
+          "TEST-001",
+          "TEST-004"
+        ]
+      },
+      {
+        "from": "templates/core/env.example",
+        "to": ".env.example",
+        "reason": [
+          "TEST-001",
+          "TEST-002"
+        ]
+      },
+      {
+        "from": "templates/core/gitignore",
+        "to": ".gitignore",
+        "reason": [
+          "TEST-001"
+        ]
+      },
+      {
+        "from": "templates/core/scripts/_env.sh",
+        "to": "scripts/_env.sh",
+        "reason": [
+          "TEST-002",
+          "PIT-N8N-001"
+        ]
+      },
+      {
+        "from": "templates/core/scripts/setup.sh",
+        "to": "scripts/setup.sh",
+        "reason": [
+          "TEST-003",
+          "PIT-CFTUNNEL-003",
+          "PIT-CFTUNNEL-005"
+        ]
+      },
+      {
+        "from": "templates/core/scripts/up.sh",
+        "to": "scripts/up.sh",
+        "reason": [
+          "TEST-005",
+          "PIT-N8N-001"
+        ]
+      },
+      {
+        "from": "templates/core/scripts/down.sh",
+        "to": "scripts/down.sh",
+        "reason": [
+          "TEST-003"
+        ]
+      },
+      {
+        "from": "templates/core/scripts/status.sh",
+        "to": "scripts/status.sh",
+        "reason": [
+          "TEST-001"
+        ]
+      },
+      {
+        "from": "templates/core/scripts/teardown.sh",
+        "to": "scripts/teardown.sh",
+        "reason": [
+          "TEST-010"
+        ]
+      },
+      {
+        "from": "templates/core/cloudflared/config.example.yml",
+        "to": "cloudflared/config.example.yml",
+        "reason": [
+          "TEST-002",
+          "PIT-CFTUNNEL-003"
+        ]
+      },
+      {
+        "from": "templates/core/cloudflared/admin.yml",
+        "to": "cloudflared/admin.yml",
+        "reason": [
+          "TEST-003",
+          "PIT-CFTUNNEL-004"
+        ]
+      },
+      {
+        "from": "templates/core/cloudflared/README.md",
+        "to": "cloudflared/README.md",
+        "reason": [
+          "PIT-CFTUNNEL-003"
+        ]
+      },
+      {
+        "from": "templates/core/skills/n8n-env/SKILL.md",
+        "to": ".claude/skills/n8n-env/SKILL.md",
+        "reason": [
+          "TEST-008",
+          "PIT-N8N-002"
+        ]
+      },
+      {
+        "from": "templates/core/skills/n8n-env/wf.mjs",
+        "to": ".claude/skills/n8n-env/wf.mjs",
+        "reason": [
+          "TEST-009"
+        ]
+      },
+      {
+        "from": "templates/core/workflows/README.md",
+        "to": "workflows/README.md",
+        "reason": [
+          "TEST-009"
+        ]
+      }
+    ],
+    "remove": []
+  },
+  "screens": []
+}

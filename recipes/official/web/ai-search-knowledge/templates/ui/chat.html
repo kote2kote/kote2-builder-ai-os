@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{PRODUCT_NAME}} — チャット</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/styles.css">
+</head>
+<body class="chat-page">
+<div class="layout">
+  <aside id="app-sidebar" aria-label="メインナビゲーション"></aside>
+  <main id="main">
+    <p class="eyebrow">KNOWLEDGE CHAT</p>
+    <h2 class="page-title" id="chat-title">全ナレッジ横断チャット</h2>
+    <p class="scope-badge" id="chat-sub">登録されているすべてのナレッジから検索します</p>
+    <a class="chat-back" id="back-docs" href="/" hidden>← 資料管理に戻る</a>
+
+    <section class="chat-panel">
+      <div class="chatlog" id="chatlog"></div>
+      <form class="chatform" id="chat-form">
+        <textarea id="chat-input" placeholder="例: 資料に書かれている注意点を教えて"></textarea>
+        <button type="submit" id="send-btn">送信</button>
+      </form>
+      <p class="chat-help">回答の下に根拠ページのサムネイル(クリックで拡大)と、ヒットした資料の一覧(sources)が付きます。資料に無いことは「記載がありません」と答えます。</p>
+    </section>
+  </main>
+</div>
+
+<dialog class="thumb-modal" id="thumb-modal" aria-labelledby="thumb-modal-caption">
+  <div class="thumb-modal-card">
+    <button class="thumb-modal-close" id="thumb-modal-close" type="button" aria-label="拡大画像を閉じる">×</button>
+    <img id="thumb-modal-image" alt="">
+    <p id="thumb-modal-caption"></p>
+  </div>
+</dialog>
+
+<script type="module">
+import { api, el, mountSidebar, qs, withLock } from "/common.js";
+
+const kbId = qs("kb");
+mountSidebar(document.getElementById("app-sidebar"), { current: kbId ? "knowledge" : "chat" });
+const main = document.getElementById("main");
+const chatlog = document.getElementById("chatlog");
+const form = document.getElementById("chat-form");
+const input = document.getElementById("chat-input");
+const backDocs = document.getElementById("back-docs");
+const thumbModal = document.getElementById("thumb-modal");
+const thumbModalImage = document.getElementById("thumb-modal-image");
+const thumbModalCaption = document.getElementById("thumb-modal-caption");
+
+if (kbId) {
+  backDocs.hidden = false;
+  backDocs.href = `/docs?kb=${encodeURIComponent(kbId)}`;
+  api(`/api/kb/${encodeURIComponent(kbId)}`)
+    .then((body) => {
+      document.getElementById("chat-title").textContent = `${body.kb.name} チャット`;
+      document.getElementById("chat-sub").textContent = "このナレッジだけを検索します";
+    })
+    .catch(() => {
+      document.getElementById("chat-title").textContent = "ナレッジが見つかりません";
+    });
+}
+
+function addUserMsg(text) {
+  const msg = el("div", "msg user");
+  msg.appendChild(el("div", "bubble", text));
+  chatlog.appendChild(msg);
+}
+
+function addAiMsg() {
+  const msg = el("div", "msg ai");
+  const bubble = el("div", "bubble");
+  bubble.appendChild(el("span", "thinking", "資料を探しています…"));
+  msg.appendChild(bubble);
+  chatlog.appendChild(msg);
+  return msg;
+}
+
+function openThumbnail(source) {
+  thumbModalImage.src = source.thumb;
+  thumbModalImage.alt = `${source.docName} p.${source.page} の拡大画像`;
+  thumbModalCaption.textContent = source.docName + (source.page ? ` — p.${source.page}` : "");
+  if (typeof thumbModal.showModal === "function") thumbModal.showModal();
+  else thumbModal.setAttribute("open", "");
+}
+
+function makeSourceRow(source) {
+  const row = el("div", "source");
+  if (source.thumb) {
+    const img = document.createElement("img");
+    img.src = source.thumb;
+    img.alt = `${source.docName} p.${source.page} のサムネイル`;
+    row.appendChild(img);
+  }
+  const info = el("div");
+  const nameLine = el("div", "s-name", source.docName + (source.page ? ` — p.${source.page}` : ""));
+  const metaLine = el("div", "s-meta");
+  const match = el("span", "match", `${source.matchPercent}%`);
+  metaLine.append("一致度 ", match);
+  info.append(nameLine, metaLine);
+  if (source.excerpt) info.appendChild(el("div", "s-excerpt", source.excerpt));
+  row.appendChild(info);
+  return row;
+}
+
+function renderSources(bubble, sources) {
+  if (!sources.length) return;
+
+  const evidence = el("div", "evidence");
+  const thumbnailSources = sources.filter((source) => source.thumb).slice(0, 3);
+  if (thumbnailSources.length) {
+    const thumbnails = el("div", "evidence-thumbs");
+    for (const source of thumbnailSources) {
+      const button = el("button", "evidence-thumb");
+      button.type = "button";
+      button.setAttribute("aria-label", `${source.docName} p.${source.page} を拡大表示`);
+      const img = document.createElement("img");
+      img.src = source.thumb;
+      img.alt = `${source.docName} p.${source.page} のサムネイル`;
+      button.append(img, el("span", "page-label", source.page ? `Page ${source.page}` : source.docName));
+      button.addEventListener("click", () => openThumbnail(source));
+      thumbnails.appendChild(button);
+    }
+    evidence.appendChild(thumbnails);
+  }
+
+  const details = el("details", "source-details");
+  const summary = el("summary", null, `${sources.length} sources`);
+  const list = el("div", "sources");
+  for (const source of sources) list.appendChild(makeSourceRow(source));
+  details.append(summary, list);
+  evidence.appendChild(details);
+  bubble.appendChild(evidence);
+}
+
+async function send(text) {
+  addUserMsg(text);
+  const msg = addAiMsg();
+  const bubble = msg.querySelector(".bubble");
+  try {
+    const body = await api("/api/chat", {
+      method: "POST",
+      json: { query: text, ...(kbId ? { kbId } : {}) },
+    });
+    bubble.replaceChildren(el("div", "answer-text", body.answer || "回答を生成できませんでした。"));
+    renderSources(bubble, body.sources || []);
+  } catch (e) {
+    bubble.replaceChildren(el("div", "answer-text error-text", `エラー: ${e.message}`));
+  }
+}
+
+form.addEventListener("submit", async (ev) => {
+  ev.preventDefault();
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = "";
+  await withLock(main, () => send(text)); // 操作ロック: 回答中は送信ボタンを無効化
+  input.focus({ preventScroll: true });
+});
+
+input.addEventListener("keydown", (ev) => {
+  if (ev.key === "Enter" && !ev.shiftKey && !ev.isComposing) {
+    ev.preventDefault();
+    form.requestSubmit();
+  }
+});
+
+document.getElementById("thumb-modal-close").addEventListener("click", () => thumbModal.close());
+thumbModal.addEventListener("click", (event) => {
+  if (event.target === thumbModal) thumbModal.close();
+});
+</script>
+</body>
+</html>

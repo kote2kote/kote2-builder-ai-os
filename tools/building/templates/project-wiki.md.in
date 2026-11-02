@@ -1,0 +1,48 @@
+---
+title: {{PROJECT_NAME}}
+status: active
+path: {{PROJECT_PATH}}
+updated: {{DATE}}
+---
+
+## ダッシュボード
+
+### いま・次
+{{CURRENT_STATUS_AND_NEXT}}
+
+### 今のあなたへの提案
+| 提案 | 内容 | 話しかけ方 |
+| --- | --- | --- |
+{{PROPOSAL_ROWS_OR_EMPTY}}
+
+### できること（話しかけるだけ）
+| 困りごと・やりたいこと | AIへの言い方 |
+| --- | --- |
+{{CAPABILITY_ROWS}}
+
+### 最近の動き
+{{ACTIVITY}}
+
+### 判断・未決・作り方のメモ
+{{DECISIONS_AND_OPEN_QUESTIONS}}
+
+## README
+
+### 目的と完成条件
+{{PURPOSE_AND_ACCEPTANCE}}
+
+### 使い方・起動・停止
+{{USAGE}}
+
+### 試験
+{{TEST_COMMANDS_AND_EXPECTED_RESULTS}}
+
+### 保存と復旧
+{{REPOSITORY_OR_BACKUP_AND_RECOVERY}}
+
+### 対応AIと設定
+{{AI_SUPPORT_AND_EFFECTIVE_PERMISSIONS}}
+
+### 検証記録
+共通手順: building@1 / project-setup@1 / agent-settings@1
+{{DATE_ENVIRONMENT_EXPECTED_ACTUAL_EVIDENCE_AND_UNTESTED}}

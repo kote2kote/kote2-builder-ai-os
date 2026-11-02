@@ -1,0 +1,20 @@
+.DS_Store
+.env
+.env.*
+.dev.vars
+.dev.vars.*
+.envrc
+*.pem
+*.key
+node_modules/
+__pycache__/
+*.pyc
+.claude/settings.local.json
+/.builder-os-update/
+
+# 成果物は除外し、フォルダを残す目印だけ管理する
+/projects/*
+!/projects/.gitkeep
+
+# 持ち込んだ試作の検査済みの置き場（tools/prototypes.md）。作ると決めたら projects/<名前>/prototype/ へ移す
+/imports/prototypes/

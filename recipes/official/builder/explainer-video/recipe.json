@@ -1,0 +1,265 @@
+{
+  "schema": 2,
+  "id": "explainer-video",
+  "name": "説明映像(キャラが図の横で解説する動画)",
+  "summary": "ビルダーに説明映像スキルを足す拡張レシピ。場面データ(scene.js)を書くだけで、同梱のひまわり猫(差し替え可・無しも可)が字幕で解説する 1920×1080 の映像を HTML で再生し、MP4 に書き出す。箱には絵(同梱アイコン 50 個 + 映像ごとに描き足すイラスト)を添える。解説モード(「〇〇とは」)と仕組みモード(このプロジェクトの仕組み)。Claude Code 専用・Opus 5.5 推奨。生成プロジェクトには頼まれた時だけ写す",
+  "usecase": "utils",
+  "category": "official/builder",
+  "target": "builder",
+  "version": "1.1.0",
+  "builder_min_version": "3.41.0",
+  "status": "verified",
+  "tested": {
+    "mac": "pass",
+    "win": "untested"
+  },
+  "signoff": {
+    "by": "distributor",
+    "date": "2026-10-09"
+  },
+  "provenance": {
+    "origin": "chat-desk の lab で 2026-09-26 に作った仕組み映像 / プロモの試作を、2026-10-08 に場面データ + 共通エンジンへ切り出し(解説モード「MCP とは」53 秒で実証)。kote2 決定(2026-10-08): 猫同梱・差し替え可 / Free+Pro / 生成物にも opt-in / 初版は音なし",
+    "skeleton_source": "templates/core/explainer-video/(このパッケージが正本。ビルダー直下の .claude/skills/explainer-video/ が写し。生成プロジェクトへはビルダー直下の写しからさらに写す)",
+    "opt_in": "2026-10-09 kote2 決定: 生成プロジェクトへは頼まれた時だけ(生成時に質問を足さない)。ビルダー直下でも映像を作れる",
+    "verification": "2026-10-09 mac: v3.41.0 の Free 配布 ZIP を展開したビルダー(.git なし・output/ に架空プロジェクト 2 本 = Claude のみ / Codex 両対応)に Phase 1 を適用。auto TEST-001〜005 PASS。別セッションの claude -p を買い手役にして TEST-007(ビルダー直下で「Cookie とは」70.5 秒・MDN / RFC 出典つき)、FEAT-01(2 プロジェクトへ写す → TEST-006 PASS・check-sync 0 FAIL)、写した先での仕組みモード(recipe-memo 58.5 秒・根拠は実ファイル)を実走。MP4 からコマを取り出して目視",
+    "win_triage": "推奨(ffmpeg = ネイティブ CLI)。非ゲートのため win untested で配布。win 機は 2026-10-09 時点で ssh 不通",
+    "v1_0_1_note": "win 検証の反映: §6 PIT-EV-FFMPEG-001 に winget 直後の PATH(同じ Git Bash には反映されない → 開き直す / FFMPEG_PATH)、§9 に Windows の実走結果・書き出し速度・TEST-004 の /tmp 表記、SKILL.md「書き出す」に同じ 2 点(FFMPEG_PATH・速度の目安)",
+    "win_verification": "2026-10-09 win: builder 3.40.0 配布版(min 3.41.0 より旧・builder.md の配線無し。互換警告を出して続行)に Phase 1 を適用。Windows 11 / Git Bash / OneDrive 配下の日本語パス / Node 24 / Chrome 自動検出 / winget の ffmpeg 9.0.2。auto TEST-001〜005 PASS(005 は FFMPEG_PATH 指定)、TEST-006 SKIP(生成プロジェクトへは未適用)、TEST-007 はビルダー直下で仕組みモード「LLM Wiki とは」69.5 秒を実走し MP4 からコマを取り出して目視(游ゴシックではみ出し無し)。写したスキル一式はパッケージとバイト一致。配線無しでもスキルは認識され「解説動画作って」で発火。書き出し 69.5 秒に約 7.5 分(i5-7500)",
+    "v1_0_2_note": "2026-10-09 kote2 決定: Claude Code 専用・Opus 5.5 推奨と明記(SKILL.md 冒頭と「できること」の 1 行・RECIPE.md の対応 AI / §2 / §9・builder.md の説明映像節)。中身の動きは変えていない",
+    "v1_1_0_note": "2026-10-12 kote2 の依頼(「文字だけでなく SVG アイコンやちょっとしたイラストも」。お手本は別に作った ToDo アプリ「にゃんタスク」の平らな絵柄)で機能追加 = マイナー。CORE-05 = 絵: engine/icons.js(同梱 50 個・viewBox 64・塗りは色クラス f-* / 輪郭 ol / 線 ln で theme に追従)、scene.js の art(映像ごとの描き足し)、references/icon-catalog/(一覧を静止画で見る)。置き方は 箱の icon(左に台紙 / iconAt top)・cls art(絵だけ)・文中 <i data-icon>・矢印の packetIcon・札の icon。at に pulse(0.6 秒だけ跳ねる)。あわせて箱のはみ出しを読み込み時に測って console.warn → render-video.mjs が「注意」で出す(止めない)。絵の名前違いは console.error で止める。例「MCP とは」に絵を入れ、USB-C のたとえを art で描いた。1.0.x の映像(index.html に icons.js の行が無い)はそのまま撮れる(後方互換)",
+    "v1_1_0_verification": "2026-10-12 mac(Chrome・Node 25): auto TEST-001〜005 + 新設 TEST-008 PASS(EXPLAINER_DIR=パッケージ / ビルダー直下の写しとも)。例の静止画 13 枚・絵の一覧を目視。わざと狭い箱で「注意: はみ出し」、無い絵の名前 3 通り + 無い pulse 先で exit 1 を確認。ビルダー直下の既存映像 2 本(icons.js の行なし)を新エンジンで撮れることを確認。win は 1.1.0 未実走(tested.win untested)",
+    "v1_1_0_followup": "2026-10-12 同じ版のうちに追加(未配布のため版はそのまま): 実使用 2 件で分かったことを反映。① 薬屋の解説映像(歴史・文化の話題)で描き足しが「1〜2 個」では足りず、SKILL.md の目安を 1〜6 個(色違いは 1 個)に・人物や建物は「イメージ」と明記し実在の人物や作品のキャラに似せない、に。② 上下中央の箱で上へのはみ出しを見逃していた → 子要素の上端・下端を測り線から 4px 以内で「注意」(高さ 0 の br は除く)= PIT-EV-FIT-001、TEST-008 に回帰(実際に見逃した寸法で、直す前のエンジンは FAIL)。③ idea-proto-relay の写しを 1.1.0 へ(骨格の更新・TEST-006 PASS)"
+  },
+  "extends": null,
+  "parts": {
+    "required": [],
+    "optional": []
+  },
+  "runtime": {
+    "node": ">=18",
+    "browser": "Chrome / Edge / Chromium(ヘッドレスで自動起動)",
+    "ffmpeg": "MP4 書き出しの時だけ(無ければ HTML 再生のみ)",
+    "ai": "Claude Code 専用・Opus 5.5 推奨(Codex での映像づくりは未検証)"
+  },
+  "placeholders": [],
+  "templates": {
+    "ui": [],
+    "core": [
+      {
+        "from": "templates/core/explainer-video/SKILL.md",
+        "to": ".claude/skills/explainer-video/SKILL.md",
+        "reason": [
+          "TEST-001",
+          "PIT-EV-SKILL-001"
+        ]
+      },
+      {
+        "from": "templates/core/explainer-video/character/TERMS.md",
+        "to": ".claude/skills/explainer-video/character/TERMS.md",
+        "reason": [
+          "TEST-001"
+        ]
+      },
+      {
+        "from": "templates/core/explainer-video/character/cat1.png",
+        "to": ".claude/skills/explainer-video/character/cat1.png",
+        "reason": [
+          "TEST-002",
+          "PIT-EV-CAT-001"
+        ]
+      },
+      {
+        "from": "templates/core/explainer-video/character/cat2.png",
+        "to": ".claude/skills/explainer-video/character/cat2.png",
+        "reason": [
+          "TEST-002",
+          "PIT-EV-CAT-001"
+        ]
+      },
+      {
+        "from": "templates/core/explainer-video/character/cat3.png",
+        "to": ".claude/skills/explainer-video/character/cat3.png",
+        "reason": [
+          "TEST-002",
+          "PIT-EV-CAT-001"
+        ]
+      },
+      {
+        "from": "templates/core/explainer-video/character/cat4.png",
+        "to": ".claude/skills/explainer-video/character/cat4.png",
+        "reason": [
+          "TEST-002",
+          "PIT-EV-CAT-001"
+        ]
+      },
+      {
+        "from": "templates/core/explainer-video/character/cat5.png",
+        "to": ".claude/skills/explainer-video/character/cat5.png",
+        "reason": [
+          "TEST-002",
+          "PIT-EV-CAT-001"
+        ]
+      },
+      {
+        "from": "templates/core/explainer-video/character/cat6.png",
+        "to": ".claude/skills/explainer-video/character/cat6.png",
+        "reason": [
+          "TEST-002",
+          "PIT-EV-CAT-001"
+        ]
+      },
+      {
+        "from": "templates/core/explainer-video/character/cat7.png",
+        "to": ".claude/skills/explainer-video/character/cat7.png",
+        "reason": [
+          "TEST-002",
+          "PIT-EV-CAT-001"
+        ]
+      },
+      {
+        "from": "templates/core/explainer-video/character/cat8.png",
+        "to": ".claude/skills/explainer-video/character/cat8.png",
+        "reason": [
+          "TEST-002",
+          "PIT-EV-CAT-001"
+        ]
+      },
+      {
+        "from": "templates/core/explainer-video/character/character.js",
+        "to": ".claude/skills/explainer-video/character/character.js",
+        "reason": [
+          "TEST-001",
+          "TEST-002"
+        ]
+      },
+      {
+        "from": "templates/core/explainer-video/engine/explainer.css",
+        "to": ".claude/skills/explainer-video/engine/explainer.css",
+        "reason": [
+          "TEST-002",
+          "TEST-004",
+          "PIT-EV-ICON-001"
+        ]
+      },
+      {
+        "from": "templates/core/explainer-video/engine/explainer.js",
+        "to": ".claude/skills/explainer-video/engine/explainer.js",
+        "reason": [
+          "TEST-002",
+          "TEST-003",
+          "TEST-008",
+          "PIT-EV-GUARD-001"
+        ]
+      },
+      {
+        "from": "templates/core/explainer-video/engine/render-video.mjs",
+        "to": ".claude/skills/explainer-video/engine/render-video.mjs",
+        "reason": [
+          "TEST-002",
+          "TEST-005",
+          "PIT-EV-CLOSE-001",
+          "PIT-EV-FFMPEG-001"
+        ]
+      },
+      {
+        "from": "templates/core/explainer-video/examples/mcp/evidence.md",
+        "to": ".claude/skills/explainer-video/examples/mcp/evidence.md",
+        "reason": [
+          "TEST-002",
+          "TEST-005"
+        ]
+      },
+      {
+        "from": "templates/core/explainer-video/examples/mcp/index.html",
+        "to": ".claude/skills/explainer-video/examples/mcp/index.html",
+        "reason": [
+          "TEST-002",
+          "TEST-005"
+        ]
+      },
+      {
+        "from": "templates/core/explainer-video/examples/mcp/plan.md",
+        "to": ".claude/skills/explainer-video/examples/mcp/plan.md",
+        "reason": [
+          "TEST-002",
+          "TEST-005"
+        ]
+      },
+      {
+        "from": "templates/core/explainer-video/examples/mcp/scene.js",
+        "to": ".claude/skills/explainer-video/examples/mcp/scene.js",
+        "reason": [
+          "TEST-002",
+          "TEST-005"
+        ]
+      },
+      {
+        "from": "templates/core/explainer-video/references/scene-format.md",
+        "to": ".claude/skills/explainer-video/references/scene-format.md",
+        "reason": [
+          "TEST-001",
+          "TEST-003"
+        ]
+      },
+      {
+        "from": "templates/core/explainer-video/engine/icons.js",
+        "to": ".claude/skills/explainer-video/engine/icons.js",
+        "reason": [
+          "TEST-008",
+          "TEST-003",
+          "PIT-EV-ICON-001"
+        ]
+      },
+      {
+        "from": "templates/core/explainer-video/references/icon-catalog/index.html",
+        "to": ".claude/skills/explainer-video/references/icon-catalog/index.html",
+        "reason": [
+          "TEST-001",
+          "TEST-008"
+        ]
+      },
+      {
+        "from": "templates/core/explainer-video/references/icon-catalog/scene.js",
+        "to": ".claude/skills/explainer-video/references/icon-catalog/scene.js",
+        "reason": [
+          "TEST-001",
+          "TEST-008"
+        ]
+      }
+    ],
+    "remove": []
+  },
+  "screens": [
+    {
+      "file": "assets/screens/01-scene-with-cat-pc.webp",
+      "shows": "解説モードの例「MCP とは」25 秒目(場面 4「例」)。1920×1080 を 1280px に縮小",
+      "checks": [
+        "左下にキャラ(バンザイ)が立ち、右に字幕の帯がある",
+        "字幕の左に場面の札「4 例」がある",
+        "箱に絵が台紙つきで添えてあり(あなた = 人 / ホスト = AI / サーバー = 文書・プログラム・フォルダ)、絵が台紙からずれていない",
+        "カメラが寄った部分の箱の文字が箱からはみ出していない",
+        "矢印の上を動くラベル(ページを読む)が、頭に文書の絵を付けて出ている"
+      ]
+    },
+    {
+      "file": "assets/screens/02-summary-pc.webp",
+      "shows": "同じ例の最後(まとめ)。全体に引いた 1 枚",
+      "checks": [
+        "左右 2 区画(これまで / MCP があると)が両方とも画面に入る",
+        "凡例が出ている",
+        "キャラがお辞儀のポーズ",
+        "描き足した絵(USB-C のたとえ)と、札の頭の絵(注意・盾)、3 種類の行の頭の絵(道具・本・メモ)が出ている",
+        "箱・札・凡例が互いに重なっていない"
+      ]
+    },
+    {
+      "file": "assets/screens/03-no-character-pc.webp",
+      "shows": "キャラ無し(index.html から character.js を外した)で 25 秒目",
+      "checks": [
+        "キャラが出ない",
+        "字幕の帯が左端まで広がる",
+        "箱の絵はキャラ無しでも出ている"
+      ]
+    }
+  ]
+}

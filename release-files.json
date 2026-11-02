@@ -1,0 +1,710 @@
+{
+  "files": {
+    ".claude/settings.json": {
+      "mode": 420,
+      "sha256": "fab3e0ed0ae044ea04bbf56b6c92495bce6844b836bd1f89b3b14afd3acaa046"
+    },
+    ".gitignore": {
+      "mode": 420,
+      "sha256": "551dfd19cd71fd6f27ce4d9afbc2b528a8fab4962c036e911cc709f71ee5646c"
+    },
+    "AGENTS.md": {
+      "mode": 420,
+      "sha256": "70adcc972daaa42419274474be02548476618547ff6d132eacbec8e5af52a7e8"
+    },
+    "CLAUDE.md": {
+      "mode": 420,
+      "sha256": "336cc4fbf19beaada7ccf9986414fa91851a8d7a07dfb3ccbe800a69eed0ab49"
+    },
+    "CONTRIBUTING.md": {
+      "mode": 420,
+      "sha256": "de197bb49bf76e75902a85a29d5d3303a333648914e8c508fa79f99f1f3b9f71"
+    },
+    "DESIGN.md": {
+      "mode": 420,
+      "sha256": "a06d72d19ec1cbd843beae2d441ce922a4d5259b1b31bb5c42ee408f5d1a9b45"
+    },
+    "LICENSE": {
+      "mode": 420,
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+    },
+    "NOTICE": {
+      "mode": 420,
+      "sha256": "823e51f5acd8c841ac7133e4931bbac486b8d2b3bf941e89583e0fbcc6220297"
+    },
+    "README.md": {
+      "mode": 420,
+      "sha256": "03fa50f64c67d7e9940f470c5092572ad0085c76b931a125a633dacb3cfe6e18"
+    },
+    "THIRD_PARTY.md": {
+      "mode": 420,
+      "sha256": "601452ce5a3bf479c243456c13dade13e0e32094ede83144a8243ad69a02bff5"
+    },
+    "VERSION": {
+      "mode": 420,
+      "sha256": "e1d49c569ae09b2ede16e2d83820a3809b35eb6c44c13ba9b5330598d6b8f43c"
+    },
+    "projects/.gitkeep": {
+      "mode": 420,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "recipes/README.md": {
+      "mode": 420,
+      "sha256": "e551547f70c355469323b6d2615016b0ac9ac3fcdf357591dbdbaacf89e02f5a"
+    },
+    "recipes/official/automation/n8n-home-tunnel/RECIPE.md": {
+      "mode": 420,
+      "sha256": "89c06b7249da147aa428077a17fcbb26e8edd22dbdfbdbd8a77c92d387cbba15"
+    },
+    "recipes/official/automation/n8n-home-tunnel/recipe.json": {
+      "mode": 420,
+      "sha256": "d02a5dcb7a7848b36677e5167087b4991b56e45d705adbdd6879a509e6f92eb3"
+    },
+    "recipes/official/automation/n8n-home-tunnel/templates/core/cloudflared/README.md": {
+      "mode": 420,
+      "sha256": "7cdc7a76004fbf7476c7a2e8cb4a47cea2905d580344cd2dd95982738993ee4d"
+    },
+    "recipes/official/automation/n8n-home-tunnel/templates/core/cloudflared/admin.yml": {
+      "mode": 420,
+      "sha256": "788ed270695afeec319148d887b4be72f9a1f6dcf22c89d5ed22af02f018c23d"
+    },
+    "recipes/official/automation/n8n-home-tunnel/templates/core/cloudflared/config.example.yml": {
+      "mode": 420,
+      "sha256": "ccb879c3b34379aeeb53f5a5c1d7298e50bf2f494afea3cd5e537b65c7a34c1e"
+    },
+    "recipes/official/automation/n8n-home-tunnel/templates/core/compose.yaml": {
+      "mode": 420,
+      "sha256": "1f5f423d65d3d577c42c41424c8c98f930441c8b6e3190544c27c51204bd3516"
+    },
+    "recipes/official/automation/n8n-home-tunnel/templates/core/env.example": {
+      "mode": 420,
+      "sha256": "754621e623abb1cb19c4b6921190cab05a014072e677928a6fc4d0e757dcaf78"
+    },
+    "recipes/official/automation/n8n-home-tunnel/templates/core/gitignore": {
+      "mode": 420,
+      "sha256": "3d8136cf140b9aad1d39a7b4caa691849c66b99471884e53be19b390fa1f12b7"
+    },
+    "recipes/official/automation/n8n-home-tunnel/templates/core/scripts/_env.sh": {
+      "mode": 420,
+      "sha256": "4d15b77242eb6947b7f2d5093aa6b663f9e4a7fc1e0cecd7bdc147aa0459ea54"
+    },
+    "recipes/official/automation/n8n-home-tunnel/templates/core/scripts/down.sh": {
+      "mode": 493,
+      "sha256": "5a4e619ac83a5e4c9c2eb8afb42c336e6bac1472da07e5bb54659ffe9d4e23f5"
+    },
+    "recipes/official/automation/n8n-home-tunnel/templates/core/scripts/setup.sh": {
+      "mode": 493,
+      "sha256": "9665703f5015b7aff037003711cb240e8bae740d210829a547fbf99e0b67f7db"
+    },
+    "recipes/official/automation/n8n-home-tunnel/templates/core/scripts/status.sh": {
+      "mode": 493,
+      "sha256": "0c538ffa30f7bed78ada66e08cc06adf0e723f88d6131d6f2923cb24444a85b9"
+    },
+    "recipes/official/automation/n8n-home-tunnel/templates/core/scripts/teardown.sh": {
+      "mode": 493,
+      "sha256": "d22b2e5f34b85170b7bd7575c52749ac3926bb1ef7776c4150972327202ec7a9"
+    },
+    "recipes/official/automation/n8n-home-tunnel/templates/core/scripts/up.sh": {
+      "mode": 493,
+      "sha256": "18c89c5e24f74362f9e8a7cd5afb4d402af0ee3406b80ad0143f3fbce8920cfb"
+    },
+    "recipes/official/automation/n8n-home-tunnel/templates/core/skills/n8n-env/SKILL.md": {
+      "mode": 420,
+      "sha256": "e97cb933fa38eb5a972458b1538b8ca225ceb776ac9872612ec973b988125777"
+    },
+    "recipes/official/automation/n8n-home-tunnel/templates/core/skills/n8n-env/wf.mjs": {
+      "mode": 420,
+      "sha256": "0bc4f57d0a7d050f4eb72b9a3316bb74187cc26d061132b85b8ca51eb6d3f583"
+    },
+    "recipes/official/automation/n8n-home-tunnel/templates/core/workflows/README.md": {
+      "mode": 420,
+      "sha256": "db774a47fd2b9d16051e71c7c580f39095cecfaef34d83df1fa6ace6ab7e11ef"
+    },
+    "recipes/official/automation/n8n-home-tunnel/tests/check-cloudflared-guard.sh": {
+      "mode": 493,
+      "sha256": "c67ded0c5c023ba40dc4530f67428a2edcf7c3ae6ab72c9a6eb45e59d1148ff8"
+    },
+    "recipes/official/automation/n8n-home-tunnel/tests/check-live.sh": {
+      "mode": 493,
+      "sha256": "9f7f840447203aa3b47e0b8b98df9d97253ed5624c35faba4aadd5eb260ae442"
+    },
+    "recipes/official/automation/n8n-home-tunnel/tests/check-per-machine.sh": {
+      "mode": 493,
+      "sha256": "83230126bfe266e6b42d1bfed30f23edce2b131f3c822e33962c39f9b01df7f7"
+    },
+    "recipes/official/automation/n8n-home-tunnel/tests/check-static.sh": {
+      "mode": 493,
+      "sha256": "fffa913abaffa059eef3739200eba0cb927d499049f4a62547b4855e64511ee9"
+    },
+    "recipes/official/automation/omni-chatbot/RECIPE.md": {
+      "mode": 420,
+      "sha256": "88179aa8ebba2662dc3ae80edbc8bcedfa060e0143fed4d02f0f84952e907871"
+    },
+    "recipes/official/automation/omni-chatbot/recipe.json": {
+      "mode": 420,
+      "sha256": "07e8b054b698b4119ff6e85ab0ddce12b0360885752144d7f0557e8753d18892"
+    },
+    "recipes/official/automation/omni-chatbot/templates/core/docs/channel-setup.html": {
+      "mode": 420,
+      "sha256": "a3a17d568bc4d92ccec654d49966631c05f172ffa7fa8e08e2027bf784203dcd"
+    },
+    "recipes/official/automation/omni-chatbot/templates/core/docs/design-brain-codex.md": {
+      "mode": 420,
+      "sha256": "09bd93326ba1e2bcc45ce14b3f64e8efb29e61cf966dbb1eab5531e9a68582c8"
+    },
+    "recipes/official/automation/omni-chatbot/templates/core/scripts/send-test.sh": {
+      "mode": 420,
+      "sha256": "92df1d8ab57155ade060c66a9557ca782191714eeca180335cdb07f650bf5a9c"
+    },
+    "recipes/official/automation/omni-chatbot/templates/core/src/adapters/chatwork.ts": {
+      "mode": 420,
+      "sha256": "26e6344a0df6d0388d548677e12113c5cf584e1e65e471a83441222588548547"
+    },
+    "recipes/official/automation/omni-chatbot/templates/core/src/adapters/discord.ts": {
+      "mode": 420,
+      "sha256": "199ccdcce0f0fa5400308147902dbca32f07c75d1eb63530cca516f233a7fdea"
+    },
+    "recipes/official/automation/omni-chatbot/templates/core/src/adapters/line.ts": {
+      "mode": 420,
+      "sha256": "2fa46360b47beeb206f05937eb0a60a2f3de0f476699087059cb66ce5c3c3473"
+    },
+    "recipes/official/automation/omni-chatbot/templates/core/src/adapters/slack.ts": {
+      "mode": 420,
+      "sha256": "3d69f844494bd553dda927ceb0f59ce95e8743f66319d52e11a08e46d57d6f93"
+    },
+    "recipes/official/automation/omni-chatbot/templates/core/src/brain-app.ts": {
+      "mode": 420,
+      "sha256": "33bfd163756db99a6e68f664b41f0c038feed96e8937b4cc2a8f4da7aa5c541c"
+    },
+    "recipes/official/automation/omni-chatbot/templates/core/src/brain-cli.ts": {
+      "mode": 420,
+      "sha256": "68decee9f31e960796d3ec7185f7c6527d793433d4b48f2993310e96010c9fc0"
+    },
+    "recipes/official/automation/omni-chatbot/templates/core/src/brain-codex.ts": {
+      "mode": 420,
+      "sha256": "382e711437de06a4add367a634d15d0cdae3346a7c9888b938a8034ed83f081b"
+    },
+    "recipes/official/automation/omni-chatbot/templates/core/src/brain-sdk.ts": {
+      "mode": 420,
+      "sha256": "2431c312f9fdb4d62d550470e4ec6851f23596befe36c7c15d45df9ff222afc8"
+    },
+    "recipes/official/automation/omni-chatbot/templates/core/src/brain.ts": {
+      "mode": 420,
+      "sha256": "c0a1528282e5f8d5308caf9362fbf5203455ff1a979f096fa4e5a3118ac325bd"
+    },
+    "recipes/official/automation/omni-chatbot/templates/core/src/dedupe.ts": {
+      "mode": 420,
+      "sha256": "43635e155acde45a80fe1cbda4c99ebdd579a0f922500e2e1d333632b2003f56"
+    },
+    "recipes/official/automation/omni-chatbot/templates/core/src/index.ts": {
+      "mode": 420,
+      "sha256": "cf83cc99fc0dfdc2bf86e91d7c3907c3123cd03890202ec3a0e0d8cd3d41c5d2"
+    },
+    "recipes/official/automation/omni-chatbot/templates/core/src/server-node.ts": {
+      "mode": 420,
+      "sha256": "b990c320d3cbb310ec6969555abdf3fc85d2d334daec10e16fea9d89d64b5bb2"
+    },
+    "recipes/official/automation/omni-chatbot/templates/core/src/verify.ts": {
+      "mode": 420,
+      "sha256": "0ba1dfa61f8025ef8afd3ed13ac5ed5de03c9f4bae96a5f11da67e090d1330d6"
+    },
+    "recipes/official/automation/omni-chatbot/tests/brain-backend-unit.mjs": {
+      "mode": 420,
+      "sha256": "7dd3f2bac305666be4e31e2923fb23a9bd56c5dde4238f9a510e0376f4380a3f"
+    },
+    "recipes/official/automation/omni-chatbot/tests/dedupe-unit.mjs": {
+      "mode": 493,
+      "sha256": "4ce74f90871704c3954a036e6669f87509de269ea3e8a5b5ecb6692576ff5979"
+    },
+    "recipes/official/automation/omni-chatbot/tests/fixtures/chatwork-message-created.json": {
+      "mode": 420,
+      "sha256": "482f9162400c261477649b4b7cfe056542fc8b7a66073028d6b70760abd15617"
+    },
+    "recipes/official/automation/omni-chatbot/tests/fixtures/discord-ping.json": {
+      "mode": 420,
+      "sha256": "0924d881e108393e6c31b13da8755c463ab7cf135d6bf9223e44c24ba8ffb39c"
+    },
+    "recipes/official/automation/omni-chatbot/tests/fixtures/env.test.json": {
+      "mode": 420,
+      "sha256": "0f7c075d0367a870df2803ae0f73660e464486e71c2906349eb919d0364ed76e"
+    },
+    "recipes/official/automation/omni-chatbot/tests/fixtures/line-follow-event.json": {
+      "mode": 420,
+      "sha256": "d1f1112a465f1ea58266cef6980e5f219636dae2adb9847cd7e2f30e1a389875"
+    },
+    "recipes/official/automation/omni-chatbot/tests/fixtures/slack-url-verification.json": {
+      "mode": 420,
+      "sha256": "fc8382c29c856df22af9508592b98371eef1f613afeaf9ac2602068e36821f18"
+    },
+    "recipes/official/automation/omni-chatbot/tests/smoke-typecheck.sh": {
+      "mode": 493,
+      "sha256": "27d1ccdb79d7d040a65e9ddb233eec94599bd9141a92e00f56fdaeb779cc3519"
+    },
+    "recipes/official/automation/omni-chatbot/tests/webhook-signature.mjs": {
+      "mode": 493,
+      "sha256": "9a50b6b9f673526e44ef119f8c138a6ce81b4ce4b11d05e19e6f21515968c75d"
+    },
+    "recipes/official/builder/explainer-video/RECIPE.md": {
+      "mode": 420,
+      "sha256": "84ea50585ed7bed9512af1afa1abf39aae08bb17b2e6f230f8f6e1ff55113de9"
+    },
+    "recipes/official/builder/explainer-video/assets/screens/01-scene-with-cat-pc.webp": {
+      "mode": 420,
+      "sha256": "7d0b8822ab5921e9d9c339b7ce662b166d2742f2566f83e05cad25e3fbaa0754"
+    },
+    "recipes/official/builder/explainer-video/assets/screens/02-summary-pc.webp": {
+      "mode": 420,
+      "sha256": "85f87c21e56868ba7f698ddf07ff4b56f1981242cf3c2dba026132a14a78136f"
+    },
+    "recipes/official/builder/explainer-video/assets/screens/03-no-character-pc.webp": {
+      "mode": 420,
+      "sha256": "c97748285d3a0b91ca6e72f34d5d4a9531083b0509551f5da061592c27c6d860"
+    },
+    "recipes/official/builder/explainer-video/recipe.json": {
+      "mode": 420,
+      "sha256": "54aabb6ab818e25484dcd739ae4124d3149687888bd66af245cbcd35abb42eb2"
+    },
+    "recipes/official/builder/explainer-video/templates/core/explainer-video/SKILL.md": {
+      "mode": 420,
+      "sha256": "64c189b3878befa0d929e63a11395122a827b55e1499f2133cdcc54e81baea03"
+    },
+    "recipes/official/builder/explainer-video/templates/core/explainer-video/character/TERMS.md": {
+      "mode": 420,
+      "sha256": "d76b0ac75fd2b6ee84276fe401a9a19866ffd094ad2777bbfc167f2e985f3364"
+    },
+    "recipes/official/builder/explainer-video/templates/core/explainer-video/character/cat1.png": {
+      "mode": 420,
+      "sha256": "37d33332e6518ef954655ad2033d6e62e749dc826b64da7f964e398f4c5cadb7"
+    },
+    "recipes/official/builder/explainer-video/templates/core/explainer-video/character/cat2.png": {
+      "mode": 420,
+      "sha256": "f943d494f8e7e898791df99b61ffe9570165621f987c921a54c7b972ae7d1e0f"
+    },
+    "recipes/official/builder/explainer-video/templates/core/explainer-video/character/cat3.png": {
+      "mode": 420,
+      "sha256": "3b86aecf29307485330d9f16819ad8d259ea3b25d859be9f261da5bf5344c92c"
+    },
+    "recipes/official/builder/explainer-video/templates/core/explainer-video/character/cat4.png": {
+      "mode": 420,
+      "sha256": "0479a895c4c2d4c578b3ae9536709335ce4b3a09b47ca8d613f9e26709e53825"
+    },
+    "recipes/official/builder/explainer-video/templates/core/explainer-video/character/cat5.png": {
+      "mode": 420,
+      "sha256": "31b90732c9a01bcbe1d6d5043da4c23cdd50b493543420284d271e384b46093f"
+    },
+    "recipes/official/builder/explainer-video/templates/core/explainer-video/character/cat6.png": {
+      "mode": 420,
+      "sha256": "61cd538f120825def39120e953c43aafa4ecb9ec72a3dfff96ea71ee3b61081b"
+    },
+    "recipes/official/builder/explainer-video/templates/core/explainer-video/character/cat7.png": {
+      "mode": 420,
+      "sha256": "94c991f8303acc910dc3e23f2226eafb6d700e5a9fe28868906a7920a7f36b61"
+    },
+    "recipes/official/builder/explainer-video/templates/core/explainer-video/character/cat8.png": {
+      "mode": 420,
+      "sha256": "033106bc0755e9e52b53ce4d2440db7a46ac62846b03e6dc3655c82ac5dc0e7a"
+    },
+    "recipes/official/builder/explainer-video/templates/core/explainer-video/character/character.js": {
+      "mode": 420,
+      "sha256": "308bab8c3a61ab09bf75f77b3240ca90e5cd2f4ae64a66c8f75ae9e7684e5968"
+    },
+    "recipes/official/builder/explainer-video/templates/core/explainer-video/engine/explainer.css": {
+      "mode": 420,
+      "sha256": "19bd1be33362f88d02419bde739b533668b7822bc93a4dd7fc378f5f8932a533"
+    },
+    "recipes/official/builder/explainer-video/templates/core/explainer-video/engine/explainer.js": {
+      "mode": 420,
+      "sha256": "e94e4e090ae7f73ceb69d6dc3cb59d1d90a318d3829b98c8df5d4643a2bdd51b"
+    },
+    "recipes/official/builder/explainer-video/templates/core/explainer-video/engine/icons.js": {
+      "mode": 420,
+      "sha256": "bc4a8ceb53cb280f200276bd1f80299e555ec64db242b6211d6386faea4384bc"
+    },
+    "recipes/official/builder/explainer-video/templates/core/explainer-video/engine/render-video.mjs": {
+      "mode": 420,
+      "sha256": "0a11346b2d499f329387a9e4ad56c014d4c828924daccf45ba00b093d3f0e8c0"
+    },
+    "recipes/official/builder/explainer-video/templates/core/explainer-video/examples/mcp/evidence.md": {
+      "mode": 420,
+      "sha256": "d52805caa7a1573af7374fbaefdea7282f4d3e01e21f058ea0a74254821d3914"
+    },
+    "recipes/official/builder/explainer-video/templates/core/explainer-video/examples/mcp/index.html": {
+      "mode": 420,
+      "sha256": "bc7416247f9b5771d3b9db1fde028f1b3480d1813e1c8bf58f08cb2a70570e50"
+    },
+    "recipes/official/builder/explainer-video/templates/core/explainer-video/examples/mcp/plan.md": {
+      "mode": 420,
+      "sha256": "621a4b08ebb69f8317bdac225cce62ecdeb5084f93bc3cb97852d46cc01900eb"
+    },
+    "recipes/official/builder/explainer-video/templates/core/explainer-video/examples/mcp/scene.js": {
+      "mode": 420,
+      "sha256": "3cf3177456171ef14832989415761272410a5cde9e205d2ce4389fd383976d81"
+    },
+    "recipes/official/builder/explainer-video/templates/core/explainer-video/references/icon-catalog/index.html": {
+      "mode": 420,
+      "sha256": "f38c9abd32a000a6f6e7ae125e3f58369f5a10b5ed74f646de50fc9dbce7f5d8"
+    },
+    "recipes/official/builder/explainer-video/templates/core/explainer-video/references/icon-catalog/scene.js": {
+      "mode": 420,
+      "sha256": "84c87a43c728e65ca684c39006d382f41920eeddfb899f9b583e6ec276e5dc08"
+    },
+    "recipes/official/builder/explainer-video/templates/core/explainer-video/references/scene-format.md": {
+      "mode": 420,
+      "sha256": "f5d5c93a28b62bdab577f203680a014691c8e83c7a90b35694503d2f17810a85"
+    },
+    "recipes/official/builder/explainer-video/tests/explainer-guard.sh": {
+      "mode": 493,
+      "sha256": "efbeb77b44997b81917a8372c03174792584317ef019ec9b081f66181e03508d"
+    },
+    "recipes/official/builder/explainer-video/tests/explainer-icons.sh": {
+      "mode": 420,
+      "sha256": "defeae8a3114c8ec67bfefb35bd6c6c62b0520c5546c17143be71cc5d35b481b"
+    },
+    "recipes/official/builder/explainer-video/tests/explainer-mp4.sh": {
+      "mode": 493,
+      "sha256": "08d01d99e057406e8cff78384924c1b6cd0351e83ba30527252ff78e74319a64"
+    },
+    "recipes/official/builder/explainer-video/tests/explainer-nocat.sh": {
+      "mode": 493,
+      "sha256": "c67bb5cc06c0ed32f08e2bd7f449db375c618c037fc386a0deea712a70d67479"
+    },
+    "recipes/official/builder/explainer-video/tests/explainer-project.sh": {
+      "mode": 493,
+      "sha256": "8f7182bd8f243aebaf023d6419fd6055f86247788cd1ffb06636e3f96c506587"
+    },
+    "recipes/official/builder/explainer-video/tests/explainer-skeleton.sh": {
+      "mode": 493,
+      "sha256": "767ae0ee03208370254df4f8c9184316c2455d3fc3a340981d8c192bf610385d"
+    },
+    "recipes/official/builder/explainer-video/tests/explainer-stills.sh": {
+      "mode": 493,
+      "sha256": "e64047a09b16fee951b449f513b409e9915814c1d37cafe7b5cf54fae4492742"
+    },
+    "recipes/official/utils/claude-docker-sandbox.md": {
+      "mode": 420,
+      "sha256": "ad9dae6432153ab9272b85b08f446c09edd86a981ab9b59e656ae17af5c084f1"
+    },
+    "recipes/official/utils/sandbox-handson.md": {
+      "mode": 420,
+      "sha256": "159c83760d68177b3384c600c8d8702125b811a4bf9b206dd4d630c1c16ec473"
+    },
+    "recipes/official/web/ai-search-knowledge/RECIPE.md": {
+      "mode": 420,
+      "sha256": "55b9ad2cf0eabb452324a7dda6226aa4654c3e6285db31ecd5151916ac0552db"
+    },
+    "recipes/official/web/ai-search-knowledge/assets/screens/01-list-mobile.webp": {
+      "mode": 420,
+      "sha256": "a92629370bc10451b4080aef9f7d83b9b1dffc2a3fd79dbbf1a1cf0f9e3d0a74"
+    },
+    "recipes/official/web/ai-search-knowledge/assets/screens/01-list-pc.webp": {
+      "mode": 420,
+      "sha256": "eb286fd7f8c9fca54a98cfee3b7960edd322f57726cb0a93ced822622ec89a8d"
+    },
+    "recipes/official/web/ai-search-knowledge/assets/screens/02-docs-mobile.webp": {
+      "mode": 420,
+      "sha256": "52451a1567d6735965341cf11cab48694358a77d92c461b9272ec7ba939fbc2d"
+    },
+    "recipes/official/web/ai-search-knowledge/assets/screens/02-docs-pc.webp": {
+      "mode": 420,
+      "sha256": "3d8b566d9ce8fffa8214efe8da35b5175184363a1dc09474487a0709849e8434"
+    },
+    "recipes/official/web/ai-search-knowledge/assets/screens/03-chat-mobile.webp": {
+      "mode": 420,
+      "sha256": "3f150c0a56052a0d1f4f6cc880ac71b68aec8f189a8366e768b971a2b9c2e79d"
+    },
+    "recipes/official/web/ai-search-knowledge/assets/screens/03-chat-pc.webp": {
+      "mode": 420,
+      "sha256": "ce928a7ebf7692f29ed893b30e159ad4a8ff39ca42bcc301c5019f96f3f67481"
+    },
+    "recipes/official/web/ai-search-knowledge/assets/screens/04-empty-list-pc.webp": {
+      "mode": 420,
+      "sha256": "43ebed35c4c30a79292294d9f3f801daf8218c25962a1cf49e415d955d2713b6"
+    },
+    "recipes/official/web/ai-search-knowledge/recipe.json": {
+      "mode": 420,
+      "sha256": "9a0ac0b982c507a232c2a7dbc22673f3fd546c5895acfc068938b29888601eb6"
+    },
+    "recipes/official/web/ai-search-knowledge/templates/core/scripts/setup-cloudflare.sh": {
+      "mode": 493,
+      "sha256": "75ca548d8086806dc9f31d24367cff40ac2f670aa28f4337ebdc688013ae51aa"
+    },
+    "recipes/official/web/ai-search-knowledge/templates/core/search.ts": {
+      "mode": 420,
+      "sha256": "6c8ca107fd83c75898a8d0ff60f30cc8da04abbfbb5dc16f6260853c1a1d6e19"
+    },
+    "recipes/official/web/ai-search-knowledge/templates/ui/chat.html": {
+      "mode": 420,
+      "sha256": "a182b32258970249d5c544bc9e24a8054c36af31f520dc90dd927fd6080bf64c"
+    },
+    "recipes/official/web/ai-search-knowledge/templates/ui/common.js": {
+      "mode": 420,
+      "sha256": "a1135bf44f9e7e7302caa915bab0732769bb6a3ce27ec410b01547c40c0aa71d"
+    },
+    "recipes/official/web/ai-search-knowledge/templates/ui/docs.html": {
+      "mode": 420,
+      "sha256": "e16d3b4ef46f2b122ee80e019e679b3d1734d5f6e59a1d91e4f1d4f39c366134"
+    },
+    "recipes/official/web/ai-search-knowledge/templates/ui/index.html": {
+      "mode": 420,
+      "sha256": "82c5f971807f8bac1f2f890b2c0ab3b66e60c885cff20185b0de6f67400a77ad"
+    },
+    "recipes/official/web/ai-search-knowledge/templates/ui/pdf-ingest.js": {
+      "mode": 420,
+      "sha256": "0b9369ecbb16dfc8d301f9d60b879ee0430eabeca72edd5c07f6c56a738bb971"
+    },
+    "recipes/official/web/ai-search-knowledge/templates/ui/styles.css": {
+      "mode": 420,
+      "sha256": "7a72fe7c5c985b3344068bb25f6845c1d5fd896d00633d132ea1d5504df7e636"
+    },
+    "recipes/official/web/ai-search-knowledge/tests/evidence-image-width-1980.sh": {
+      "mode": 493,
+      "sha256": "21b4dee1231ae3da0e14214ba3a1c8e88038acbbf174ac5c42b7e771d15d4c2a"
+    },
+    "recipes/official/web/ai-search-knowledge/tests/fixtures/data.json": {
+      "mode": 420,
+      "sha256": "397936472c20298d8c75327c892b77d1d0d93a9cf20af812faba1e148c7f58f5"
+    },
+    "recipes/official/web/ai-search-knowledge/tests/fixtures/fake-pnpm.sh": {
+      "mode": 493,
+      "sha256": "0489aca149975953983c943f17538c520ebfb73937e68ccb4f34ea5263a712dd"
+    },
+    "recipes/official/web/ai-search-knowledge/tests/fixtures/mock-api.mjs": {
+      "mode": 493,
+      "sha256": "c85c9218fca95b065fd71bfa260182e8db7babff1dccefbac75ebc0935217746"
+    },
+    "recipes/official/web/ai-search-knowledge/tests/fixtures/ui-harness.mjs": {
+      "mode": 420,
+      "sha256": "cb93cd829dda3e2998a49bd9d6bbf946303fecfda29463a2f6d39e3fb327f6e8"
+    },
+    "recipes/official/web/ai-search-knowledge/tests/fixtures/wrangler-jsonc.mjs": {
+      "mode": 420,
+      "sha256": "a915dacadb00d312383c92c7799394a0163f60a30dd590e9ce3b1c8016c95f5e"
+    },
+    "recipes/official/web/ai-search-knowledge/tests/setup-cloudflare-boundary.sh": {
+      "mode": 493,
+      "sha256": "c4f0cf6f23899655cf3b68361528c8b73d090066de3a8580f2448f36ea89b013"
+    },
+    "recipes/official/web/ai-search-knowledge/tests/smoke-typecheck.sh": {
+      "mode": 493,
+      "sha256": "867dad66b7932f9b3deee8191a14f9d828ee730accd7ddc021022353e8c7f12d"
+    },
+    "recipes/official/web/ai-search-knowledge/tests/ui/docs-has-accent-cta.mjs": {
+      "mode": 493,
+      "sha256": "1ba1cc4dc3af74788c02a87de3351b9a1ce318ff31a0d55c142aa80b58f54eea"
+    },
+    "recipes/official/web/ai-search-knowledge/tests/ui/kb-description-editable.mjs": {
+      "mode": 420,
+      "sha256": "08e4ffbbd4bbd3df6280cb5de10f5f3fbd65364c7b61374bc6b0de1ffcf1a9f2"
+    },
+    "recipes/official/web/ai-search-knowledge/tests/ui/modal-backdrop-close.mjs": {
+      "mode": 493,
+      "sha256": "d1a48193d7628adc2efa54c61e2fef89dfcd57ec38ee47b8ccc7bb1a2d4c2b42"
+    },
+    "recipes/official/web/ai-search-knowledge/tests/ui/modal-center.mjs": {
+      "mode": 493,
+      "sha256": "99cb354d3b81dc18ab8c3f7c10709fdb7ea2fe02241690185f2245055d4caace"
+    },
+    "recipes/official/web/ai-search-knowledge/tests/ui/no-forced-scroll-on-answer.mjs": {
+      "mode": 493,
+      "sha256": "853316ce9fc0854adb465c7f6fb20bf2e028e9be3918c56ce58e53dc88f5fda5"
+    },
+    "recipes/official/web/ai-search-knowledge/tests/ui/open-goes-to-docs.mjs": {
+      "mode": 493,
+      "sha256": "8f9dd192f8ae9ba5ca6106dc42ea830a35ae3db43d44f3f32afc15dd36b7bb2d"
+    },
+    "recipes/official/web/ai-search-knowledge/tests/ui/screens.mjs": {
+      "mode": 493,
+      "sha256": "ec03086b0816ef2d296009cb9fc7828a3c9368a324010109332016a02e436bf8"
+    },
+    "recipes/official/web/ai-search-knowledge/tests/ui/sidebar-on-all-pages.mjs": {
+      "mode": 493,
+      "sha256": "e2f72641a0cfa872d7dc85ffd91981cb8434562c40bc45b8b7b6e40f8d1c7378"
+    },
+    "recipes/official/web/file-bin.md": {
+      "mode": 420,
+      "sha256": "a4fe9129347ca71779649ecc26ff75733b28fd2a8d171aad6653494542cf744b"
+    },
+    "recipes/official/web/html-share-board.md": {
+      "mode": 420,
+      "sha256": "174a4abf12638324a008079f88380c97f5315c7984d978bf533034a437c600fa"
+    },
+    "recipes/official/web/manga-koma-search.md": {
+      "mode": 420,
+      "sha256": "8a4b5f298c7e076830a75b123054a1dffbe4667176b1f3c43801e4a078740afb"
+    },
+    "recipes/official/web/notion-wp.md": {
+      "mode": 420,
+      "sha256": "755d31308f489f3b0d5c4700ddb04c9ae2d984480e430bc7db0ef7064c314d23"
+    },
+    "tools/building/design.md": {
+      "mode": 420,
+      "sha256": "70670bb0b2860fe9e7a2b18b9ba906e697c645238445b5b39560f35b09577f37"
+    },
+    "tools/building/freshness.md": {
+      "mode": 420,
+      "sha256": "02355f0c73c9f5096004c6dc443551a78b8501e6d6bee95899738c5b0f4556fa"
+    },
+    "tools/building/index.md": {
+      "mode": 420,
+      "sha256": "abc5d81e313de711bef46bc94250dbfbc3ccef3e11c7f99fac0a2cc877c942e5"
+    },
+    "tools/building/legacy-recipes.md": {
+      "mode": 420,
+      "sha256": "1e2bf69646b347c511b915d974409de5ee5e68e8ac4c0fca81c8fe4bf6014918"
+    },
+    "tools/building/project.md": {
+      "mode": 420,
+      "sha256": "45798e6e372bd57762c6f04ff6a1be72363f0fc5a8dd19b9d67724d2dd0aea5f"
+    },
+    "tools/building/settings.md": {
+      "mode": 420,
+      "sha256": "5263fa5c39485e452f6933b79db3d75ed8ca2dcd442e6d88e7cd085fc254c594"
+    },
+    "tools/building/skills.md": {
+      "mode": 420,
+      "sha256": "efda71cb13984a1622d55ae3b3aea3cb5ddad2c3997fdc26ae5aaa7f6194dbd1"
+    },
+    "tools/building/templates/AGENTS.md.in": {
+      "mode": 420,
+      "sha256": "775883d90cd63bff327eb43548cca3c6941cd2f85bb03c83878f47bc80c2f1ae"
+    },
+    "tools/building/templates/CLAUDE.md.in": {
+      "mode": 420,
+      "sha256": "336cc4fbf19beaada7ccf9986414fa91851a8d7a07dfb3ccbe800a69eed0ab49"
+    },
+    "tools/building/templates/README.md.in": {
+      "mode": 420,
+      "sha256": "3c4ce48eb1eb351ffe0a352c8828078470964163533dce9e3616549ae54f7f06"
+    },
+    "tools/building/templates/build-contract.json": {
+      "mode": 420,
+      "sha256": "40f4762eb90239859f74ec4eff846b93af00b0a83eed57c581cc0d2540033c15"
+    },
+    "tools/building/templates/claude-settings.json": {
+      "mode": 420,
+      "sha256": "63d7c296cd2f64d1c2296d9ec2feef9d2dd635088f99175d56391c0ce4ef4251"
+    },
+    "tools/building/templates/codex-config.toml": {
+      "mode": 420,
+      "sha256": "6ae989e7f6ec6a69513d63855825eee68c8a7d5c94801ffa275151b1bc632a45"
+    },
+    "tools/building/templates/project-wiki.md.in": {
+      "mode": 420,
+      "sha256": "ef3873c551e249065642a5bb8ab5ef912e31ac8cd5e6cd01195f7e200a5dbc54"
+    },
+    "tools/building/verification.md": {
+      "mode": 420,
+      "sha256": "5a1848f4ba9a4acb66cb5e91ca33b7d44d3e4dec34b94d396ec8aea5962f2c5a"
+    },
+    "tools/building_check.py": {
+      "mode": 420,
+      "sha256": "b26b57ffef8a1d7ed9e780a845b801e61793a91a0de7b2cd9496648577f814bc"
+    },
+    "tools/design.md": {
+      "mode": 420,
+      "sha256": "7b1a9f98a6535c6dae43d87db31eb8d2c6d2a27c013cdb5e002d38e28fdd0bbd"
+    },
+    "tools/experience.md": {
+      "mode": 420,
+      "sha256": "f6061c72962e6155089c13d5053c9d8d8118374ff67fcc5cdd76cb64a048c6b7"
+    },
+    "tools/migrate_v3.py": {
+      "mode": 420,
+      "sha256": "bc607a424de022d122ea4571e703ef5ac2b674d0bbe7308865cc73335b2361ef"
+    },
+    "tools/onboarding.md": {
+      "mode": 420,
+      "sha256": "58c8d7d3a3ecc90c22067e7893f28c966925c5b64df37256fcafb761496323c1"
+    },
+    "tools/os-files.txt": {
+      "mode": 420,
+      "sha256": "f0b3bcc149b22967ee10c796f421e36d426f6625d07bb4a8cbaa9a7726885a6e"
+    },
+    "tools/os-update.md": {
+      "mode": 420,
+      "sha256": "8768639266366a7916aca1d160c67760d0fc10a764ecc21d32eeb8f470f3582f"
+    },
+    "tools/prototype_import.py": {
+      "mode": 420,
+      "sha256": "71abfeeec06ec0e3587b9e20b1a784af1435fb47c1e391a8bd2601afa7bd7aea"
+    },
+    "tools/prototypes.md": {
+      "mode": 420,
+      "sha256": "58e90b58bdb551a806d68e2c42699575ab290ede36c32e1b6279a34d76341a89"
+    },
+    "tools/recipe_list.py": {
+      "mode": 420,
+      "sha256": "ea233911511269784c734b9ac4a56a820fceeb174c4cfd2e7e9c73f92ab736f7"
+    },
+    "tools/recipes.md": {
+      "mode": 420,
+      "sha256": "92557eef87d0ad47c8f01f40c288eff454081d7695f15384927a62b74d205272"
+    },
+    "tools/release_package.py": {
+      "mode": 420,
+      "sha256": "1a3e90f489f5511ba63b53ecb0ba68c4efa839d836f686be19db0d4ef4467b70"
+    },
+    "tools/setup.md": {
+      "mode": 420,
+      "sha256": "e745b2935a028c83848c315127919f2b3376b0799f571d6438503aa0c0b5b3a6"
+    },
+    "tools/update_os.py": {
+      "mode": 493,
+      "sha256": "3f2bf21faf0ebe5e0720bf51515a432d7fe4a040a573f8ed7fe13edbacdeebaa"
+    },
+    "tools/v3-migration.md": {
+      "mode": 420,
+      "sha256": "1875c1b551792de19316112e65dbc40b584d5e5c499f77f8be34db5cd5448780"
+    },
+    "tools/v3_topics.py": {
+      "mode": 420,
+      "sha256": "09cd27c04ccb07551feb44e79ac95cf929dfe5254a104562faace434555b7d8e"
+    },
+    "tools/wiki-view/admin/config.yml": {
+      "mode": 420,
+      "sha256": "bfb4690397e1d55b93e5316226498b2e79b1b30c0fe3d3c6407b53092dfe1437"
+    },
+    "tools/wiki-view/admin/index.html": {
+      "mode": 420,
+      "sha256": "8e36d0b0771167de97a6df7e48488493157e11d490262895caa6f89743bd202d"
+    },
+    "tools/wiki-view/graph.html": {
+      "mode": 420,
+      "sha256": "9fcf09d6b009c1f72fd7c255246fdb0e65d943f4f4926b849446439813e68d61"
+    },
+    "tools/wiki-view/index.html": {
+      "mode": 420,
+      "sha256": "a9bd9e2666d1686abbee1197c5c1f1f39df1a8fdbfaad0b2ec420452983ca5e5"
+    },
+    "tools/wiki_view.py": {
+      "mode": 420,
+      "sha256": "c463ecba09ba60751b5a7a524346bfb3b8af8cfd35ddf2d4fdd709583c8b66ac"
+    },
+    "wiki/README.md": {
+      "mode": 420,
+      "sha256": "e1c5252f1891c64216cc332c6b93e36ad11d42217a83e9e78c2e2e72155e16ed"
+    },
+    "wiki/index.md": {
+      "mode": 420,
+      "sha256": "d2b5bcfd7f5108275f5c4a30a4ed40306cec3581953ce84d86f230d7684ab087"
+    },
+    "wiki/me/profile.md": {
+      "mode": 420,
+      "sha256": "b047c32ac94fcc19d4e11e71efcffd812d7a9f368507abf7607b81a3f1234bb0"
+    },
+    "wiki/me/proposals.md": {
+      "mode": 420,
+      "sha256": "f33c1879a3bc948867758c4b7187462e32d4449627dcff1494526c3064d47689"
+    },
+    "wiki/notes/index.md": {
+      "mode": 420,
+      "sha256": "c30cfb1c44343e300bf4b3e40661e15097347e7e375175b472498d00e9722e93"
+    },
+    "wiki/projects/index.md": {
+      "mode": 420,
+      "sha256": "882e21753bb7cc6f9a93208997cc340c493570f71532f9c6e9b89caa3518c099"
+    }
+  },
+  "format": 1,
+  "version": "4.0.0"
+}

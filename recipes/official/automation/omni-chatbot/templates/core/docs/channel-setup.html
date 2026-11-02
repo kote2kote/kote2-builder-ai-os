@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{PROJECT_NAME}} — チャネル接続手順書</title>
+<style>
+  :root {
+    --fg: #222;
+    --muted: #666;
+    --link: #1a73e8;
+    --bg: #fff;
+    --card-bg: #f7f7f7;
+    --border: #e0e0e0;
+    --accent: #2b6cb0;
+    --code-bg: #f1f1f1;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, "Hiragino Sans", "Helvetica Neue", Arial, sans-serif;
+    color: var(--fg);
+    background: var(--bg);
+    line-height: 1.7;
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 32px 24px 80px;
+  }
+  h1 { font-size: 26px; border-bottom: 2px solid var(--accent); padding-bottom: 8px; margin-top: 0; }
+  h2 { font-size: 20px; margin-top: 40px; padding-left: 10px; border-left: 4px solid var(--accent); }
+  h3 { font-size: 16px; margin-top: 24px; }
+  p, li { font-size: 15px; }
+  a { color: var(--link); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code { background: var(--code-bg); padding: 2px 6px; border-radius: 4px; font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 13px; }
+  pre { background: var(--code-bg); padding: 12px 16px; border-radius: 6px; overflow-x: auto; font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 13px; line-height: 1.5; }
+  pre code { background: transparent; padding: 0; }
+  table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 14px; }
+  th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--border); }
+  th { background: var(--card-bg); }
+  .callout { background: var(--card-bg); border-left: 4px solid var(--accent); padding: 14px 18px; margin: 18px 0; border-radius: 0 6px 6px 0; }
+  .callout strong { color: var(--accent); }
+  .muted { color: var(--muted); font-size: 14px; }
+  hr { border: none; border-top: 1px solid var(--border); margin: 32px 0; }
+</style>
+</head>
+<body>
+
+<h1>チャネル接続手順書</h1>
+
+<p>{{PROJECT_NAME}} を Slack / Discord / Chatwork / LINE それぞれと繋ぐ手順です。
+<strong>1 チャネルずつ繋いで動作確認</strong>してから次に進むのがおすすめです。</p>
+
+<div class="callout">
+  <strong>前提</strong>: サーバーが起動していて、外から届く公開 URL
+  <code>{{WEBHOOK_BASE_URL}}</code> が決まっていること
+  (ローカルモードなら名前付き Cloudflare Tunnel の <code>https://ホスト名</code>、Workers デプロイなら <code>https://…workers.dev</code>)。
+  Webhook URL はこの公開 URL の末尾に <code>/webhook/{チャネル名}</code> を付けたものです。<br><br>
+  <strong>合鍵(キー)の扱い</strong>: この手順で発行するキーは、すべて<strong>ご自身の手で</strong>
+  <code>.env</code> に記入します(Workers デプロイの場合はさらに <code>pnpm wrangler secret put {キー名}</code> で登録)。
+  <strong>.env を書き換えたらサーバーを再起動</strong>してから次の手順へ(旧プロセスが残っていると新しい値が効きません)。
+  チャットや AI に値を貼らないでください。
+</div>
+
+<hr>
+
+<h2>① Slack(メンションに返信)</h2>
+
+<table>
+  <tr><th>集める値</th><th>.env のキー</th></tr>
+  <tr><td>Bot User OAuth Token(xoxb で始まる)</td><td><code>SLACK_BOT_TOKEN</code></td></tr>
+  <tr><td>Signing Secret</td><td><code>SLACK_SIGNING_SECRET</code></td></tr>
+</table>
+
+<ol>
+  <li><a href="https://api.slack.com/apps">api.slack.com/apps</a> → <strong>Create New App</strong> → From scratch → 名前とワークスペースを選ぶ</li>
+  <li><strong>OAuth &amp; Permissions</strong> → Bot Token Scopes に <code>app_mentions:read</code> <code>chat:write</code> <code>im:history</code> を追加</li>
+  <li>同ページ上部の <strong>Install to Workspace</strong> でインストール → 表示された Bot User OAuth Token を控える</li>
+  <li><strong>Basic Information</strong> → App Credentials → <strong>Signing Secret</strong> を控える</li>
+  <li>2 つの値を <code>.env</code> に記入してサーバーを再起動(URL 検証にも署名チェックが掛かるため、この順番を守る)</li>
+  <li><strong>Socket Mode</strong>(左メニュー)が <strong>OFF</strong> であることを確認(ON だとイベントが Request URL に一切届かない)</li>
+  <li><strong>Event Subscriptions</strong> → ON → Request URL に <code>{{WEBHOOK_BASE_URL}}/webhook/slack</code> を入力(自動で Verified ✓ になる)</li>
+  <li>Subscribe to bot events に <code>app_mention</code> と <code>message.im</code> を追加 → <strong>Save Changes</strong>(再インストールを求められたら従う)</li>
+  <li>動作確認: チャンネルにボットを招待(<code>/invite @ボット名</code>)して <code>@ボット名 こんにちは</code></li>
+</ol>
+
+<hr>
+
+<h2>② Discord(/ask スラッシュコマンド)</h2>
+
+<table>
+  <tr><th>集める値</th><th>.env のキー</th></tr>
+  <tr><td>Public Key</td><td><code>DISCORD_PUBLIC_KEY</code></td></tr>
+  <tr><td>Application ID</td><td><code>DISCORD_APPLICATION_ID</code></td></tr>
+  <tr><td>Bot Token</td><td><code>DISCORD_BOT_TOKEN</code></td></tr>
+</table>
+
+<ol>
+  <li><a href="https://discord.com/developers/applications">discord.com/developers/applications</a> → <strong>New Application</strong></li>
+  <li><strong>General Information</strong> で <strong>Public Key</strong> と <strong>Application ID</strong> を控える</li>
+  <li><strong>Bot</strong> タブ → <strong>Reset Token</strong> で Bot Token を控える</li>
+  <li>3 つの値を <code>.env</code> に記入してサーバーを再起動</li>
+  <li><strong>General Information</strong> → <strong>Interactions Endpoint URL</strong> に <code>{{WEBHOOK_BASE_URL}}/webhook/discord</code> を入力して保存(サーバーが起動していないと保存に失敗します)</li>
+  <li><code>/ask</code> コマンドを登録する(ターミナルで 1 回だけ実行。<code>.env</code> の値を読み込んで叩きます):
+<pre><code>source .env
+curl -sS -X POST \
+  "https://discord.com/api/v10/applications/${DISCORD_APPLICATION_ID}/commands" \
+  -H "Authorization: Bot ${DISCORD_BOT_TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"ask","description":"AIに質問する","options":[{"type":3,"name":"text","description":"聞きたいこと","required":true}]}'</code></pre></li>
+  <li><strong>Installation</strong>(または OAuth2 → URL Generator で <code>bot</code> + <code>applications.commands</code>)からサーバーへ招待</li>
+  <li>動作確認: サーバーで <code>/ask text:こんにちは</code></li>
+</ol>
+
+<div class="callout">
+  💡 Discord だけ「メンションに返信」ではなく <code>/ask</code> コマンド方式です。
+  普通のメッセージ受信には常駐接続(24 時間動き続けるプログラム)が必要で、
+  Webhook 方式の今の構成では受けられないため。常駐 Bot が必要になったら AI に相談してください(拡張できます)。
+</div>
+
+<hr>
+
+<h2>③ Chatwork(自分宛メンションに返信)</h2>
+
+<table>
+  <tr><th>集める値</th><th>.env のキー</th></tr>
+  <tr><td>API Token</td><td><code>CHATWORK_API_TOKEN</code></td></tr>
+  <tr><td>Webhook トークン</td><td><code>CHATWORK_WEBHOOK_TOKEN</code></td></tr>
+</table>
+
+<ol>
+  <li>ボット用の Chatwork アカウントを用意(自分のアカウントでも試せますが、その場合「自分宛メンション」= あなた宛です)</li>
+  <li>右上メニュー → <strong>サービス連携</strong> → <strong>API Token</strong> を発行して控える</li>
+  <li>同じくサービス連携 → <strong>Webhook</strong> → 新規作成:
+    <ul>
+      <li>Webhook URL: <code>{{WEBHOOK_BASE_URL}}/webhook/chatwork</code></li>
+      <li>イベント: <strong>自分宛のメンション(mention_to_me)</strong></li>
+    </ul>
+  </li>
+  <li>作成時に表示される <strong>トークン</strong> を控える(これが <code>CHATWORK_WEBHOOK_TOKEN</code>)</li>
+  <li>2 つの値を <code>.env</code> に記入してサーバーを再起動</li>
+  <li>動作確認: グループチャットで <code>[To:ボットのアカウント]</code> 付きでメッセージを送る</li>
+</ol>
+
+<hr>
+
+<h2>④ LINE(トークに返信)</h2>
+
+<table>
+  <tr><th>集める値</th><th>.env のキー</th></tr>
+  <tr><td>チャネルシークレット</td><td><code>LINE_CHANNEL_SECRET</code></td></tr>
+  <tr><td>チャネルアクセストークン(長期)</td><td><code>LINE_CHANNEL_ACCESS_TOKEN</code></td></tr>
+</table>
+
+<ol>
+  <li><a href="https://developers.line.biz/console/">LINE Developers コンソール</a> → プロバイダー作成 → <strong>Messaging API チャネル</strong>を作成(LINE 公式アカウントが紐づきます)</li>
+  <li><strong>チャネル基本設定</strong> → <strong>チャネルシークレット</strong> を控える</li>
+  <li><strong>Messaging API 設定</strong> → <strong>チャネルアクセストークン(長期)</strong> を発行して控える</li>
+  <li>2 つの値を <code>.env</code> に記入してサーバーを再起動</li>
+  <li>同じ Messaging API 設定で:
+    <ul>
+      <li><strong>Webhook URL</strong>: <code>{{WEBHOOK_BASE_URL}}/webhook/line</code> を入力 → <strong>検証</strong>ボタンで「成功」を確認 → <strong>Webhook の利用</strong>を ON</li>
+      <li><strong>応答メッセージ</strong>(自動応答)を OFF(LINE Official Account Manager 側の設定。ON のままだと定型文が二重に返ります)</li>
+    </ul>
+  </li>
+  <li>動作確認: QR コードでボットを友だち追加してトークで話しかける</li>
+</ol>
+
+<hr>
+
+<h2>繋がらない時は</h2>
+
+<ul>
+  <li>このフォルダを AI で開いて「<strong>疎通テストして</strong>」と話しかける(チャネルごとの確認手順を AI が一緒にたどります)</li>
+  <li>まず <code>{{WEBHOOK_BASE_URL}}/</code> をブラウザで開き、本文が「{{PROJECT_NAME}} is running」であることを見る(200 でも本文が別プロジェクトなら、トンネルの向き先ポートを他のプロセスが先取りしています)</li>
+  <li>ログを見る: ローカルモードはサーバーを起動したターミナル / Workers デプロイは <code>pnpm wrangler tail</code></li>
+  <li>よくある原因: .env 更新後の再起動忘れ(旧プロセスがポートに居座ったまま)/ Slack の Socket Mode が ON / Workers デプロイでの <code>secret put</code> 忘れ / Webhook URL の末尾チャネル名の打ち間違い</li>
+</ul>
+
+<p class="muted">— kote2 Builder 生成(レシピ omni-chatbot 同梱の手順書)</p>
+
+</body>
+</html>
