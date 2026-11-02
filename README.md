@@ -4,8 +4,6 @@
 
 Keep conversations and decisions from Claude Code or Codex in a **Wiki**, your deliverables in **projects**, and reusable ways of working in **recipes**. Pick up where you left off on another day—or with another AI—by referring to those records. This is a working environment, not a replacement for your computer's operating system.
 
-> **Early preview.** Third-party rights and usage terms, as well as first-time setup guidance, still need review. A dedicated ZIP, tag, GitHub Release, or attestation is not required for normal setup or OS updates.
-
 ## What you can do
 
 - **Think together** — Explore ideas with the context of your work and past records.

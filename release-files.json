@@ -34,7 +34,7 @@
     },
     "README.md": {
       "mode": 420,
-      "sha256": "e55f03afc49b91a0d8ada85a5df54378e85b4c6fc94aa54a34689bd9cd40ed59"
+      "sha256": "988dae27b65d48d68b545de747b8fba8410373eaccab851295a3134af050f01a"
     },
     "THIRD_PARTY.md": {
       "mode": 420,
@@ -618,7 +618,7 @@
     },
     "tools/os-files.txt": {
       "mode": 420,
-      "sha256": "ec0d718af24f4934f2fd292f1bf962854c9ae6700c19407b0dc7e89f9e0027ad"
+      "sha256": "3566d3667e7c45bfee4121f72deeb3712df425040b2ceb3083db4a3457aa36c1"
     },
     "tools/os-update.md": {
       "mode": 420,
