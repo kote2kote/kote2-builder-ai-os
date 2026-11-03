@@ -1,10 +1,14 @@
 #!/usr/bin/env python3
 """Validate conversation-authored topic plans; never infer classifications."""
 import copy
+import functools
 import hashlib
+import importlib.util
 import json
 import os
+import posixpath
 import re
+import stat
 import uuid
 from pathlib import Path
 from urllib.parse import quote
@@ -200,10 +204,16 @@ def entry_link(label, path):
     return "- [" + re.sub(r"([\\`*_{}\[\]<>!|])", r"\\\1", label) + "](" + quote(path, safe="/.") + ")"
 
 
-def markdown_destinations(content):
-    from wiki_view import navigation_links
+@functools.lru_cache(maxsize=1)
+def navigation_parser():
+    spec = importlib.util.spec_from_file_location("v3_topics_wiki_view", Path(__file__).resolve().with_name("wiki_view.py"))
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module.navigation_links
 
-    destinations = navigation_links(content)
+
+def markdown_destinations(content):
+    destinations = navigation_parser()(content)
     return {(destination[2:] if destination.startswith("./") else destination).split("#", 1)[0]
             for destination in destinations}
 
@@ -332,12 +342,10 @@ def snapshot(P, base_hash, api, session_id=None):
                              mode=(P.v3 / path).stat().st_mode & 0o777,
                              disposition="target_source" if path in target_sources else "excluded_from_classification"))
     manifest.sort(key=lambda item: (item["root"], item["path"]))
-    head = api.git(P.ws, "rev-parse", "HEAD")
-    if head.returncode or not head.stdout.strip():
-        fail("workspace HEAD required")
+    head = api.workspace_head(P.ws)
     plan = dict(schema_version=SCHEMA, policy_version=POLICY,
                 migration_session_id=session_id or uuid.uuid4().hex, plan_phase="intermediate", batch_cursor=0,
-                base_plan_hash=base_hash, workspace_head=head.stdout.strip(), input_manifest=manifest,
+                base_plan_hash=base_hash, workspace_head=head, input_manifest=manifest,
                 category_defs=categories, targets=targets, changes=[], plan_hash="")
     return seal(plan), content, files
 
@@ -349,6 +357,10 @@ def validate(P, base_hash, proposal, api, final=False):
     if not isinstance(session_id, str) or not re.fullmatch(r"[a-f0-9]{32}", session_id):
         fail("invalid migration session ID")
     fresh, content, files = snapshot(P, base_hash, api, session_id)
+    if not fresh["workspace_head"] and isinstance(proposal["workspace_head"], str):
+        prefix = "repair-" if base_hash.startswith("repair-") else ""
+        fresh["base_plan_hash"] = prefix + api.base_hash(P, workspace_head_value=proposal["workspace_head"])
+        fresh["workspace_head"] = proposal["workspace_head"]
     for key in ("schema_version", "policy_version", "base_plan_hash", "workspace_head", "input_manifest"):
         if proposal[key] != fresh[key] or type(proposal[key]) is not type(fresh[key]):
             if key == "base_plan_hash":
@@ -482,7 +494,7 @@ def bundle(P, plan, content, files, api):
             data = ("---\n" + "\n".join(key + ": " + json.dumps(value, ensure_ascii=False) for key, value in fields) + "\n---\n").encode()
         members = [target for target in plan["targets"] if item["id"] in target["os_topics"]]
         links = ["- [" + re.sub(r"([\\`*_{}\[\]<>!|])", r"\\\1", target["destination_path"]) + "](" +
-                 quote(os.path.relpath(target["destination_path"], "wiki/notes/topics"), safe="/.") + ")" for target in members]
+                 quote(posixpath.relpath(target["destination_path"], "wiki/notes/topics"), safe="/.") + ")" for target in members]
         data = region(data, "\n".join(links) or "所属する知識はまだありません。")
         item["after_hash"] = digest(data)
         put(P, path, data, api)
@@ -523,16 +535,57 @@ def summary(plan):
                 limitations="名前の意味的重複と origin=user の本人指定根拠は技術保証せず、AI/本人の確認が必要です。")
 
 
+def is_link(path):
+    try:
+        info = Path(path).lstat()
+    except FileNotFoundError:
+        return False
+    return stat.S_ISLNK(info.st_mode) or bool(getattr(info, "st_file_attributes", 0) & 0x400)
+
+
 def session_dir(ws, api):
-    response = api.git(ws, "rev-parse", "--absolute-git-dir")
-    if response.returncode:
-        fail("workspace git directory unavailable")
-    return Path(response.stdout.strip()) / "v3-topics"
+    ws = ws.resolve()
+
+    def checked(directory):
+        for path in (directory, *directory.parents):
+            if is_link(path):
+                raise PlanGuidance("移行セッションの保存先または親がリンクです。保存先を変更せず、復旧記録を確認してください。")
+        if directory.exists() and not directory.is_dir():
+            raise PlanGuidance("移行セッションの保存先が通常のフォルダではありません。復旧記録を確認してください。")
+        return directory
+
+    local = ws / ".v3-topics"
+    metadata = ws / ".git"
+    if is_link(metadata):
+        raise PlanGuidance(".git がリンクです。保存先を変更せず、復旧記録を確認してください。")
+    response = api.git(ws, "rev-parse", "--absolute-git-dir", optional=True)
+    root = api.git(ws, "rev-parse", "--show-toplevel", optional=True)
+    if response.returncode == 0 and response.stdout.strip() and root.returncode == 0 and Path(root.stdout.strip()).resolve() == ws.resolve():
+        directory = Path(response.stdout.strip()) / "v3-topics"
+    else:
+        if metadata.is_file():
+            raise PlanGuidance("Git で .git ファイルの参照先を照合できません。保存・再開先を推測せず停止します。Git を準備して resume から確認してください。")
+        elif metadata.is_dir():
+            head = metadata / "HEAD"
+            if response.returncode != 127 or is_link(head) or not head.is_file() or head.stat().st_nlink != 1:
+                raise PlanGuidance("Git 領域を安全に照合できません。保存先を変更せず、Git を準備して resume から確認してください。")
+            if not re.fullmatch(r"(?:ref: refs/[^\s]+|[0-9a-fA-F]{40}|[0-9a-fA-F]{64})\n?", head.read_text(encoding="utf-8")):
+                raise PlanGuidance("Git HEAD が不正です。保存先を変更せず、Git と復旧記録を確認してください。")
+            directory = metadata / "v3-topics"
+        elif os.path.lexists(metadata):
+            raise PlanGuidance(".git が安全な形式ではありません。保存先を変更せず、復旧記録を確認してください。")
+        else:
+            return checked(local)
+    if os.path.lexists(local):
+        if os.path.lexists(directory):
+            raise PlanGuidance("移行セッションの保存先が2つあります。.v3-topics と Git 領域の v3-topics の復旧記録を確認してから再開してください。")
+        return checked(local)
+    return checked(directory)
 
 
 def save(plan, ws, api):
     directory = session_dir(ws, api)
-    if directory.is_symlink():
+    if is_link(directory):
         fail("session directory symlink")
     directory.mkdir(mode=0o700, exist_ok=True)
     path = directory / (plan["migration_session_id"] + ".json")
@@ -554,21 +607,22 @@ def load(path):
 def resume(ws, api):
     directory = session_dir(ws, api)
     results = []
+    if is_link(directory):
+        fail("session directory symlink")
     if not directory.exists():
         return results
-    if directory.is_symlink():
-        fail("session directory symlink")
-    if (directory / "transaction.json").exists() or (directory / "apply.lock").exists():
+    if os.path.lexists(directory / "transaction.json") or os.path.lexists(directory / "apply.lock"):
         results.append(dict(recovery_required=True, command="recover --plan <承認hash>",
                             message="中断記録を確認し、本人編集がなければ対象だけを復旧します。ロックを手動削除しないでください。"))
         return results
     probe = api.Plan(ws / "imports", ws)
     current_files, current_manifest = workspace_files(probe, api)
+    head = api.workspace_head(ws)
     for path in sorted(directory.glob("*.json")):
         if not re.fullmatch(r"[a-f0-9]{32}\.json", path.name):
             continue
         try:
-            if path.is_symlink() or not path.is_file() or path.stat().st_nlink != 1:
+            if is_link(path) or not path.is_file() or path.stat().st_nlink != 1:
                 fail("unsafe saved session")
             plan = load(path)
             if not isinstance(plan, dict) or set(plan) != KEYS or seal(copy.deepcopy(plan))["plan_hash"] != plan["plan_hash"]:
@@ -577,7 +631,8 @@ def resume(ws, api):
             results.append(dict(session_file=path.name, invalid_session=True,
                                 message="保存済み計画が破損または安全に読めません。この計画は再利用せず、保存済みの写しと照合してください。"))
             continue
-        applied = api.git(ws, "log", "--format=%H", "--fixed-strings", "--grep=計画の番号: " + plan["plan_hash"]).stdout.strip()
+        history = api.git(ws, "log", "--format=%H", "--fixed-strings", "--grep=計画の番号: " + plan["plan_hash"], optional=True) if head else None
+        applied = history.stdout.strip() if history is not None and history.returncode == 0 else None
         pending = 0
         for target in plan["targets"]:
             if target["os_topic_state"] != "pending":
@@ -591,7 +646,9 @@ def resume(ws, api):
             workspace_stale = previous_manifest != sorted(current_manifest, key=lambda item: item["path"])
             results.append(dict(migration_session_id=plan["migration_session_id"], plan_phase=plan["plan_phase"],
                                 batch_cursor=plan["batch_cursor"], total=len(plan["targets"]), pending=pending,
-                                applied=bool(applied), stale=workspace_stale or api.git(ws, "rev-parse", "HEAD").stdout.strip() != plan["workspace_head"],
+                                applied=bool(applied) if applied is not None else None,
+                                git_verification_required=applied is None,
+                                stale=workspace_stale or applied is None or head != plan["workspace_head"],
                                 source_recheck_required=any(item["root"] == "v3" for item in plan["input_manifest"]),
                                 session_file=str(path)))
     return results

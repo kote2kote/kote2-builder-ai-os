@@ -16,6 +16,7 @@ import argparse
 import ctypes
 import datetime
 import hashlib
+import importlib.util
 import json
 import os
 import re
@@ -25,7 +26,9 @@ import sys
 from types import SimpleNamespace
 from pathlib import Path
 
-import v3_topics
+_topics_spec = importlib.util.spec_from_file_location("v3_topics", Path(__file__).resolve().with_name("v3_topics.py"))
+v3_topics = importlib.util.module_from_spec(_topics_spec)
+_topics_spec.loader.exec_module(v3_topics)
 import stat
 import base64
 import uuid
@@ -437,10 +440,6 @@ def check_ws(ws, allow_migrated=False):
     for f in ["AGENTS.md", "wiki/index.md", "wiki/me/profile.md"]:
         if not (ws / f).is_file():
             raise Stop(f"ワークスペースではないようです（{f} がありません）: {ws}")
-    r = subprocess.run(["git", "-C", str(ws), "rev-parse", "--show-toplevel"],
-                       capture_output=True, text=True, encoding="utf-8")
-    if r.returncode != 0 or Path(r.stdout.strip()).resolve() != ws.resolve():
-        raise Stop("ワークスペースのいちばん上が git のワークスペースになっていません。")
     if not allow_migrated and (ws / "wiki/notes/v3-migration.md").exists():
         raise Stop("このワークスペースには、もう v3 から移した記録があります（wiki/notes/v3-migration.md）。"
                    "2回は移しません。", 3)
@@ -1420,8 +1419,16 @@ def make_plan(v3, ws):
     return P, ver, warn, base_hash(P)
 
 
-def base_hash(P):
-    head = git(P.ws, "rev-parse", "HEAD").stdout.strip()
+def workspace_head(ws):
+    root = git(ws, "rev-parse", "--show-toplevel", optional=True)
+    if root.returncode or Path(root.stdout.strip()).resolve() != Path(ws).resolve():
+        return ""
+    head = git(ws, "rev-parse", "HEAD", optional=True)
+    return head.stdout.strip() if head.returncode == 0 else ""
+
+
+def base_hash(P, workspace_head_value=None):
+    head = workspace_head(P.ws) if workspace_head_value is None else workspace_head_value
     h = hashlib.sha256()
     h.update(head.encode())
     for k in sorted(P.writes):
@@ -1526,9 +1533,21 @@ def show(P, ver, warn, pid, full):
 
 # ---------- 書く ----------
 
-def git(ws, *args, input=None):
-    return subprocess.run(["git", "--literal-pathspecs", "-C", str(ws), *args],
-                          capture_output=True, text=True, encoding="utf-8", input=input)
+def git(ws, *args, input=None, optional=False):
+    try:
+        return subprocess.run(["git", "--literal-pathspecs", "-C", str(ws), *args],
+                              capture_output=True, text=True, encoding="utf-8", input=input)
+    except OSError:
+        if optional:
+            return subprocess.CompletedProcess(["git", *args], 127, "", "Git unavailable")
+        raise Stop("Git を実行できません。適用・復旧には Git が必要です。準備後に refresh → evaluate → 本人の再承認へ進めてください。", 4) from None
+
+
+def require_git_workspace(ws):
+    root = git(ws, "rev-parse", "--show-toplevel")
+    head = git(ws, "rev-parse", "--verify", "HEAD")
+    if root.returncode or Path(root.stdout.strip()).resolve() != Path(ws).resolve() or head.returncode or not head.stdout.strip():
+        raise Stop("適用・復旧には、このワークスペース自身の Git と最初の commit が必要です。準備後に refresh → evaluate → 本人の再承認へ進めてください。", 4)
 
 
 def index_paths(ws, paths):
@@ -1541,13 +1560,14 @@ def pathspec_input(ws, paths):
 
 
 def apply(P, pid):
+    require_git_workspace(P.ws)
     if not callable(getattr(P, "topic_guard", None)) or pid != getattr(P, "topic_plan_hash", None):
         raise Stop("内容分類を含む最終計画が必要です。prepare → evaluate → 本人確認の順に進めてください。", 4)
     directory = v3_topics.session_dir(P.ws, module_api())
     if directory.is_symlink():
         raise Stop("移行セッションの保存先がリンクです。", 4)
     directory.mkdir(mode=0o700, exist_ok=True)
-    if (directory / "transaction.json").exists():
+    if os.path.lexists(directory / "transaction.json"):
         raise Stop("中断した適用があります。resume → recover --plan <承認hash> で確認・復旧してから再開してください。", 4)
     lock = directory / "apply.lock"
     try:
@@ -1646,6 +1666,7 @@ def pid_alive(pid):
 
 
 def recover(ws, approved=None, internal=False):
+    require_git_workspace(ws)
     directory = v3_topics.session_dir(ws, module_api())
     if directory.is_symlink():
         raise Stop("復旧記録の保存先がリンクです。", 4)
@@ -1704,6 +1725,7 @@ def recover(ws, approved=None, internal=False):
 
 def apply_files(P, pid):
     ws = P.ws
+    require_git_workspace(ws)
     paths = sorted(set(P.writes) | set(P.modifies))
     for path in paths:
         safe_dest(ws, P.v3, path)
@@ -1779,6 +1801,9 @@ def apply_files(P, pid):
 
 
 def main():
+    for stream in (sys.stdout, sys.stderr):
+        if hasattr(stream, "reconfigure"):
+            stream.reconfigure(encoding="utf-8")
     ap = argparse.ArgumentParser(description="kote2 Builder v3 から、このワークスペースへ移す")
     ap.add_argument("cmd", choices=["scan", "prepare", "read", "checkpoint", "evaluate", "apply", "resume", "refresh", "recover"])
     ap.add_argument("--from", dest="v3", help="v3 のフォルダ（builder.md があるところ）")
@@ -1793,6 +1818,8 @@ def main():
     ws = Path(a.ws).expanduser().resolve() if a.ws else Path(__file__).resolve().parent.parent
     try:
         api = module_api()
+        if a.cmd == "apply":
+            require_git_workspace(ws)
         if a.cmd == "recover":
             check_ws(ws, allow_migrated=True)
             print(recover(ws, a.plan))
@@ -1809,7 +1836,9 @@ def main():
         if a.cmd == "scan":
             show(P, ver, warn, pid, a.full)
             plan, _, _ = v3_topics.snapshot(P, pid, api)
-            print(f"- 内容評価の対象 {len(plan['targets'])} 件。prepare で中間状態をgit領域へ保存し、分類を含む最終計画の承認が必要です。")
+            print(f"- 内容評価の対象 {len(plan['targets'])} 件。prepare で中間状態を保存し、分類を含む最終計画の承認が必要です。")
+            if not plan["workspace_head"]:
+                print("- Git未確認です。計画は .v3-topics（既存Git領域があればそちら）へ保存します。適用前にGitと最初のcommitを準備し、refresh → evaluate → 本人の再承認が必要です。")
             return 0
         if a.cmd == "prepare":
             plan, _, _ = v3_topics.snapshot(P, pid, api)

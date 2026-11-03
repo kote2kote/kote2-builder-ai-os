@@ -6,11 +6,11 @@
     },
     ".gitignore": {
       "mode": 420,
-      "sha256": "551dfd19cd71fd6f27ce4d9afbc2b528a8fab4962c036e911cc709f71ee5646c"
+      "sha256": "adef247188b77f5499f8a0eb4a31c8d7850ba8ff37a653d23aad54f7d90588a1"
     },
     "AGENTS.md": {
       "mode": 420,
-      "sha256": "70adcc972daaa42419274474be02548476618547ff6d132eacbec8e5af52a7e8"
+      "sha256": "3588c48eed4d7f8c89bde8c20adb8e7b061fb644f46172e2f357ab9bd40e9688"
     },
     "CLAUDE.md": {
       "mode": 420,
@@ -610,15 +610,15 @@
     },
     "tools/migrate_v3.py": {
       "mode": 420,
-      "sha256": "bc607a424de022d122ea4571e703ef5ac2b674d0bbe7308865cc73335b2361ef"
+      "sha256": "4921c3f880ab41ae43f59bd0956c229810d7b532d216279fa0b37d94c0254b6b"
     },
     "tools/onboarding.md": {
       "mode": 420,
-      "sha256": "58c8d7d3a3ecc90c22067e7893f28c966925c5b64df37256fcafb761496323c1"
+      "sha256": "49b014957a6e940df086c7ad2781273e7f77757a91ff2d918630dc6734b803bf"
     },
     "tools/os-files.txt": {
       "mode": 420,
-      "sha256": "3566d3667e7c45bfee4121f72deeb3712df425040b2ceb3083db4a3457aa36c1"
+      "sha256": "8a41331133576f1fea7c8a01e4c3452ea56d7e95447f731c703be18997466c03"
     },
     "tools/os-update.md": {
       "mode": 420,
@@ -646,7 +646,7 @@
     },
     "tools/setup.md": {
       "mode": 420,
-      "sha256": "e745b2935a028c83848c315127919f2b3376b0799f571d6438503aa0c0b5b3a6"
+      "sha256": "249c4cfe3f01b70ce08f4b53211dd62dc7092429be1eab696bfe989045066586"
     },
     "tools/update_os.py": {
       "mode": 493,
@@ -654,11 +654,11 @@
     },
     "tools/v3-migration.md": {
       "mode": 420,
-      "sha256": "1875c1b551792de19316112e65dbc40b584d5e5c499f77f8be34db5cd5448780"
+      "sha256": "20bf2dc2c1f19a23dad5babcd8224baa39e7ba42cb53ac8ab5d016874e8de4b3"
     },
     "tools/v3_topics.py": {
       "mode": 420,
-      "sha256": "09cd27c04ccb07551feb44e79ac95cf929dfe5254a104562faace434555b7d8e"
+      "sha256": "720288e4ff6c0cb3ed43d952bf5d407e94d1520c84af4bf9b569ce99b2ba1763"
     },
     "tools/wiki-view/admin/config.yml": {
       "mode": 420,
@@ -682,7 +682,7 @@
     },
     "wiki/README.md": {
       "mode": 420,
-      "sha256": "e1c5252f1891c64216cc332c6b93e36ad11d42217a83e9e78c2e2e72155e16ed"
+      "sha256": "7ece08409c7baef9757e617a6c3ddd40fafc41b449c3039d96a99fb16c5db3e7"
     },
     "wiki/index.md": {
       "mode": 420,
