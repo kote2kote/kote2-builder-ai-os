@@ -12,6 +12,7 @@ __pycache__/
 .claude/settings.local.json
 /.builder-os-update/
 /.v3-topics/
+/tools/.state/
 
 # 成果物は除外し、フォルダを残す目印だけ管理する
 /projects/*

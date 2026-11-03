@@ -544,20 +544,26 @@ def is_link(path):
 
 
 def session_dir(ws, api):
+    """Reuse one existing store; otherwise prefer Git, then the tools fallback."""
     ws = ws.resolve()
 
     def checked(directory):
-        for path in (directory, *directory.parents):
+        for path in (*reversed(directory.parents), directory):
             if is_link(path):
                 raise PlanGuidance("移行セッションの保存先または親がリンクです。保存先を変更せず、復旧記録を確認してください。")
-        if directory.exists() and not directory.is_dir():
-            raise PlanGuidance("移行セッションの保存先が通常のフォルダではありません。復旧記録を確認してください。")
+            if path.exists() and not path.is_dir():
+                raise PlanGuidance("移行セッションの保存先または親が通常のフォルダではありません。復旧記録を確認してください。")
         return directory
 
     local = ws / ".v3-topics"
+    fallback = ws / "tools/.state/v3-topics"
     metadata = ws / ".git"
     if is_link(metadata):
         raise PlanGuidance(".git がリンクです。保存先を変更せず、復旧記録を確認してください。")
+    if os.path.lexists(metadata) and not (metadata.is_file() or metadata.is_dir()):
+        raise PlanGuidance(".git が安全な形式ではありません。保存先を変更せず、復旧記録を確認してください。")
+    if metadata.is_file() and metadata.stat().st_nlink != 1:
+        raise PlanGuidance(".git がハードリンクです。保存先を変更せず、復旧記録を確認してください。")
     response = api.git(ws, "rev-parse", "--absolute-git-dir", optional=True)
     root = api.git(ws, "rev-parse", "--show-toplevel", optional=True)
     if response.returncode == 0 and response.stdout.strip() and root.returncode == 0 and Path(root.stdout.strip()).resolve() == ws.resolve():
@@ -575,20 +581,27 @@ def session_dir(ws, api):
         elif os.path.lexists(metadata):
             raise PlanGuidance(".git が安全な形式ではありません。保存先を変更せず、復旧記録を確認してください。")
         else:
-            return checked(local)
-    if os.path.lexists(local):
-        if os.path.lexists(directory):
-            raise PlanGuidance("移行セッションの保存先が2つあります。.v3-topics と Git 領域の v3-topics の復旧記録を確認してから再開してください。")
-        return checked(local)
-    return checked(directory)
+            directory = fallback
+    candidates = {local, fallback, directory}
+    existing = [path for path in candidates if os.path.lexists(path)]
+    if len(existing) > 1:
+        raise PlanGuidance("移行セッションの保存先が2つ以上あります。.v3-topics・tools/.state/v3-topics・Git 領域の復旧記録を確認してから再開してください。")
+    return checked(existing[0] if existing else directory)
 
 
 def save(plan, ws, api):
+    session_id = plan["migration_session_id"]
+    if not isinstance(session_id, str) or not re.fullmatch(r"[a-f0-9]{32}", session_id):
+        fail("invalid migration session ID")
     directory = session_dir(ws, api)
     if is_link(directory):
         fail("session directory symlink")
-    directory.mkdir(mode=0o700, exist_ok=True)
-    path = directory / (plan["migration_session_id"] + ".json")
+    path = directory / (session_id + ".json")
+    if os.path.lexists(path):
+        info = path.lstat()
+        if is_link(path) or not stat.S_ISREG(info.st_mode) or info.st_nlink != 1:
+            fail("unsafe saved session")
+    directory.mkdir(mode=0o700, parents=True, exist_ok=True)
     api.durable_json(path, plan)
     return path
 

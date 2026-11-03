@@ -19,6 +19,7 @@ import hashlib
 import importlib.util
 import json
 import os
+import posixpath
 import re
 import subprocess
 import unicodedata
@@ -766,7 +767,61 @@ class DashboardText(HTMLParser):
             self.parts.append(data)
 
 
-def project_documents(P, directory, destination):
+def project_recipe_catalog(P):
+    """Only copied/retained recipe entry points, keyed by their exact v3 source."""
+    files = {src: (dest, data) for src, dest, data in P.recipe_files}
+    packages = {posixpath.dirname(src) for src in files if src.endswith(('/recipe.json', '/RECIPE.md'))}
+    catalog = {}
+    for src, (dest, data) in files.items():
+        if not src.endswith('.md') or posixpath.basename(src).lower() == 'readme.md':
+            continue
+        parents = [unit for unit in packages if src.startswith(unit + '/')]
+        if parents and (len(parents) != 1 or src != parents[0] + '/RECIPE.md'):
+            continue
+        try:
+            fields = fm_keys(split_fm(data.decode('utf-8'))[0])
+            manifest = files.get(parents[0] + '/recipe.json') if parents else None
+            metadata = json.loads(manifest[1]) if manifest else fields
+        except (ValueError, UnicodeError):
+            metadata = {}
+        if not isinstance(metadata, dict):
+            metadata = {}
+        provenance = metadata.get('provenance', {})
+        if not isinstance(provenance, dict):
+            provenance = {}
+        sources = []
+        for value in [provenance.get(key) for key in ('core_source', 'ui_source', 'source_project')] + [metadata.get('source'), metadata.get('source_project')]:
+            if not isinstance(value, str):
+                continue
+            # Accept an explicit path and an optional explanatory parenthesis, never prose/name similarity.
+            match = re.fullmatch(r'`?(output/[^`\s()（）]+)`?(?:\s*[（(][^\r\n]*[)）])?', value.strip())
+            if not match or value.count('output/') != 1:
+                continue
+            parts = match[1].rstrip('/').split('/')
+            if (len(parts) >= 2 and not any(part in ('', '.', '..') for part in parts)
+                    and not re.search(r'[\\%?#\x00-\x1f\x7f-\x9f]', match[1])):
+                sources.append('/'.join(parts[:2]) + '/')
+        catalog[src] = dict(destination=dest, id=metadata.get('id'), version=metadata.get('version'), sources=sources)
+    return catalog
+
+
+def project_recipe_text(text, source, destination, catalog):
+    """Rebase explicit recipe links using source mapping (including from-v3 collisions)."""
+    def replace(match):
+        target = match.group(2)
+        if re.match(r'^[a-z][a-z0-9+.-]*:', target, re.I) or target.startswith(('#', '/', '<')):
+            return match[0]
+        path, _, fragment = target.partition('#')
+        original = posixpath.normpath(posixpath.join(posixpath.dirname(source), unquote(path)))
+        entry = catalog.get(original)
+        if not entry:
+            return match[0]
+        mapped = posixpath.relpath(entry['destination'], posixpath.dirname(destination))
+        return match[1] + quote(mapped, safe='/.-_~') + ('#' + fragment if fragment else '') + match[3]
+    return MD_LINK.sub(replace, text)
+
+
+def project_documents(P, directory, destination, catalog=None):
     sections = []
     dashboard = directory / "dashboard.html"
     if dashboard.is_file() and not P.link(dashboard):
@@ -814,7 +869,7 @@ def project_documents(P, directory, destination):
     sections += ["## README", ""]
     if readme.is_file() and not P.link(readme):
         sections += ["v3 の説明書を移行時点の記録として保持。相対リンクは元の案件フォルダ基準です。再開時に照合して更新してください。", "",
-                     P.load_text(readme), ""]
+                     project_recipe_text(P.load_text(readme), P.rel(readme), destination, catalog or {}), ""]
         P.ledger.append((P.rel(readme), destination, "READMEは要約だけでなく本文を保持"))
     else:
         sections += ["旧READMEはありません。再開時に使い方・試験・復旧方法を確認します。", ""]
@@ -822,6 +877,7 @@ def project_documents(P, directory, destination):
 
 
 def plan_projects(P, cards_by_project, project_cards):
+    catalog = project_recipe_catalog(P)
     out = P.v3 / "output"
     names = []
     if out.is_dir():
@@ -847,7 +903,7 @@ def plan_projects(P, cards_by_project, project_cards):
         if (d / "README.md").is_file() and not P.link(d / "README.md"):
             rl = P.load_text(d / "README.md").splitlines()
             title = first_h1(rl) or name
-            lead = readme_lead(rl)
+            lead = project_recipe_text(readme_lead(rl), P.rel(d / 'README.md'), dest, catalog)
             date = mdate(d / "README.md")
         if d.is_dir():
             lr = latest_record(d)
@@ -859,7 +915,7 @@ def plan_projects(P, cards_by_project, project_cards):
         if card:
             ck = card[1]
             title = ck.get("title") or title
-            lead = lead or ck.get("summary", "")
+            lead = lead or project_recipe_text(ck.get("summary", ""), card[0], dest, catalog)
             date = date or ck.get("updated")
         date = date or TODAY
         has_code = d.is_dir()
@@ -877,6 +933,25 @@ def plan_projects(P, cards_by_project, project_cards):
         if rec:
             body.append(f"- v3 の最後の作業記録: `output/{name}/{rec}`（{date}）")
         body += ["", "### 未決", "- 続けるかどうか", "", "### 決定ログ", ""]
+        recipe_targets = {entry['destination'] for entry in catalog.values()
+                          if has_code and f'output/{name}/' in entry['sources']}
+        if card and card[1].get('recipe'):
+            reference = card[1]['recipe']
+            identifier, _, version = reference.partition('@')
+            matches = {entry['destination'] for src, entry in catalog.items()
+                       if (src == identifier or entry['id'] == identifier)
+                       and (not version or str(entry['version']) == version)}
+            if len(matches) == 1:
+                recipe_targets.update(matches)
+            else:
+                P.ask.append(f'{dest} の v3 recipe 参照は未解決（候補 {len(matches)} 件）。名前だけで接続しない。')
+                P.count('project_recipe_unresolved')
+        if recipe_targets:
+            body += ['## 出典を確認できたレシピ', '', 'v3 の出典メタ情報・明示された recipe 参照に基づく接続です。現在の採用・動作確認を表しません。', '']
+            body += [f'- [レシピ]({quote(posixpath.relpath(target, posixpath.dirname(dest)), safe="/.-_~")})'
+                     for target in sorted(recipe_targets)]
+            body.append('')
+            P.count('project_recipe_links', len(recipe_targets))
         rel_cards = cards_by_project.get(name, []) + (cards_by_project.get(card[1].get("id"), []) if card else [])
         if rel_cards:
             body += ["## v3 の関係する記録"]
@@ -893,9 +968,10 @@ def plan_projects(P, cards_by_project, project_cards):
                 if re.match(r"^[A-Za-z_]", line) and not re.match(r"^(title|id):", line):
                     body.append(f"- v3 の {line}")
             body.append("")
-            body += [("##" + l if l.startswith("#") else l) for l in cbody]
+            linked_body = project_recipe_text('\n'.join(cbody), rel, dest, catalog).split('\n')
+            body += [("##" + l if l.startswith("#") else l) for l in linked_body]
             P.ledger.append((rel, dest, "仕事の紹介カード（本文は案件ページの末尾に元のまま）"))
-        body += project_documents(P, d, dest)
+        body += project_documents(P, d, dest, catalog)
         P.new(dest, "\n".join(body).rstrip() + "\n",
               f"output/{name}/" if has_code else None, "仕事のページ（コードは写していない）")
         P.projects.append((oid, title, f"output/{name}/" if has_code else "（コードなし）", rec or "", dest))
@@ -1010,6 +1086,8 @@ def plan_recipes(P):
                 j = json.loads((d / "recipe.json").read_text(encoding="utf-8"))
             except Exception:
                 j = {}
+        if not isinstance(j, dict):
+            j = {}
         texts = "".join((read_text(f) or "") for f in walk(d) if f.suffix == ".md")
         flag = " 【v3 の道具の手順あり】" if V3_TOOL_STEP.search(texts) else ""
         flag += recipe_flag(P, rel)
@@ -1404,8 +1482,8 @@ def make_plan(v3, ws):
     plan_profile(P)
     plan_knowledge(P)
     cards_by_project, project_cards = plan_wiki(P)
-    plan_projects(P, cards_by_project, project_cards)
     plan_recipes(P)
+    plan_projects(P, cards_by_project, project_cards)
     plan_top(P)
     plan_proposals(P)
     plan_recipe_links(P)

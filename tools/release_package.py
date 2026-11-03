@@ -28,7 +28,7 @@ MAX_TOTAL = 32 * 1024 * 1024
 MAX_ZIP = 16 * 1024 * 1024
 AUTO_INTERVAL = 24 * 60 * 60
 AUTO_TIMEOUT = 8
-AUTO_DIRECTORY = ".builder-os-update"
+AUTO_DIRECTORY = "tools/.state/os-update"
 ROOT_FILES = {"AGENTS.md", "CLAUDE.md", "README.md", "DESIGN.md", ".gitignore", ".claude/settings.json",
               "VERSION", "LICENSE", "NOTICE", "THIRD_PARTY.md", "CONTRIBUTING.md", INVENTORY}
 OS_ROOT_FILES = {"VERSION", "AGENTS.md", "CLAUDE.md", "README.md", "DESIGN.md", ".gitignore", ".claude/settings.json"}
@@ -100,7 +100,7 @@ def valid_path(name):
     require(isinstance(name, str) and len(name) <= 240 and re.fullmatch(r"[A-Za-z0-9._/-]+", name), "不正な配布パスです")
     parts = name.split("/")
     require(all(part not in {"", ".", ".."} for part in parts), "不正な配布パスです")
-    require(all(part.lower() not in {".git", ".hg", ".svn", "__pycache__", ".ds_store"}
+    require(all(part.lower() not in {".git", ".hg", ".svn", "__pycache__", ".ds_store", ".state"}
                 and not part.lower().startswith(".env") for part in parts), "配布できないパスです")
     require(name in ROOT_FILES or name in SEEDS or name in NAVIGATION_SEEDS or name == "projects/.gitkeep"
             or name.startswith("tools/") or is_bundled_recipe(name), "配布範囲外のファイルです")
@@ -601,13 +601,25 @@ def save_auto_state(directory, state):
             os.unlink(temporary)
 
 
+def auto_directory(workspace):
+    """Keep legacy settings in place; never choose between conflicting stores."""
+    current = workspace / AUTO_DIRECTORY
+    legacy = workspace / ".builder-os-update"
+    existing = [path for path in (current, legacy) if os.path.lexists(path)]
+    require(len(existing) <= 1, "自動確認の保存先が複数あります。旧記録と新記録を確認してください")
+    directory = existing[0] if existing else current
+    for path in (*reversed(directory.parents), directory):
+        require(no_links(path), "自動確認の保存先または親がリンクです")
+        require(not path.exists() or path.is_dir(), "自動確認の保存先または親が通常フォルダではありません")
+    return directory
+
+
 def automatic_status(workspace=".", enabled=None):
     quiet = {"notify": False}
     try:
         workspace_version(workspace)
-        directory = Path(workspace).resolve() / AUTO_DIRECTORY
-        require(no_links(directory), "自動確認の保存先がリンクです")
-        directory.mkdir(mode=0o700, exist_ok=True)
+        directory = auto_directory(Path(workspace).resolve())
+        directory.mkdir(mode=0o700, parents=True, exist_ok=True)
         with auto_lock(directory) as acquired:
             if not acquired:
                 return {**quiet, "status": "skipped", "reason": "busy"}

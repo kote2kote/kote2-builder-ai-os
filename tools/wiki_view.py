@@ -10,6 +10,7 @@
   python3 tools/wiki_view.py json                         index.json を出すだけ（確かめ用）
   python3 tools/wiki_view.py diagnose [--root ワークスペース]       関係の読取専用診断を JSON で出す（修復・保存はしない）
   python3 tools/wiki_view.py audit [--root ワークスペース]          Markdownの入口不足を点検する（指摘ありは終了コード1。保存しない）
+        --migration-completion で移行完了時のコピー先・生成案内・状態も確認（孤立・日付差は参考情報）。後日の通常点検では指定しない。
 
 - 本人のデータ（wiki/・recipes/）は読むだけ。このサーバーは何も書かない。直すのは Sveltia（ブラウザがワークスペースのファイルに直接書く）で、
   commit はしない（Sveltia の設定の「ローカルの変更を commit する」が OFF＝既定のとき。次に AI と話すとき、wiki/README.md の「保存前の安全確認」に従い、保存が必要なときに中身を見て commit する）。
@@ -22,6 +23,7 @@
 """
 import argparse
 import base64
+import datetime
 import hashlib
 import json
 import os
@@ -307,11 +309,7 @@ def resolve_references(root, pages, navigation):
     references = []
     for page in pages + navigation:
         page["related"], page["navigation_related"] = [], []
-        body = re.sub(r"<!--.*?-->", "", page.pop("_body_for_links"), flags=re.S)
-        body = re.sub(r"^(`{3,}|~{3,})[^\n]*\n.*?^\1[^\n]*$", "", body, flags=re.M | re.S)
-        body = re.sub(r"`[^`\n]*`", "", body)
-        body = re.sub(r"!\[([^\]]*)\]\([^)]*\)", lambda match: match.group(1), body)
-        raw = [("body", href) for href in re.findall(r"(?<!!)\[[^\]]*\]\(\s*<?([^)\s>]+)>?(?:\s+\"[^\"]*\")?\s*\)", body)]
+        raw = [("body", href) for href in navigation_links(page.pop("_body_for_links"))]
         if page["origin"] == "v3":
             related = page["fm"].get("related", [])
             raw += [("related", value) for value in (related if isinstance(related, list) else [related]) if value]
@@ -500,7 +498,7 @@ def navigation_links(body):
     body = re.sub(r"(?<!`)(`+)(?!`)(.*?)(?<!`)\1(?!`)", "", body, flags=re.S)
     body = re.sub(r"<!--.*?(?:-->|$)", "", body, flags=re.S)
     body = re.sub(r"<(pre|code|script|style|textarea)\b[^>]*>.*?(?:</\1\s*>|\Z)", "", body, flags=re.I | re.S)
-    body = re.sub(r"!\[[^\]]*\]\([^)]*\)", "", body)
+    body = re.sub(r"!\[([^\]]*)\]\([^)]*\)", lambda match: match[1], body)
     definitions = {}
     for definition in re.finditer(r"^ {0,3}\[([^\]]+)\]:[ \t]*", body, re.M):
         value, _ = markdown_destination(body, definition.end())
@@ -508,7 +506,7 @@ def navigation_links(body):
             definitions.setdefault(" ".join(definition[1].split()).casefold(), value)
     body = re.sub(r"^ {0,3}\[[^\]]+\]:[^\n]*$", "", body, flags=re.M)
     links, consumed = [], 0
-    for label in re.finditer(r"\[([^\]\n]+)\]", body):
+    for label in re.finditer(r"\[([^\]\n]*)\]", body):
         if label.start() < consumed:
             continue
         before = body[:label.start()]
@@ -601,6 +599,103 @@ def audit_navigation(root):
                              "リンク欄が古くても所属の正本と本文検索を確認する。結果だけで自動補修しない"])
 
 
+def audit_migration_completion(root):
+    """Opt-in handoff check, never a persistent requirement to keep projects active."""
+    root = Path(root).resolve()
+    findings, advisories = [], []
+    copied = 0
+    project_index = root / 'wiki/projects/index.md'
+    listed_projects = set()
+    if project_index in safe_files(root, root / 'wiki/projects', 'index.md'):
+        try:
+            _, index_body = front_matter(project_index.read_text(encoding='utf-8'))
+            for target in navigation_links(index_body):
+                if local_reference(target):
+                    listed_projects.add(posixpath.normpath(posixpath.join('wiki/projects', unquote(target.split('#', 1)[0]))))
+        except (OSError, UnicodeError):
+            pass  # The navigation audit reports unreadable/missing entry pages.
+
+    def date(value):
+        if not isinstance(value, str) or not re.fullmatch(r'\d{4}-\d{2}-\d{2}', value):
+            return None
+        try:
+            return datetime.date.fromisoformat(value)
+        except ValueError:
+            return None
+
+    def copied_directory(value):
+        # This is a filesystem path, not a URL. Do not normalize away traversal or follow links.
+        if not isinstance(value, str) or not local_reference(value) or '#' in value or '%' in value:
+            return False
+        parts = value.rstrip('/').split('/')
+        if len(parts) < 2 or parts[0] != 'projects' or any(part in ('', '.', '..') for part in parts):
+            return False
+        current = root
+        try:
+            for part in parts:
+                current = current / part
+                if not stat.S_ISDIR(current.lstat().st_mode):
+                    return False
+        except OSError:
+            return False
+        return True
+
+    for path in safe_files(root, root / 'wiki/projects', '*.md'):
+        relative = path.relative_to(root).as_posix()
+        try:
+            fields, body = front_matter(path.read_text(encoding='utf-8'))
+        except (OSError, UnicodeError):
+            findings.append(dict(code='unreadable_page', page=relative))
+            continue
+        if fields.get('os_output_state') != 'copied':
+            continue
+        copied += 1
+        if relative not in listed_projects:
+            findings.append(dict(code='copied_output_unlisted', page=relative, source='wiki/projects/index.md'))
+        if not fields.get('path'):
+            findings.append(dict(code='copied_output_missing_path', page=relative))
+        elif not copied_directory(fields['path']):
+            findings.append(dict(code='copied_output_directory_unavailable', page=relative))
+        # Inspect only the generated current section and next field, never preserved v3 documents.
+        generated = re.split(r'^## (?:README|v3 の紹介カード).*$', body, maxsplit=1, flags=re.M)[0]
+        current = re.search(r'^#{2,3} いまの状況[^\S\n]*\n(.*?)(?=^#{1,3} |\Z)', generated, re.M | re.S)
+        stale_current = current and any(phrase in current[1] for phrase in
+                                       ('ワークスペースにはまだ写していない', 'まだ再開していない'))
+        stale_next = str(fields.get('next', '')).startswith('続けるなら、写してよいかを本人に聞いてから、v3 の output/')
+        if stale_current or stale_next:
+            findings.append(dict(code='copied_output_stale_text', page=relative))
+        copied_at, updated = date(fields.get('os_output_copied_at')), date(fields.get('updated'))
+        if not copied_at or not updated or copied_at != updated:
+            advisories.append(dict(code='copied_output_date_mismatch', page=relative))
+        # A dated later transition to done/paused is legitimate. Same-day transitions cannot be
+        # distinguished with date-only metadata: this mode is explicitly for the initial handoff.
+        later_transition = copied_at and updated and updated > copied_at and fields.get('status') in ('done', 'paused')
+        if fields.get('status') != 'active' and not later_transition:
+            findings.append(dict(code='copied_output_not_active_at_completion', page=relative))
+
+    index = build_index(root)
+    linked = set()
+    for page in index['pages']:
+        if page['related']:
+            linked.add(page['key'])
+            linked.update(page['related'])
+    for page in index['pages']:
+        if not page['navigation'] and page['collection'] in ('projects', 'v3', 'recipes') and page['key'] not in linked:
+            advisories.append(dict(code='isolated_reference_page', page=page['path']))
+    for reference in index['diagnostics']['references']:
+        if reference['status'] in ('missing', 'ambiguous', 'not_migrated'):
+            source = next((page['path'] for page in index['pages'] if page['key'] == reference['source']),
+                          reference['source'] + '.md')
+            broken_link = reference['relation'] == 'body' and reference['status'] in ('missing', 'not_migrated')
+            (findings if broken_link else advisories).append(
+                dict(code='missing_reference_page' if broken_link else 'unresolved_reference', page=source,
+                     relation=reference['relation'], status=reference['status'], target=reference['reference']))
+    return dict(read_only=True, copied_projects_scanned=copied, findings=findings, advisories=advisories,
+                limitations=['コピー済み印のある案件だけを検査。成果物の内容一致・動作・機密検査はしない',
+                             'active は移行完了時だけの条件。後日の通常点検ではこのオプションを使わない。日付だけでは同日の状態変更を区別できない',
+                             'updated がコピー日より後の done/paused は許容。日付差・関係線の孤立・未解決メタ情報は参考情報であり失敗にしない。本文リンクの参照先欠落は指摘する'])
+
+
 def read_page(root, p, rel, col):
     text = p.read_text(encoding="utf-8", errors="replace")
     fm, body = front_matter(text)
@@ -611,6 +706,8 @@ def read_page(root, p, rel, col):
                 and os.path.realpath(rj).startswith(os.path.realpath(root / "recipes") + os.sep):  # 外のファイル・ハードリンクは読まない
             try:
                 spec = json.loads(rj.read_text(encoding="utf-8"))
+                if not isinstance(spec, dict):
+                    spec = {}
                 rid = str(spec.get("id") or rid)
                 fm.setdefault("title", spec.get("name") or rid)
                 fm.setdefault("summary", spec.get("summary") or "")
@@ -788,14 +885,18 @@ def main():
     d.add_argument("--root", default=".")
     audit = sub.add_parser("audit")
     audit.add_argument("--root", default=".")
+    audit.add_argument("--migration-completion", action="store_true",
+                       help="移行完了時だけコピー済み案件を点検（保存しない。後日の状態変更を強制しない）")
     a = ap.parse_args()
     root = Path(getattr(a, "root", ".")).resolve()
     if not (root / "wiki").is_dir():
         raise SystemExit("ワークスペースのいちばん上（wiki/ があるフォルダ）で実行してください")
     if a.cmd == "audit":
         data = audit_navigation(root)
+        if a.migration_completion:
+            data['migration_completion'] = audit_migration_completion(root)
         print(json.dumps(data, ensure_ascii=False, indent=1))
-        raise SystemExit(1 if data["findings"] else 0)
+        raise SystemExit(1 if data["findings"] or data.get('migration_completion', {}).get('findings') else 0)
     elif a.cmd in ("json", "diagnose"):
         data = build_index(root) if a.cmd == "diagnose" else view_index(root)
         print(json.dumps(data["diagnostics"] if a.cmd == "diagnose" else data, ensure_ascii=False, indent=1))

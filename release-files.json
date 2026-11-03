@@ -6,11 +6,11 @@
     },
     ".gitignore": {
       "mode": 420,
-      "sha256": "adef247188b77f5499f8a0eb4a31c8d7850ba8ff37a653d23aad54f7d90588a1"
+      "sha256": "5dccf02b405b36e0a2dbcf821c79bea6fd48bd9944229ad25cba6cebfb9ac531"
     },
     "AGENTS.md": {
       "mode": 420,
-      "sha256": "3588c48eed4d7f8c89bde8c20adb8e7b061fb644f46172e2f357ab9bd40e9688"
+      "sha256": "5294d387001acf59cdb1eae2923b71c41565c93ab60f2b856ce7b9d38c987535"
     },
     "CLAUDE.md": {
       "mode": 420,
@@ -42,7 +42,7 @@
     },
     "VERSION": {
       "mode": 420,
-      "sha256": "e1d49c569ae09b2ede16e2d83820a3809b35eb6c44c13ba9b5330598d6b8f43c"
+      "sha256": "3b10b6ad566eadbcacadb33c591f1ec629593d6adf47442e56e0f61996829ef7"
     },
     "projects/.gitkeep": {
       "mode": 420,
@@ -566,7 +566,7 @@
     },
     "tools/building/templates/AGENTS.md.in": {
       "mode": 420,
-      "sha256": "775883d90cd63bff327eb43548cca3c6941cd2f85bb03c83878f47bc80c2f1ae"
+      "sha256": "054646362c244c3cd7958ade507c0c5b62f892d7378bd132f46a92cb7061203f"
     },
     "tools/building/templates/CLAUDE.md.in": {
       "mode": 420,
@@ -610,19 +610,23 @@
     },
     "tools/migrate_v3.py": {
       "mode": 420,
-      "sha256": "4921c3f880ab41ae43f59bd0956c229810d7b532d216279fa0b37d94c0254b6b"
+      "sha256": "cd60291a52e340f136995828938d2dcb6d963d83fcef3856d5363a3b606d41bd"
     },
     "tools/onboarding.md": {
       "mode": 420,
-      "sha256": "49b014957a6e940df086c7ad2781273e7f77757a91ff2d918630dc6734b803bf"
+      "sha256": "47fd9d520e6ee0d3d76beaaabbb8d9e1ac90b22446aa4ea3bfb2792c6d3edd12"
     },
     "tools/os-files.txt": {
       "mode": 420,
-      "sha256": "8a41331133576f1fea7c8a01e4c3452ea56d7e95447f731c703be18997466c03"
+      "sha256": "35ac4ccaf1e90f999bddd4d55a2f62d4541fc606d1173365535219abfd42139c"
     },
     "tools/os-update.md": {
       "mode": 420,
-      "sha256": "8768639266366a7916aca1d160c67760d0fc10a764ecc21d32eeb8f470f3582f"
+      "sha256": "9f8d6282228c49f225c55ed6af5f1d6167caa439bf83ade35b9b5785d6f0e84a"
+    },
+    "tools/output_migration.py": {
+      "mode": 420,
+      "sha256": "49ae57f1153e18346176837729991970bdfe940079c2baab63550f3e6df5ca80"
     },
     "tools/prototype_import.py": {
       "mode": 420,
@@ -642,7 +646,7 @@
     },
     "tools/release_package.py": {
       "mode": 420,
-      "sha256": "1a3e90f489f5511ba63b53ecb0ba68c4efa839d836f686be19db0d4ef4467b70"
+      "sha256": "b01c15e6685e37319836ab31dd249fa0a0b0557feee21b6c6b52da4d9cc54e48"
     },
     "tools/setup.md": {
       "mode": 420,
@@ -650,15 +654,15 @@
     },
     "tools/update_os.py": {
       "mode": 493,
-      "sha256": "3f2bf21faf0ebe5e0720bf51515a432d7fe4a040a573f8ed7fe13edbacdeebaa"
+      "sha256": "0c836eb3d220fa61b2067d95a2d1daf2e55e1e197b7086fcec0fa207ccee56be"
     },
     "tools/v3-migration.md": {
       "mode": 420,
-      "sha256": "20bf2dc2c1f19a23dad5babcd8224baa39e7ba42cb53ac8ab5d016874e8de4b3"
+      "sha256": "33647c1ea004d9dfd99c0a10fcda329f07288fddf33fffeec763f6dad7f7f283"
     },
     "tools/v3_topics.py": {
       "mode": 420,
-      "sha256": "720288e4ff6c0cb3ed43d952bf5d407e94d1520c84af4bf9b569ce99b2ba1763"
+      "sha256": "c9dccd5293ecbf75fdd8d3498b7886e7be5dcd411cf27e6872f3c7150b082c4e"
     },
     "tools/wiki-view/admin/config.yml": {
       "mode": 420,
@@ -678,7 +682,7 @@
     },
     "tools/wiki_view.py": {
       "mode": 420,
-      "sha256": "c463ecba09ba60751b5a7a524346bfb3b8af8cfd35ddf2d4fdd709583c8b66ac"
+      "sha256": "b034760e18ec669b187f0d2647fb8366c0349cd38ac1fb0e53c4d7eca8fb2cfc"
     },
     "wiki/README.md": {
       "mode": 420,
@@ -706,5 +710,5 @@
     }
   },
   "format": 1,
-  "version": "4.0.0"
+  "version": "4.1.0"
 }

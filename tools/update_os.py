@@ -51,7 +51,7 @@ OS_FILES = {"VERSION", "AGENTS.md", "CLAUDE.md", "README.md", "DESIGN.md", ".git
 STABLE_VERSION = r"(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)"
 LEGACY_VERSION = r"[0-9]{4}-[0-9]{2}-[0-9]{2}\.[0-9]+"
 OS_DIRS = ("tools/",)
-SKIP_NAMES = {".DS_Store", "__pycache__"}
+SKIP_NAMES = {".DS_Store", "__pycache__", ".state"}
 MERGE_LINES = {".gitignore"}  # 行の集まりなので、ワークスペースで足した行を残して足し合わせる
 OSASCRIPT = "/usr/bin/osascript"  # 本人の画面に確認の窓を出す（macOS）
 ASK_SECONDS = 110  # 窓を出しておく秒数（AI の道具の待ち時間の既定 2 分に収める）
@@ -360,6 +360,26 @@ def check_git_locks(ws, head_ref):
 
 
 def pending(ws):
+    output_state = "tools/.state/output-migration"
+    for name in (output_state + "/transaction.json", output_state + "/apply.lock"):
+        target = ws / name
+        if os.path.lexists(target):
+            if not no_links(ws, name) or not target.is_file() or target.stat().st_nlink != 1:
+                raise Stop("output一括移行の記録を確認できません。OS更新より先に移行の状態を確認してください", 7)
+            if name.endswith("apply.lock"):
+                raise Stop("output一括移行のlockがあります。先にoutput_migration.py resumeで確認してください", 7)
+            try:
+                if target.stat().st_size > 16 * 1024 * 1024:
+                    raise ValueError("large journal")
+                record = json.loads(target.read_bytes())
+                if not isinstance(record, dict) or record.get("phase") != "complete":
+                    raise ValueError("unfinished journal")
+                expected = hashlib.sha256(json.dumps({key: value for key, value in record.items() if key != "journal_hash"},
+                    ensure_ascii=True, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+                if record.get("journal_hash") != expected:
+                    raise ValueError("invalid journal")
+            except (OSError, ValueError, TypeError):
+                raise Stop("output一括移行が中断中か記録不明です。OS更新より先にoutput_migration.py resumeで確認してください", 7)
     path = journal_path(ws)
     if path.exists() or is_link(path):
         raise Stop(f"OS更新が中断しています。途中の状態をcommitしないでください。復旧: python3 -I '{path / 'recover.py'}' recover --ws '{ws}'", 7)
