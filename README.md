@@ -29,7 +29,9 @@ Tested on macOS. Final verification on Windows is not complete. Your chosen AI e
 2. **Open the whole folder with your AI.** In Claude Code or Codex, open the folder containing this README—not a subfolder such as `wiki/`.
 3. **Say what you want to do.** Start in everyday language: “Hello” or “I'd like to create a document.”
 
-To tailor the workspace to you, ask, “Please start interview mode.” You do not need to register a profile. You can skip the questions for now and get straight to work.
+You can choose an optional seven-topic onboarding interview to introduce yourself, or skip it and get straight to work. You do not need to register a profile.
+
+For any topic, ask, “Interview me about…” or “Please start interview mode.” The AI asks one question at a time to help clarify your work, concerns, ideas, or requirements. It records key answers, organizes confirmed points at a stopping point, and uses relevant Wiki records in later conversations. You can pause or stop; ending an interview does not authorize building or external actions. [Interview guide](tools/interview.md) (Japanese).
 
 ## Things you can ask
 

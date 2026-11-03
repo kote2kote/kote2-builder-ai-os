@@ -16,10 +16,10 @@
 - .gitignore は、ワークスペースで足された行を残したまま新しい版の行を足す（--overwrite は要らない）。
 - 書く先やその途中のフォルダがリンクなら、何も書かずに止まる。1回の更新を1つの commit にする。失敗したら書いたファイルを元に戻す。
 - OS のファイルに commit されていない変更があれば止まる。ほかの場所の commit されていない変更には触らず、commit にも入れない。
-- 本人の承認: apply は、書く前に本人の画面に確認の窓を出し（macOS）、本人が「更新する」を押したときだけ書く。
+- 本人の承認: apply は、書く前に本人の画面に確認の窓を出し（macOS・Windows）、本人が「更新する」を押したときだけ書く。
   AI がふだん使う道具（コマンドの実行・ファイルの読み書き）では窓のボタンを押せないので、この道具での更新は本人の操作なしには進まない
-  （画面の操作を自動化する許可を AI に与えている環境では、この限りではない）。窓を出せない環境（macOS 以外）では、
-  本人が自分のターミナルで apply を実行し、「更新する」と打つ（AI も同じように打てるので、こちらは弱い）。
+  （画面の操作を自動化する許可を AI に与えている環境では、この限りではない）。Windowsの窓が出せないときは停止し、端末入力へ自動で切り替えない。
+  その他のOSでは本人が自分のターミナルで apply を実行し、「更新する」と打つ（AI も同じように打てるので、こちらは弱い）。
 - 防げないこと: ワークスペースに書き込める AI が、この道具を使わずに OS のファイルを書き換えること。承認を強制するには権限を分ける必要があり、
   この道具はそこまではしない。道具を通った更新の commit には「確認の窓で承認」と入るが、これは承認の証拠ではなく目印（まねできる）。
 - AI へ: 窓は省けない。本人が「確認はいらない」「そのまま入れて」と言ったときは、check の結果を伝えて同じ返事の中で apply してよい
@@ -525,6 +525,125 @@ def show(steps, pid, info):
     print(f"plan {pid}")
 
 
+WINDOWS_APPROVAL_SCRIPT = r"""
+$ErrorActionPreference = 'Stop'
+$form = $null
+$timer = $null
+$script:decision = 'no'
+try {
+    if (-not [Environment]::UserInteractive) { throw 'No interactive desktop' }
+    $payload = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String([Console]::In.ReadToEnd())) | ConvertFrom-Json
+    Add-Type -AssemblyName System.Windows.Forms
+    Add-Type -AssemblyName System.Drawing
+    [System.Windows.Forms.Application]::EnableVisualStyles()
+    $form = New-Object System.Windows.Forms.Form
+    $form.Text = 'kote2 Builder AI OS - 更新の確認'
+    $form.StartPosition = 'CenterScreen'
+    $form.AutoScaleMode = 'Font'
+    $form.Font = [System.Drawing.SystemFonts]::MessageBoxFont
+    $form.TopMost = $true
+    $form.MinimizeBox = $false
+    $screen = [System.Windows.Forms.Screen]::PrimaryScreen.WorkingArea
+    $width = [Math]::Min(760, [Math]::Max(280, $screen.Width - 48))
+    $height = [Math]::Min(600, [Math]::Max(240, $screen.Height - 80))
+    $form.Size = New-Object System.Drawing.Size($width, $height)
+    $form.MinimumSize = New-Object System.Drawing.Size([Math]::Min(360, $width), [Math]::Min(300, $height))
+    $form.BackColor = [System.Drawing.ColorTranslator]::FromHtml('#f0efe2')
+    $form.ForeColor = [System.Drawing.ColorTranslator]::FromHtml('#2f3a1c')
+    $layout = New-Object System.Windows.Forms.TableLayoutPanel
+    $layout.Dock = 'Fill'
+    $layout.Padding = New-Object System.Windows.Forms.Padding(16)
+    $layout.ColumnCount = 1
+    $layout.RowCount = 2
+    [void]$layout.RowStyles.Add((New-Object System.Windows.Forms.RowStyle([System.Windows.Forms.SizeType]::Percent, 100)))
+    [void]$layout.RowStyles.Add((New-Object System.Windows.Forms.RowStyle([System.Windows.Forms.SizeType]::AutoSize)))
+    $details = New-Object System.Windows.Forms.RichTextBox
+    $details.Dock = 'Fill'
+    $details.ReadOnly = $true
+    $details.DetectUrls = $false
+    $details.WordWrap = $true
+    $details.ScrollBars = 'Vertical'
+    $details.BackColor = [System.Drawing.Color]::White
+    $details.ForeColor = $form.ForeColor
+    $details.Text = [string]$payload.message
+    $buttons = New-Object System.Windows.Forms.FlowLayoutPanel
+    $buttons.Dock = 'Fill'
+    $buttons.AutoSize = $true
+    $buttons.FlowDirection = 'RightToLeft'
+    $buttons.WrapContents = $true
+    $buttons.Padding = New-Object System.Windows.Forms.Padding(0, 12, 0, 0)
+    $cancel = New-Object System.Windows.Forms.Button
+    $cancel.Text = 'やめる'
+    $cancel.AutoSize = $true
+    $cancel.MinimumSize = New-Object System.Drawing.Size(112, 36)
+    $cancel.Add_Click({ $script:decision = 'no'; $form.Close() })
+    $approve = New-Object System.Windows.Forms.Button
+    $approve.Text = '更新する'
+    $approve.AutoSize = $true
+    $approve.MinimumSize = New-Object System.Drawing.Size(112, 36)
+    $approve.Add_Click({ $script:decision = 'yes'; $form.Close() })
+    $buttons.Controls.Add($cancel)
+    $buttons.Controls.Add($approve)
+    $layout.Controls.Add($details, 0, 0)
+    $layout.Controls.Add($buttons, 0, 1)
+    $form.Controls.Add($layout)
+    $form.AcceptButton = $cancel
+    $form.CancelButton = $cancel
+    $form.Add_Shown({ $form.Activate(); [void]$cancel.Focus() })
+    $timer = New-Object System.Windows.Forms.Timer
+    $timer.Interval = [int]$payload.seconds * 1000
+    $timer.Add_Tick({ $script:decision = 'timeout'; $timer.Stop(); $form.Close() })
+    $timer.Start()
+    [void]$form.ShowDialog()
+    [Console]::Out.Write($script:decision)
+} catch {
+    [Console]::Out.Write('unavailable')
+    exit 1
+} finally {
+    if ($null -ne $timer) { $timer.Dispose() }
+    if ($null -ne $form) { $form.Dispose() }
+}
+"""
+
+
+def windows_powershell():
+    import ctypes
+    from ctypes import wintypes
+
+    kernel = ctypes.WinDLL("kernel32", use_last_error=True)
+    get_directory = kernel.GetSystemDirectoryW
+    get_directory.argtypes = (wintypes.LPWSTR, wintypes.UINT)
+    get_directory.restype = wintypes.UINT
+    buffer = ctypes.create_unicode_buffer(32768)
+    length = get_directory(buffer, len(buffer))
+    if not length or length >= len(buffer):
+        raise OSError("Windowsのシステムフォルダを確認できません")
+    executable = Path(buffer.value) / "WindowsPowerShell/v1.0/powershell.exe"
+    if not executable.is_file():
+        raise OSError("Windows標準のPowerShellが見つかりません")
+    return str(executable)
+
+
+def ask_windows(message):
+    payload = base64.b64encode(json.dumps(
+        {"message": message, "seconds": ASK_SECONDS}, ensure_ascii=False
+    ).encode("utf-8"))
+    script = base64.b64encode(WINDOWS_APPROVAL_SCRIPT.encode("utf-16le")).decode("ascii")
+    try:
+        result = subprocess.run(
+            [windows_powershell(), "-NoLogo", "-NoProfile", "-NonInteractive", "-STA", "-EncodedCommand", script],
+            input=payload, capture_output=True, timeout=ASK_SECONDS + 15,
+            creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
+        )
+    except subprocess.TimeoutExpired:
+        return "timeout"
+    except (OSError, AttributeError):
+        return "unavailable: Windowsの確認窓を起動できません"
+    if result.returncode == 0 and result.stdout in (b"yes", b"no", b"timeout"):
+        return result.stdout.decode("ascii")
+    return "unavailable: Windowsの確認窓を表示・確認できません"
+
+
 def ask_human(steps, info):
     """本人に聞く。本人が「更新する」を選んだときだけ "yes"。ほかは "no"（やめる）/ "timeout" / "unavailable: 理由"。"""
     changed = [r for r, _, c in steps if c]
@@ -538,6 +657,8 @@ def ask_human(steps, info):
         msg += f"\n\nplan {info['plan']} / 承認 {info['approval']}\nパッケージ SHA-256: {info['package']}"
         msg += "\n対象とmode: " + "、".join(f"{rel} ({state['mode']:04o})" for rel, state in info["expected"].items())
     msg += "\n\nAI の説明を読んで、よければ「更新する」を押してください。あとで元に戻せます。"
+    if WINDOWS:
+        return ask_windows(msg)
     if Path(OSASCRIPT).is_file():
         script = ["on run argv", "activate",
                   'display dialog (item 1 of argv) with title "kote2 Builder AI OS の更新" buttons {"やめる", "更新する"} '
