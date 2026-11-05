@@ -18,7 +18,7 @@ Wiki画面は、three@0.170.0をjsDelivr、@sveltia/cms@0.252.0をunpkgから読
 
 ## ひまわり猫（別条件・同梱画像）
 
-作者: kote2。対象は `recipes/official/builder/explainer-video/templates/core/explainer-video/character/cat1.png` から `cat8.png` の8枚です。
+作者: kote2。対象は `tools/skills/explainer-video/character/cat1.png` から `cat8.png` の8枚です。
 
 説明映像内での利用・公開・商用利用は認められています。この画像をkote2 Builder AI OS一式に含めた状態で再配布することも認められています。画像だけの再配布・販売、キャラクター単体の商品化はできません。詳細は画像と同じフォルダの `TERMS.md` を確認してください。この画像は本体のApache License 2.0の対象外です。
 

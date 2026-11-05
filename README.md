@@ -43,10 +43,15 @@ For any topic, ask, “Interview me about…” or “Please start interview mod
 | Use or save a method | “Show me the recipes.” / “Turn this into a recipe.” |
 | Save or restore history | “Please save my work.” / “I'd like to return to an earlier state.” |
 | Match a visual style | “Match the design of this document.” |
+| Explain with a diagram or video | “Make a diagram of how this project works.” / “Make an explainer video about this.” (video: Claude Code only) |
+| Try before building | After the design, “Make a prototype I can try first.” |
 | Start from a prototype | Attach a ZIP and ask, “Could we build an app like this?” |
+| Continue an existing project | “Can you manage this existing project here?” Share its folder location; the AI checks it and proposes a connection plan before changing anything. |
 | Update the OS | “Please update the OS.” |
 
 For new work or major changes, the AI shows a design first. It also asks before publishing, sending anything externally, or taking actions that incur costs.
+
+Projects made outside Builder can also be connected for ongoing work. Keep the original location, or approve a copy into `projects/`. The AI checks existing instructions, settings, and history first; copying a folder alone does not configure it or prove that it runs. Existing files are not replaced with new-project templates. See [existing projects](tools/building/existing-projects.md) for the procedure.
 
 ## Folder structure
 
@@ -103,7 +108,7 @@ Report your version, environment, and reproduction steps in the official reposit
 
 The core is licensed under the [Apache License 2.0](LICENSE). Also review the [attribution notices](NOTICE) and [third-party terms](THIRD_PARTY.md).
 
-The Himawari cat images are **not** covered by the Apache License 2.0. You may use them in explainer videos, publish and commercially use those videos, and redistribute the images as part of the complete OS package. Redistributing or selling the images on their own, or selling merchandise featuring the character alone, is prohibited. [Image usage terms](recipes/official/builder/explainer-video/templates/core/explainer-video/character/TERMS.md) (Japanese).
+The Himawari cat images are **not** covered by the Apache License 2.0. You may use them in explainer videos, publish and commercially use those videos, and redistribute the images as part of the complete OS package. Redistributing or selling the images on their own, or selling merchandise featuring the character alone, is prohibited. [Image usage terms](tools/skills/explainer-video/character/TERMS.md) (Japanese).
 
 kote2 does not claim rights to the deliverables you create with this OS. Check the terms of any materials and external services you use separately. This is not an official Anthropic or OpenAI product, is not affiliated with either company, and does not guarantee operation or results.
 

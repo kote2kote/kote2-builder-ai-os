@@ -2,6 +2,8 @@
 
 案件を直接開いて再開する時に読む。共通手順 `project-setup@1`。
 
+外部で作った既存案件を迎える場合は、先に [既存案件の接続](existing-projects.md) を読む。以下の新規用雛形で既存ファイルを置換しない。元の場所で続ける案も選べる。
+
 1. 保存先と対象AIを設計で決める。新しい継続案件の説明と状況は `wiki/projects/<名前>.md` に統合し、`## ダッシュボード` と `## README` を置く。ダッシュボードに提案・できること・いま/次・履歴、READMEに目的・完成条件・起動・停止・試験・復旧を分ける。案件フォルダのREADMEはWikiへの入口だけとし、別のdashboard.htmlを新設しない。単発成果物には一式不要。既存の同等ファイルを勝手に改名・上書きしない。
 2. 新規案件の雛形は [案件Wiki](templates/project-wiki.md.in)・[README入口](templates/README.md.in)・[共通指示](templates/AGENTS.md.in)。`{{...}}`を案件の事実で埋める。`PROJECT_WIKI_PATH` は案件フォルダからの相対パス（標準配置なら `../../wiki/projects/<名前>.md`）。`WORKSPACE_AGENTS_PATH` は同じ親OSの `AGENTS.md`（標準配置なら `../../AGENTS.md`）、`WIKI_RULES_PATH` は `wiki/README.md`（標準配置なら `../../wiki/README.md`）への相対パス。別配置では実際の所在から求め、3リンクの存在と同じ親OSへの接続を読むだけで照合する。提案がなければ無理に作らず未提案とする。案件索引からリンクする。利用者固有値や秘密は雛形/レシピへ入れない。
 3. Claudeを使うなら [CLAUDE入口](templates/CLAUDE.md.in)を `CLAUDE.md` に置き、[Claude設定](templates/claude-settings.json)を候補として確認する。Codexなら [Codex設定](templates/codex-config.toml)を候補にする。配置は[AI設定](settings.md)へ。すべての案件に3ディレクトリを作らない。
@@ -19,4 +21,4 @@
 
 完了報告には「Wikiの『案件』→対象案件で『ダッシュボード』『README』を切り替えて読めます」と、実際の案件ページへの案内を含める。Wikiの起動は `python3 tools/wiki_view.py open view`。特定のポートを固定しない。Wikiへ未反映なら完成済みとせず、未反映と追記案を示す。
 
-既存案件やv3からコードを再開する案件も、本人が統合を依頼した範囲で説明・提案・機能・履歴をWikiへ移す。元のCLAUDE.mdに独自指示があれば安全/禁止事項をAGENTSへ整理してから、CLAUDE.mdをプレーンな `@AGENTS.md` 一行にする。単に元の指示を消さない。設定・hooks・権限は別物で、自動変更しない。ファイル名は `CLAUDE.md`（大文字）。
+既存案件やv3からコードを再開する案件も、本人が統合を依頼した範囲で説明・提案・機能・履歴をWikiへつなぐ。既存README等の技術説明は原文への参照で保ち、本文を二重管理しない。元のCLAUDE.mdに独自指示があれば原文を保全し、安全/禁止事項をAGENTSへ整理する案を見せる。本人了承後に限りCLAUDE.mdをプレーンな `@AGENTS.md` 一行にする。単に元の指示を消さない。設定・hooks・権限は別物で、自動変更しない。ファイル名は `CLAUDE.md`（大文字）。

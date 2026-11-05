@@ -9,7 +9,11 @@
 | いつ | 読むもの | 確かめること |
 |---|---|---|
 | 新規制作・大きな変更の設計前 | [設計](design.md) | 完成条件・本人了承・出力と復旧 |
+| 外部で作った既存案件を管理・継続開発する | [既存案件の接続](existing-projects.md) | 原本保持・配置の選択・Git・独自設定・実行前確認 |
 | 継続案件を直接開けるようにする | [最小構成](project.md) | 独立した入口・設定・保存先 |
+| 設計の後、作る前に架空のデータで触って確かめる | [作る前の試作](../skills/create-prototype/SKILL.md) | 設計のOK・主な流れ1本・`projects/<名前>/prototype/` |
+| 見た目のある物を完成と報告する前 | [見た目の確認](../skills/design-review/SKILL.md) | 広い幅と狭い幅を撮って `DESIGN.md` と照らす・未確認の区別 |
+| 図解・説明動画を作る | [図解](../skills/visualize-project-architecture/SKILL.md)・[説明動画](../skills/explainer-video/SKILL.md)（Claude Code専用） | 根拠の表・置き場・撮影の可否 |
 | Claude/Codexの設定を作る・替える | [AI設定](settings.md) | 対象と実効設定・秘密・承認 |
 | スキルを追加・引き継ぐ | [スキル](skills.md) | 共通正本と各AIの探索先 |
 | 完成を判定する | [検証](verification.md) | 静的検査・実読込・動作の区別 |

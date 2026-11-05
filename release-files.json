@@ -10,7 +10,7 @@
     },
     "AGENTS.md": {
       "mode": 420,
-      "sha256": "8ce9aebd07232ce7ad93b264efd31b621722181b66977d236265003affd2af4d"
+      "sha256": "77f47e5748ea6d187863557c7e443e4f16320bc70609cdb64237cbc4915a0072"
     },
     "CLAUDE.md": {
       "mode": 420,
@@ -34,15 +34,15 @@
     },
     "README.md": {
       "mode": 420,
-      "sha256": "4d83b28253a58f8e0ff926c541a140406303ff5e8189c062009b871a5afdfd4c"
+      "sha256": "cbb1e8a9cbbfe97c92548d4e536fadf37a842dfa44fc96072802a413bc30cb8c"
     },
     "THIRD_PARTY.md": {
       "mode": 420,
-      "sha256": "601452ce5a3bf479c243456c13dade13e0e32094ede83144a8243ad69a02bff5"
+      "sha256": "ead4e283dd2013d20d1b4a2df819f68e3a2946d8210359dbe0e6068d8dfaaa19"
     },
     "VERSION": {
       "mode": 420,
-      "sha256": "8fb33dadbe981cf5847df269c10c2a3fe107f2b269d5ccb6db37d1f61ffc3bba"
+      "sha256": "1e5302003691b6fdc7bddc0736eef7ce3adc870e97afdfcfb497dde2a78ed545"
     },
     "projects/.gitkeep": {
       "mode": 420,
@@ -50,7 +50,7 @@
     },
     "recipes/README.md": {
       "mode": 420,
-      "sha256": "e551547f70c355469323b6d2615016b0ac9ac3fcdf357591dbdbaacf89e02f5a"
+      "sha256": "2e4ff0fa40023053511f61400e2ea9fe5d1ecf3df12f689f2ebe6bba8fbc59be"
     },
     "recipes/official/automation/n8n-home-tunnel/RECIPE.md": {
       "mode": 420,
@@ -246,7 +246,7 @@
     },
     "recipes/official/builder/explainer-video/RECIPE.md": {
       "mode": 420,
-      "sha256": "84ea50585ed7bed9512af1afa1abf39aae08bb17b2e6f230f8f6e1ff55113de9"
+      "sha256": "173adf67308ef03863b4ffe5342aa8a06c65d95e1683e977cabe0f90a208e65d"
     },
     "recipes/official/builder/explainer-video/assets/screens/01-scene-with-cat-pc.webp": {
       "mode": 420,
@@ -262,95 +262,7 @@
     },
     "recipes/official/builder/explainer-video/recipe.json": {
       "mode": 420,
-      "sha256": "54aabb6ab818e25484dcd739ae4124d3149687888bd66af245cbcd35abb42eb2"
-    },
-    "recipes/official/builder/explainer-video/templates/core/explainer-video/SKILL.md": {
-      "mode": 420,
-      "sha256": "64c189b3878befa0d929e63a11395122a827b55e1499f2133cdcc54e81baea03"
-    },
-    "recipes/official/builder/explainer-video/templates/core/explainer-video/character/TERMS.md": {
-      "mode": 420,
-      "sha256": "d76b0ac75fd2b6ee84276fe401a9a19866ffd094ad2777bbfc167f2e985f3364"
-    },
-    "recipes/official/builder/explainer-video/templates/core/explainer-video/character/cat1.png": {
-      "mode": 420,
-      "sha256": "37d33332e6518ef954655ad2033d6e62e749dc826b64da7f964e398f4c5cadb7"
-    },
-    "recipes/official/builder/explainer-video/templates/core/explainer-video/character/cat2.png": {
-      "mode": 420,
-      "sha256": "f943d494f8e7e898791df99b61ffe9570165621f987c921a54c7b972ae7d1e0f"
-    },
-    "recipes/official/builder/explainer-video/templates/core/explainer-video/character/cat3.png": {
-      "mode": 420,
-      "sha256": "3b86aecf29307485330d9f16819ad8d259ea3b25d859be9f261da5bf5344c92c"
-    },
-    "recipes/official/builder/explainer-video/templates/core/explainer-video/character/cat4.png": {
-      "mode": 420,
-      "sha256": "0479a895c4c2d4c578b3ae9536709335ce4b3a09b47ca8d613f9e26709e53825"
-    },
-    "recipes/official/builder/explainer-video/templates/core/explainer-video/character/cat5.png": {
-      "mode": 420,
-      "sha256": "31b90732c9a01bcbe1d6d5043da4c23cdd50b493543420284d271e384b46093f"
-    },
-    "recipes/official/builder/explainer-video/templates/core/explainer-video/character/cat6.png": {
-      "mode": 420,
-      "sha256": "61cd538f120825def39120e953c43aafa4ecb9ec72a3dfff96ea71ee3b61081b"
-    },
-    "recipes/official/builder/explainer-video/templates/core/explainer-video/character/cat7.png": {
-      "mode": 420,
-      "sha256": "94c991f8303acc910dc3e23f2226eafb6d700e5a9fe28868906a7920a7f36b61"
-    },
-    "recipes/official/builder/explainer-video/templates/core/explainer-video/character/cat8.png": {
-      "mode": 420,
-      "sha256": "033106bc0755e9e52b53ce4d2440db7a46ac62846b03e6dc3655c82ac5dc0e7a"
-    },
-    "recipes/official/builder/explainer-video/templates/core/explainer-video/character/character.js": {
-      "mode": 420,
-      "sha256": "308bab8c3a61ab09bf75f77b3240ca90e5cd2f4ae64a66c8f75ae9e7684e5968"
-    },
-    "recipes/official/builder/explainer-video/templates/core/explainer-video/engine/explainer.css": {
-      "mode": 420,
-      "sha256": "19bd1be33362f88d02419bde739b533668b7822bc93a4dd7fc378f5f8932a533"
-    },
-    "recipes/official/builder/explainer-video/templates/core/explainer-video/engine/explainer.js": {
-      "mode": 420,
-      "sha256": "e94e4e090ae7f73ceb69d6dc3cb59d1d90a318d3829b98c8df5d4643a2bdd51b"
-    },
-    "recipes/official/builder/explainer-video/templates/core/explainer-video/engine/icons.js": {
-      "mode": 420,
-      "sha256": "bc4a8ceb53cb280f200276bd1f80299e555ec64db242b6211d6386faea4384bc"
-    },
-    "recipes/official/builder/explainer-video/templates/core/explainer-video/engine/render-video.mjs": {
-      "mode": 420,
-      "sha256": "0a11346b2d499f329387a9e4ad56c014d4c828924daccf45ba00b093d3f0e8c0"
-    },
-    "recipes/official/builder/explainer-video/templates/core/explainer-video/examples/mcp/evidence.md": {
-      "mode": 420,
-      "sha256": "d52805caa7a1573af7374fbaefdea7282f4d3e01e21f058ea0a74254821d3914"
-    },
-    "recipes/official/builder/explainer-video/templates/core/explainer-video/examples/mcp/index.html": {
-      "mode": 420,
-      "sha256": "bc7416247f9b5771d3b9db1fde028f1b3480d1813e1c8bf58f08cb2a70570e50"
-    },
-    "recipes/official/builder/explainer-video/templates/core/explainer-video/examples/mcp/plan.md": {
-      "mode": 420,
-      "sha256": "621a4b08ebb69f8317bdac225cce62ecdeb5084f93bc3cb97852d46cc01900eb"
-    },
-    "recipes/official/builder/explainer-video/templates/core/explainer-video/examples/mcp/scene.js": {
-      "mode": 420,
-      "sha256": "3cf3177456171ef14832989415761272410a5cde9e205d2ce4389fd383976d81"
-    },
-    "recipes/official/builder/explainer-video/templates/core/explainer-video/references/icon-catalog/index.html": {
-      "mode": 420,
-      "sha256": "f38c9abd32a000a6f6e7ae125e3f58369f5a10b5ed74f646de50fc9dbce7f5d8"
-    },
-    "recipes/official/builder/explainer-video/templates/core/explainer-video/references/icon-catalog/scene.js": {
-      "mode": 420,
-      "sha256": "84c87a43c728e65ca684c39006d382f41920eeddfb899f9b583e6ec276e5dc08"
-    },
-    "recipes/official/builder/explainer-video/templates/core/explainer-video/references/scene-format.md": {
-      "mode": 420,
-      "sha256": "f5d5c93a28b62bdab577f203680a014691c8e83c7a90b35694503d2f17810a85"
+      "sha256": "bb381c57dc520848069659c830956cb442299fea94a3cd161840b972f96b423c"
     },
     "recipes/official/builder/explainer-video/tests/explainer-guard.sh": {
       "mode": 493,
@@ -538,7 +450,11 @@
     },
     "tools/building/design.md": {
       "mode": 420,
-      "sha256": "70670bb0b2860fe9e7a2b18b9ba906e697c645238445b5b39560f35b09577f37"
+      "sha256": "92fd2ff983ba9bbfdd7a4f7ec6a4be60129d5f49130bca4498b04271efe98cba"
+    },
+    "tools/building/existing-projects.md": {
+      "mode": 420,
+      "sha256": "d594acaa26e14ac1dbf5ed4180e9480e8257b7691bbc0a0a6b9a68dd795fbcf8"
     },
     "tools/building/freshness.md": {
       "mode": 420,
@@ -546,7 +462,7 @@
     },
     "tools/building/index.md": {
       "mode": 420,
-      "sha256": "abc5d81e313de711bef46bc94250dbfbc3ccef3e11c7f99fac0a2cc877c942e5"
+      "sha256": "96e20729e43d1f952bd5b2a84d40bb4b53722ebc7115b784bfdfc9b17764da18"
     },
     "tools/building/legacy-recipes.md": {
       "mode": 420,
@@ -554,7 +470,7 @@
     },
     "tools/building/project.md": {
       "mode": 420,
-      "sha256": "45798e6e372bd57762c6f04ff6a1be72363f0fc5a8dd19b9d67724d2dd0aea5f"
+      "sha256": "ebc4702fbecfb5c50672ec2554b115f83764be238cb31c7735b1266f71465409"
     },
     "tools/building/settings.md": {
       "mode": 420,
@@ -562,11 +478,11 @@
     },
     "tools/building/skills.md": {
       "mode": 420,
-      "sha256": "efda71cb13984a1622d55ae3b3aea3cb5ddad2c3997fdc26ae5aaa7f6194dbd1"
+      "sha256": "acb88fd830280357029d2a687f9cf1c0b9a2e08750d6c058311a74c24462d108"
     },
     "tools/building/templates/AGENTS.md.in": {
       "mode": 420,
-      "sha256": "054646362c244c3cd7958ade507c0c5b62f892d7378bd132f46a92cb7061203f"
+      "sha256": "8b157858b5faf56aaa82bc07057c2be20298fc14c304d89f4939ff22dfc0f5a4"
     },
     "tools/building/templates/CLAUDE.md.in": {
       "mode": 420,
@@ -602,7 +518,7 @@
     },
     "tools/design.md": {
       "mode": 420,
-      "sha256": "7b1a9f98a6535c6dae43d87db31eb8d2c6d2a27c013cdb5e002d38e28fdd0bbd"
+      "sha256": "55657592e43ebf41cd9340b1503074a0507dea12744bd85a496cdc4d0492f9b1"
     },
     "tools/experience.md": {
       "mode": 420,
@@ -622,7 +538,7 @@
     },
     "tools/os-files.txt": {
       "mode": 420,
-      "sha256": "28045ad38e75b335fa3ca4823a12cd196e7b5ffa668c4c0dadcdfeccec14cc04"
+      "sha256": "83cb268e21cef62457e75b9d9b8804f0befebc6ca5ee65653af1b35a9f440eca"
     },
     "tools/os-update.md": {
       "mode": 420,
@@ -638,15 +554,23 @@
     },
     "tools/prototypes.md": {
       "mode": 420,
-      "sha256": "58e90b58bdb551a806d68e2c42699575ab290ede36c32e1b6279a34d76341a89"
+      "sha256": "3e0ff2f045ced2890b368e28aa513a979b869b6c5f4d486c9a9f31dc456af599"
+    },
+    "tools/recipe-reproduce.md": {
+      "mode": 420,
+      "sha256": "c5cb767f5c0f45fbad436fa2a7dd600acac8423ea813846abed58d556ae65caa"
     },
     "tools/recipe_list.py": {
       "mode": 420,
-      "sha256": "ea233911511269784c734b9ac4a56a820fceeb174c4cfd2e7e9c73f92ab736f7"
+      "sha256": "7769cdf895e74825b58d10220c37ad40c5da5579c5fc180ed5abedd75aac2064"
+    },
+    "tools/recipe_zip.py": {
+      "mode": 420,
+      "sha256": "9ac91950d2a4907f62a16fe64eb7865f28203507ac9595d9da4d761536a69b21"
     },
     "tools/recipes.md": {
       "mode": 420,
-      "sha256": "92557eef87d0ad47c8f01f40c288eff454081d7695f15384927a62b74d205272"
+      "sha256": "d4c853a72fed8d8ca79e9308310c493378099399a187bd1deebd28a6c52df688"
     },
     "tools/release_package.py": {
       "mode": 420,
@@ -655,6 +579,142 @@
     "tools/setup.md": {
       "mode": 420,
       "sha256": "249c4cfe3f01b70ce08f4b53211dd62dc7092429be1eab696bfe989045066586"
+    },
+    "tools/skills/create-prototype/SKILL.md": {
+      "mode": 420,
+      "sha256": "659cac42416076a75299c9fb6e86c751b49438b9f866b48d36b589e39dd2d10c"
+    },
+    "tools/skills/create-prototype/references/builder-handoff.md": {
+      "mode": 420,
+      "sha256": "903b3b37e93e34f7c91563f562938bc37be5f8950cc71c1135ab0a4c4f1aac0b"
+    },
+    "tools/skills/create-prototype/references/kinds.md": {
+      "mode": 420,
+      "sha256": "865c43d2fa99439bde2664090974efa84692d981500a687539c32c3bfee47461"
+    },
+    "tools/skills/create-prototype/references/manual.html": {
+      "mode": 420,
+      "sha256": "6cea5f9ffb215b43ce3401893b6327bcf1b5072dab2b14685c4dd8a0cfa8bea6"
+    },
+    "tools/skills/create-prototype/scripts/shot.mjs": {
+      "mode": 420,
+      "sha256": "d0560e3e531b5f046035d8b2b377cfdb3758e0e0f59855c8fc4d1194c437d014"
+    },
+    "tools/skills/design-review/SKILL.md": {
+      "mode": 420,
+      "sha256": "a8862006b9960d67feb075e9e0f442a9a36639e9774867d3e23179dcde261f31"
+    },
+    "tools/skills/design-review/scripts/shot.mjs": {
+      "mode": 420,
+      "sha256": "d0560e3e531b5f046035d8b2b377cfdb3758e0e0f59855c8fc4d1194c437d014"
+    },
+    "tools/skills/explainer-video/SKILL.md": {
+      "mode": 420,
+      "sha256": "5861b016ad3851ebb757cd669cc67ee4b7891cd1c62cbf55a203aef74330e630"
+    },
+    "tools/skills/explainer-video/character/TERMS.md": {
+      "mode": 420,
+      "sha256": "e5dd2922aa454c83d9a67147ce95fedd821a919fbf4b0d1e87dc4a162863a9c5"
+    },
+    "tools/skills/explainer-video/character/cat1.png": {
+      "mode": 420,
+      "sha256": "37d33332e6518ef954655ad2033d6e62e749dc826b64da7f964e398f4c5cadb7"
+    },
+    "tools/skills/explainer-video/character/cat2.png": {
+      "mode": 420,
+      "sha256": "f943d494f8e7e898791df99b61ffe9570165621f987c921a54c7b972ae7d1e0f"
+    },
+    "tools/skills/explainer-video/character/cat3.png": {
+      "mode": 420,
+      "sha256": "3b86aecf29307485330d9f16819ad8d259ea3b25d859be9f261da5bf5344c92c"
+    },
+    "tools/skills/explainer-video/character/cat4.png": {
+      "mode": 420,
+      "sha256": "0479a895c4c2d4c578b3ae9536709335ce4b3a09b47ca8d613f9e26709e53825"
+    },
+    "tools/skills/explainer-video/character/cat5.png": {
+      "mode": 420,
+      "sha256": "31b90732c9a01bcbe1d6d5043da4c23cdd50b493543420284d271e384b46093f"
+    },
+    "tools/skills/explainer-video/character/cat6.png": {
+      "mode": 420,
+      "sha256": "61cd538f120825def39120e953c43aafa4ecb9ec72a3dfff96ea71ee3b61081b"
+    },
+    "tools/skills/explainer-video/character/cat7.png": {
+      "mode": 420,
+      "sha256": "94c991f8303acc910dc3e23f2226eafb6d700e5a9fe28868906a7920a7f36b61"
+    },
+    "tools/skills/explainer-video/character/cat8.png": {
+      "mode": 420,
+      "sha256": "033106bc0755e9e52b53ce4d2440db7a46ac62846b03e6dc3655c82ac5dc0e7a"
+    },
+    "tools/skills/explainer-video/character/character.js": {
+      "mode": 420,
+      "sha256": "308bab8c3a61ab09bf75f77b3240ca90e5cd2f4ae64a66c8f75ae9e7684e5968"
+    },
+    "tools/skills/explainer-video/engine/explainer.css": {
+      "mode": 420,
+      "sha256": "19bd1be33362f88d02419bde739b533668b7822bc93a4dd7fc378f5f8932a533"
+    },
+    "tools/skills/explainer-video/engine/explainer.js": {
+      "mode": 420,
+      "sha256": "e94e4e090ae7f73ceb69d6dc3cb59d1d90a318d3829b98c8df5d4643a2bdd51b"
+    },
+    "tools/skills/explainer-video/engine/icons.js": {
+      "mode": 420,
+      "sha256": "bc4a8ceb53cb280f200276bd1f80299e555ec64db242b6211d6386faea4384bc"
+    },
+    "tools/skills/explainer-video/engine/render-video.mjs": {
+      "mode": 420,
+      "sha256": "34be0b3d09933fe1cc6188175348444c0092a59932e953a3bfd1033091867ff8"
+    },
+    "tools/skills/explainer-video/examples/mcp/evidence.md": {
+      "mode": 420,
+      "sha256": "d52805caa7a1573af7374fbaefdea7282f4d3e01e21f058ea0a74254821d3914"
+    },
+    "tools/skills/explainer-video/examples/mcp/index.html": {
+      "mode": 420,
+      "sha256": "bc7416247f9b5771d3b9db1fde028f1b3480d1813e1c8bf58f08cb2a70570e50"
+    },
+    "tools/skills/explainer-video/examples/mcp/plan.md": {
+      "mode": 420,
+      "sha256": "621a4b08ebb69f8317bdac225cce62ecdeb5084f93bc3cb97852d46cc01900eb"
+    },
+    "tools/skills/explainer-video/examples/mcp/scene.js": {
+      "mode": 420,
+      "sha256": "3cf3177456171ef14832989415761272410a5cde9e205d2ce4389fd383976d81"
+    },
+    "tools/skills/explainer-video/references/icon-catalog/index.html": {
+      "mode": 420,
+      "sha256": "f38c9abd32a000a6f6e7ae125e3f58369f5a10b5ed74f646de50fc9dbce7f5d8"
+    },
+    "tools/skills/explainer-video/references/icon-catalog/scene.js": {
+      "mode": 420,
+      "sha256": "84c87a43c728e65ca684c39006d382f41920eeddfb899f9b583e6ec276e5dc08"
+    },
+    "tools/skills/explainer-video/references/scene-format.md": {
+      "mode": 420,
+      "sha256": "f5d5c93a28b62bdab577f203680a014691c8e83c7a90b35694503d2f17810a85"
+    },
+    "tools/skills/visualize-project-architecture/SKILL.md": {
+      "mode": 420,
+      "sha256": "852d214a65c3db33e0cda44d5478347f9f6abd6b43f81b73c4b5895ee523915d"
+    },
+    "tools/skills/visualize-project-architecture/agents/openai.yaml": {
+      "mode": 420,
+      "sha256": "b23efaa35f7fb26ddb3596d17bce2fc3f9e847acd059c4ff8b8b604d03304a26"
+    },
+    "tools/skills/visualize-project-architecture/references/diagram-strategy.md": {
+      "mode": 420,
+      "sha256": "50df0d6f38bdfb32958fbd0a70f1627a83f02cfeb862e971ca0d4fb45b6ee96b"
+    },
+    "tools/skills/visualize-project-architecture/references/visual-style.md": {
+      "mode": 420,
+      "sha256": "90db95baf6009a2f2b792d40b8cb87321b77e1f1d1e68b6df76f964a7da3e7c1"
+    },
+    "tools/skills/visualize-project-architecture/scripts/shot.mjs": {
+      "mode": 420,
+      "sha256": "d0560e3e531b5f046035d8b2b377cfdb3758e0e0f59855c8fc4d1194c437d014"
     },
     "tools/update_os.py": {
       "mode": 493,
@@ -682,15 +742,15 @@
     },
     "tools/wiki-view/index.html": {
       "mode": 420,
-      "sha256": "a9bd9e2666d1686abbee1197c5c1f1f39df1a8fdbfaad0b2ec420452983ca5e5"
+      "sha256": "dc9d79f07026210ec3cf1b07116bb8de070f2aa74fcca2ca76f266ff963d7399"
     },
     "tools/wiki_view.py": {
       "mode": 420,
-      "sha256": "b034760e18ec669b187f0d2647fb8366c0349cd38ac1fb0e53c4d7eca8fb2cfc"
+      "sha256": "0a934a83ae6e5e6f9f3ff18160f536aac36656992cdb9baaeb8b30ad6b5da4dd"
     },
     "wiki/README.md": {
       "mode": 420,
-      "sha256": "9602f51c2dd7a76019d67d099961be3c319adfd57c1c7787321be5f03c9ce80c"
+      "sha256": "be549fa3c44afb370d876823caaaf7352f9415c7814a35cf061b56d5cf01abaa"
     },
     "wiki/index.md": {
       "mode": 420,
@@ -714,5 +774,5 @@
     }
   },
   "format": 1,
-  "version": "4.2.0"
+  "version": "4.3.0"
 }

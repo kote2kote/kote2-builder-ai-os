@@ -7,7 +7,9 @@
 <!-- ============================================================
   tools/wiki-view/index.html — ワークスペースの Wiki の閲覧画面（kote2 Builder AI OS の本体。OS の更新で配る）
   - kote2 Builder v3 の LLM Wiki の閲覧画面（templates/wiki/index.html）を写して、OS の Wiki の項目に合わせたもの。
-    Markdown の表示・2D のグラフの計算は v3 のまま。v3 の Wiki にしかないもの（毎日メモ・プロジェクトの並び・昇格候補・棚・スタック）は外した
+    Markdown の表示・2D のグラフの計算は v3 のまま。v3 の Wiki にしかないもの（昇格候補・棚・スタック・毎日メモのタスクと今月の目標）は外した
+  - 📅 毎日メモと左の [プロジェクト | 知識] タブは、本人の希望で v3 から戻した（2026-11-05）。毎日メモは ./daily.json（tools/wiki_view.py が
+    ページの日付つきの行・Git の保存記録・v3 の毎日メモの写しからその場で集める）を開いたときだけ読む。新しいファイルは作らない
   - 色と枠は OS の標準テーマ（DESIGN.md。v3 のダッシュボードと同じ抹茶色: 緑の外枠・クリームの地・白い面）。ダークモードとフォントの外からの読み込みはしない。3D（graph.html）は別の見た目のまま
   - 依存なしの単一 HTML。tools/wiki_view.py が返す ./index.json を読んで描く。読む・探す・つながりを眺める専用で、何も書かない
   - 直すのは Sveltia（../admin/）。3D のグラフは ./graph.html（three.js を CDN から読む。オフラインならこの 2D が受け皿）
@@ -166,6 +168,66 @@
   .proposal-card p:last-child { background:var(--accent-soft); border-radius:6px; padding:8px 12px; }
   .project-section:has(.proposal-grid) { background:transparent; border:0; padding:0; }
   @media print { .project-tabs { display:none; } .project-panel[hidden] { display:block; } }
+  /* 左の [プロジェクト | 知識] タブ（最後に選んだ方を覚える） */
+  .seg { display:flex; gap:3px; margin:12px 0 4px; padding:3px; border:1px solid var(--line); border-radius:9px; background:var(--bg); }
+  .seg button { flex:1; font:inherit; font-size:12.5px; font-weight:700; border:0; border-radius:7px; padding:6px 8px; background:transparent; color:var(--sub); cursor:pointer; }
+  .seg button[aria-selected="true"] { background:var(--surface); color:var(--text); box-shadow:0 1px 2px rgba(47,58,28,.18); }
+  .seg button:focus-visible { outline:2px solid var(--dark); outline-offset:1px; }
+  .left-panel { display:flex; flex-direction:column; }
+  nav a .pj { display:flex; flex-direction:column; line-height:1.45; min-width:0; }
+  nav a .pj small { font-size:10.5px; color:var(--sub); font-weight:400; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  /* 毎日メモ（#/daily/日付）: 月 → 日 → その日の中身 → その月のカレンダー。幅が狭いと縦に積む */
+  .strip { font-size:12.5px; color:var(--sub); background:var(--surface); border:1px solid var(--line); border-radius:8px; padding:8px 14px; margin:0 0 14px; }
+  .daily { display:grid; grid-template-columns:116px 168px minmax(0,1fr) 236px; background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden; }
+  .daily .col { position:relative; border-right:1px solid var(--line); overflow-y:auto; max-height:calc(100vh - 170px); }
+  .daily .col .lbl { font-size:11px; color:var(--sub); letter-spacing:.08em; padding:10px 14px 6px; }
+  .daily .col a { display:flex; justify-content:space-between; align-items:center; gap:6px; padding:9px 14px; color:var(--text); text-decoration:none; font-size:13.5px; border-top:1px solid var(--line); }
+  .daily .col a:hover { background:var(--bg); } .daily .col a.on { background:var(--accent-soft); font-weight:700; }
+  .daily .col a small { color:var(--sub); font-size:11px; white-space:nowrap; font-feature-settings:"tnum"; } .daily .col a .new { color:var(--ok); font-weight:700; }
+  .daily .col a.today { box-shadow:inset 3px 0 0 var(--warn); }
+  .daily .col a:focus-visible, .heat a:focus-visible { outline:2px solid var(--dark); outline-offset:-2px; }
+  .daily .pg { padding:24px 28px 36px; overflow-y:auto; max-height:calc(100vh - 170px); min-width:0; overflow-wrap:anywhere; }
+  .daily .pg h1 { font-size:22px; font-weight:900; line-height:1.4; border-bottom:1px solid var(--line); padding-bottom:6px; margin-bottom:4px; }
+  .daily .pg h1 .badge { font-size:12px; vertical-align:middle; margin-left:8px; }
+  .daily .pg .when { color:var(--sub); font-size:12.5px; margin-bottom:6px; font-feature-settings:"tnum"; }
+  .daily .pg h2 { font-size:15px; margin:22px 0 8px; padding:4px 10px; background:var(--bg); border-radius:6px; letter-spacing:.02em; }
+  .daily .pg ul { margin:6px 0 6px 20px; font-size:14px; } .daily .pg li { margin:3px 0; }
+  .dm-none { color:var(--sub); font-size:13.5px; margin:6px 2px; }
+  .dm-group { margin:10px 0 14px; }
+  .dm-group .dm-head { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+  .dm-group .dm-head a { font-weight:700; font-size:14.5px; text-decoration:none; }
+  .dm-group .dm-head a:hover { text-decoration:underline; }
+  .dm-group .dm-n { font-size:11.5px; color:var(--sub); }
+  .dm-group li { color:var(--text); }
+  .dm-sub { color:var(--sub); font-size:12.5px; }
+  .dm-ch { display:inline-block; min-width:5.5em; font-size:12px; font-weight:700; color:var(--sub); }
+  .dm-ch.added { color:var(--ok); } .dm-ch.deleted { color:var(--warn-ink); }
+  .dm-v3 { margin-top:26px; border:1px solid var(--line); border-left:4px solid var(--c-v3); border-radius:8px; padding:4px 16px 12px; background:var(--callout-bg); }
+  .dm-v3 > h2 { background:transparent !important; padding:4px 0 !important; }
+  .dm-v3 .dm-src { font-size:12px; color:var(--sub); margin-bottom:6px; }
+  .dm-v3 .md h2, .dm-v3 .md h3 { font-size:14.5px; border:0; margin:16px 0 4px; padding:0; }
+  .daily .side { background:var(--bg); padding:18px 18px 28px; border-left:3px solid var(--frame); }
+  .daily .side .cap { font-size:12px; color:var(--sub); }
+  .heat { display:grid; grid-template-columns:repeat(7,1fr); gap:4px; margin:10px 0 12px; max-width:300px; }
+  .heat .h { font-size:10.5px; color:var(--sub); text-align:center; }
+  .heat a, .heat span { aspect-ratio:1; border-radius:5px; background:var(--surface); border:1px solid var(--line); display:flex; align-items:center; justify-content:center; font-size:11px; color:var(--sub); text-decoration:none; font-feature-settings:"tnum"; }
+  .heat span.pad { visibility:hidden; }
+  .heat a { color:var(--text); font-weight:700; }
+  .heat .l1 { background:var(--accent-soft); } .heat .l2 { background:#a8b183; border-color:#a8b183; } .heat .l3 { background:var(--link); border-color:var(--link); color:#fff; }
+  .heat .today { border:2px solid var(--warn); }
+  .heat a.on { outline:3px solid var(--dark); outline-offset:1px; }
+  .heat-legend { display:flex; align-items:center; gap:4px; font-size:11px; color:var(--sub); }
+  .heat-legend i { width:14px; height:14px; border-radius:3px; border:1px solid var(--line); background:var(--surface); }
+  .heat-legend i.l1 { background:var(--accent-soft); } .heat-legend i.l2 { background:#a8b183; } .heat-legend i.l3 { background:var(--link); }
+  @media (max-width:1360px) { .daily { grid-template-columns:108px 160px minmax(0,1fr); } .daily .side { grid-column:1 / -1; border-left:0; border-top:3px solid var(--frame); } }
+  @media (max-width:1100px) {
+    .daily { grid-template-columns:minmax(0,1fr); }
+    .daily .col { display:flex; align-items:stretch; overflow-x:auto; overflow-y:hidden; max-height:none; border-right:0; border-bottom:1px solid var(--line); }
+    .daily .col .lbl { flex:none; align-self:center; padding:8px 10px 8px 14px; }
+    .daily .col a { flex:none; border-top:0; border-left:1px solid var(--line); padding:9px 12px; }
+    .daily .col a.today { box-shadow:inset 0 -3px 0 var(--warn); }
+    .daily .pg { max-height:none; padding:20px 18px 28px; }
+  }
 </style>
 </head>
 <body>
@@ -192,6 +254,7 @@
   const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const STATUS = { active:'進行中', paused:'一時停止', done:'完了', draft:'未確認', confirmed:'確かめた' };
   let DATA = null, COL = {}, BYKEY = {}, BYPATH = {}, CUR = null;  // CUR = いま開いているページ（相対リンクを解く起点）
+  let DAILY = null, LEFT = null, ROUTE = '', PROJ_COUNT = {};  // DAILY = 毎日メモ（開いたときに読む）・LEFT = 左のタブ・ROUTE = いまの画面
   const arr = v => Array.isArray(v) ? v.map(String) : (typeof v === 'string' && v ? [v] : []);  // 壊れた値でも落ちない
   const normalize = p => { p.collection = p.role || p.collection; p.related = arr(p.related); p.tags = arr(p.tags); p.importance = Number.isFinite(p.importance) ? p.importance : 0; p.important = p.important === true; p.fm = p.fm && typeof p.fm === 'object' ? p.fm : {}; return p; };
   const context = p => [p.kind_label, p.origin === 'v3' ? '出どころ: v3' : '', p.previous_status ? `v3での状態: ${p.previous_status}（現在への適用確認とは別）` : ''].filter(Boolean).join(' · ');
@@ -284,11 +347,11 @@
       sec('最近更新したページ', recent.length, grid(recent), '更新日の新しい順') +
       sec('種類', DATA.collections.length, `<div class="grid">${cols}</div>`);
   }
-  function collection(name, topic = '') {
+  function collection(name, topic = '', kind = '') {
     const items = byUpdated(DATA.pages.filter(p => name === 'v3' ? p.origin === 'v3' : name === 'notes' ? knowledge(p) : p.collection === name));
     const filterBar = topicFacet('c-topic') + facets('c-origin', 'origin', '出どころ') + facets('c-kind', 'kind', '知識の種類');
-    setTimeout(() => { if (!$('#c-topic')) return; $('#c-topic').value = topic; const draw = () => { const origin = $('#c-origin').value, kind = $('#c-kind').value; const visible = items.filter(p => topicMatch(p, $('#c-topic').value) && (!origin || p.origin === origin) && (!kind || p.kind === kind)); $('#c-count').textContent = `${visible.length} ページ（固有）`; $('#c-items').innerHTML = grid(visible); }; ['#c-topic','#c-origin','#c-kind'].forEach(id => $(id)?.addEventListener('change', draw)); draw(); });
-    return sec(esc(name === 'v3' ? '知識（出どころ: v3）' : label(name)), items.length, `<div class="toolbar">${filterBar}<span id="c-count"></span></div><div id="c-items">${grid(items.filter(p => topicMatch(p, topic)))}</div>`);
+    setTimeout(() => { if (!$('#c-topic')) return; $('#c-topic').value = topic; $('#c-kind').value = kind; const draw = () => { const origin = $('#c-origin').value, kind = $('#c-kind').value; const visible = items.filter(p => topicMatch(p, $('#c-topic').value) && (!origin || p.origin === origin) && (!kind || p.kind === kind)); $('#c-count').textContent = `${visible.length} ページ（固有）`; $('#c-items').innerHTML = grid(visible); }; ['#c-topic','#c-origin','#c-kind'].forEach(id => $(id)?.addEventListener('change', draw)); draw(); });
+    return sec(esc(name === 'v3' ? '知識（出どころ: v3）' : label(name)), kind ? items.filter(p => p.kind === kind).length : items.length, `<div class="toolbar">${filterBar}<span id="c-count"></span></div><div id="c-items">${grid(items.filter(p => topicMatch(p, topic) && (!kind || p.kind === kind)))}</div>`);
   }
   function graph() {
     const options = DATA.collections.map(c => `<option value="${esc(c.name)}">${esc(c.label)}</option>`).join('');
@@ -650,13 +713,118 @@
     return sec(`検索: ${esc(q)}`, items.length, grid(items, '見つかりませんでした'));
   }
 
+  // ---------- 毎日メモ（./daily.json。日付の索引で、知識の棚ではない。開いたときだけ読む）----------
+  const WD = '日月火水木金土';
+  const isDate = s => /^\d{4}-\d{2}-\d{2}$/.test(s || '') && (() => { const [y, m, d] = s.split('-').map(Number), x = new Date(y, m - 1, d); return x.getFullYear() === y && x.getMonth() === m - 1 && x.getDate() === d; })();
+  const dateOf = s => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
+  const dayLabel = s => { const x = dateOf(s); return `${x.getMonth() + 1}/${x.getDate()} ${WD[x.getDay()]}`; };
+  const dayTitle = s => { const x = dateOf(s); return `${x.getFullYear()}年${x.getMonth() + 1}月${x.getDate()}日(${WD[x.getDay()]})`; };
+  const CHANGE = { added:['＋', '増えた'], modified:['✎', '直した'], renamed:['→', '名前を変えた'], deleted:['−', '消した'] };
+  const BULK = { os_update:'OS の更新で', migration:'移行で', many:'' };
+  const list = v => Array.isArray(v) ? v.filter(x => x && typeof x === 'object') : [];
+  function normalizeDaily(d) {  // 壊れた値でも落ちない
+    const days = list(d && d.days).filter(x => isDate(x.date)).map(x => ({ date:x.date,
+      records:list(x.records).map(r => ({ ...r, lines:list(r.lines) })), changes:list(x.changes), review:list(x.review),
+      v3:x.v3 && typeof x.v3.body === 'string' ? x.v3 : null, counts:x.counts && typeof x.counts === 'object' ? x.counts : {} }));
+    return { today:isDate(d && d.today) ? d.today : (days[0] || {}).date || '', git:d && d.git, days:days.sort((a, b) => b.date.localeCompare(a.date)) };
+  }
+  let dailyLoading = null;
+  function loadDaily() {
+    if (dailyLoading) return;
+    dailyLoading = fetch('./daily.json', { cache:'no-store' }).then(r => r.ok ? r.json() : Promise.reject(new Error('HTTP ' + r.status)))
+      .then(d => { DAILY = normalizeDaily(d); }).catch(e => { DAILY = { error:e.message, days:[] }; })
+      .finally(() => {
+        dailyLoading = null;
+        if (ROUTE !== 'daily') { if (DATA) sidebar(ROUTE); return; }
+        const pane = $('.daily .pg'), top = pane ? pane.scrollTop : 0; render(true);
+        const after = $('.daily .pg'); if (after) after.scrollTop = top;
+      });
+  }
+  const level = d => { const n = d ? (+d.counts.records || 0) + (+d.counts.added || 0) + (+d.counts.modified || 0) + d.changes.filter(c => c.bulk).length + (d.v3 ? 1 : 0) : 0; return n >= 10 ? 3 : n >= 3 ? 2 : n ? 1 : 0; };  // まとめた変更は1件と数える
+  function daily(id) {
+    if (!DAILY) { loadDaily(); return '<div class="empty">毎日メモを集めています…</div>'; }
+    if (DAILY.error) return `<div class="empty">毎日メモを読み込めませんでした（${esc(DAILY.error)}）。Wiki の画面を開き直してください</div>`;
+    const days = DAILY.days, byDate = Object.fromEntries(days.map(d => [d.date, d]));
+    const wanted = isDate(id) ? id : DAILY.today;
+    if (!wanted) return '<div class="empty">毎日メモの日付を読み込めませんでした。Wiki の画面を開き直してください</div>';
+    const cur = byDate[wanted] || { date:wanted, records:[], changes:[], review:[], v3:null, counts:{}, missing:true };
+    const mon = cur.date.slice(0, 7), monthIds = [...new Set([...days.map(d => d.date.slice(0, 7)), mon])].sort().reverse();
+    const thisYear = (DAILY.today || cur.date).slice(0, 4);
+    const months = monthIds.map(m => { const inMonth = days.filter(d => d.date.startsWith(m)); return `<a href="#/daily/${esc(inMonth[0] ? inMonth[0].date : m + '-01')}" class="${m === mon ? 'on' : ''}"><span>${m.slice(0, 4) === thisYear ? '' : esc(m.slice(0, 4)) + '年'}${+m.slice(5, 7)}月</span><small>${inMonth.length} 日</small></a>`; }).join('');
+    const marks = d => [d.counts.added ? `<span class="new">+${+d.counts.added}</span>` : '', d.counts.records ? `${+d.counts.records}行` : '', d.v3 ? 'v3' : ''].filter(Boolean).join(' · ');
+    const dlist = days.filter(d => d.date.startsWith(mon)).map(d => `<a href="#/daily/${esc(d.date)}" class="${d.date === cur.date ? 'on' : ''}${d.date === DAILY.today ? ' today' : ''}"${d.date === cur.date ? ' aria-current="date"' : ''}><span>${esc(dayLabel(d.date))}${d.date === DAILY.today ? ' ・今日' : ''}</span><small>${marks(d)}</small></a>`).join('') || '<div class="lbl">この月の記録はありません</div>';
+    const pageLink = (key, title, prefix = '') => BYKEY[key] ? `<a href="${esc(pageHref(key))}">${prefix}${esc(title || BYKEY[key].title)}</a>` : `${prefix}${esc(title || key)}`;
+    const records = cur.records.length ? cur.records.map(r => `<div class="dm-group"><div class="dm-head">${pageLink(r.key, r.title, r.collection === 'projects' ? '📁 ' : '')}${badge(r)}<span class="dm-n">${r.lines.length} 行</span></div><ul>${r.lines.map(l => `<li title="${esc(l.full || l.text)}">${esc(l.text) || '（本文なし）'}</li>`).join('')}</ul></div>`).join('') : '<p class="dm-none">（日付つきの記録なし）</p>';
+    const changes = DAILY.git === 'none' ? '<p class="dm-none">（このワークスペースには Git の保存記録がないので出せません）</p>' : DAILY.git === 'error' ? '<p class="dm-none">（Git の保存記録を読めませんでした）</p>'
+      : cur.changes.length ? `<ul>${cur.changes.map(c => c.bulk ? `<li>📦 ${esc(BULK[c.bulk] || '')}まとめて ${+c.count || 0} ページ（${esc(c.subject)}）</li>` : `<li><span class="dm-ch ${esc(CHANGE[c.status] ? c.status : 'modified')}">${(CHANGE[c.status] || CHANGE.modified).join(' ')}</span> ${c.status !== 'deleted' && BYKEY[c.key] ? pageLink(c.key, c.title) : `<code>${esc(c.path)}</code>`}</li>`).join('')}</ul>` : '<p class="dm-none">（この日は Wiki の保存記録なし）</p>';
+    const review = cur.missing ? '<p class="dm-none">（この日は集める材料がありません）</p>' : cur.review.length ? `<ul>${cur.review.map(r => `<li><span class="badge gray">${esc(r.ago)}</span> ${pageLink(r.key, r.title)}${r.summary ? ` <span class="dm-sub">— ${esc(r.summary)}</span>` : ''}</li>`).join('')}</ul>` : '<p class="dm-none">（この日に復習する知識はありません）</p>';
+    const v3 = cur.v3 ? `<section class="dm-v3"><h2>🗂 v3 の毎日メモ（写し）</h2><div class="dm-src"><code>${esc(cur.v3.path)}</code> の写し。中のリンクは、移した先の v3 の知識へつなぎ直しています</div><div class="md">${md(cur.v3.body)}</div></section>` : '';
+    const [y, m] = mon.split('-').map(Number), first = new Date(y, m - 1, 1).getDay(), last = new Date(y, m, 0).getDate();
+    let heat = [...WD].map(w => `<div class="h">${w}</div>`).join('') + '<span class="pad"></span>'.repeat(first);
+    for (let k = 1; k <= last; k++) {
+      const ds = `${mon}-${String(k).padStart(2, '0')}`, d = byDate[ds], cls = `l${level(d)}${ds === DAILY.today ? ' today' : ''}`;
+      heat += d ? `<a href="#/daily/${ds}" class="${cls}${ds === cur.date ? ' on' : ''}" title="${ds}: 記録 ${+d.counts.records || 0} 行・増えた ${+d.counts.added || 0}・直した ${+d.counts.modified || 0}${d.v3 ? '・v3 の写し' : ''}">${k}</a>` : `<span class="${ds === DAILY.today ? 'today' : ''}">${k}</span>`;
+    }
+    const c = cur.counts;
+    return `<div class="strip">日付ごとの索引です。案件ページなどの日付つきの行・Wiki の Git の保存記録・v3 の毎日メモの写しから、開いたときに自動で集めます（新しいファイルは作らず、何も書きません）。${DAILY.git === 'none' ? 'Git がないので「増えた・直したページ」は出ません。' : ''}</div>
+      <div class="daily">
+        <div class="col" aria-label="月"><div class="lbl">月</div>${months}</div>
+        <div class="col" aria-label="日"><div class="lbl">日（新しい順）</div>${dlist}</div>
+        <div class="pg"><h1>${esc(dayTitle(cur.date))}${cur.date === DAILY.today ? '<span class="badge star">今日</span>' : ''}</h1>
+          <div class="when">記録 ${+c.records || 0} 行 · 増えた ${+c.added || 0} · 直した ${+c.modified || 0}${c.bulk ? ` · まとめての変更 ${+c.bulk}` : ''} · 復習 ${+c.review || 0}${cur.v3 ? ' · v3 の写しあり' : ''}</div>
+          <h2>🛠 その日の記録</h2>${records}
+          <h2>📚 Wiki で増えた・直したページ</h2>${changes}
+          <h2>🔁 復習（1 日前・1 週間前・1 か月前に増えた知識）</h2>${review}
+          ${v3}
+        </div>
+        <div class="side"><div class="cap">${y}年${m}月 · 記録の多い日ほど濃い</div><div class="heat">${heat}</div><div class="heat-legend">少 <i></i><i class="l1"></i><i class="l2"></i><i class="l3"></i> 多</div></div>
+      </div>`;
+  }
+
+  // ---------- 左の [プロジェクト | 知識] タブ ----------
+  const V3_KINDS = [['knowledge', '一般知識'], ['troubleshooting', 'トラブル対処'], ['decisions', '判断'], ['stacks', '技術'], ['sources', '資料'], ['patterns', '使えた型']];
+  const PROJECT_ORDER = { active:0, paused:1, done:2 };
+  const projects = () => DATA.pages.filter(p => p.collection === 'projects' && !p.navigation).sort((x, y) => (PROJECT_ORDER[x.status] ?? 3) - (PROJECT_ORDER[y.status] ?? 3) || String(y.updated || '').localeCompare(String(x.updated || '')) || String(x.title).localeCompare(String(y.title)));
+  function projectCounts() {  // 案件に関係する知識の数 = v3 の知識の project: 欄とリンク（どちら向きでも）でつながった知識（v3 と同じ考え方）
+    const counts = {};
+    DATA.pages.filter(p => p.collection === 'projects').forEach(p => { counts[p.key] = new Set(p.related.filter(k => BYKEY[k] && knowledge(BYKEY[k]))); });
+    DATA.pages.filter(knowledge).forEach(q => q.related.forEach(k => { if (counts[k]) counts[k].add(q.key); }));
+    return Object.fromEntries(Object.entries(counts).map(([k, v]) => [k, v.size]));
+  }
+  function leftTab() {
+    if (LEFT) return LEFT;
+    let saved = ''; try { saved = localStorage.getItem('wiki-left-tab') || ''; } catch (e) {}
+    return LEFT = ['projects', 'knowledge'].includes(saved) ? saved : (projects().length ? 'projects' : 'knowledge');
+  }
+  function projectNav(route) {
+    const items = projects(), active = items.filter(p => p.status === 'active'), rest = items.filter(p => p.status !== 'active');
+    if (!items.length) return '<div class="lbl">案件はまだありません</div>';
+    const row = p => `<a href="${esc(pageHref(p.key))}" class="${route === pageHref(p.key).slice(2) ? 'on' : ''}" title="${esc(p.title)}（関係する知識 ${PROJ_COUNT[p.key] || 0}）"><span class="pj"><span>📁 ${esc(p.title)}</span><small>${esc(p.id)}${p.status && p.status !== 'active' ? ' · ' + esc(STATUS[p.status] || p.status) : ''}</small></span><span class="n">${PROJ_COUNT[p.key] || 0}</span></a>`;
+    return (active.length ? `<div class="lbl">進行中 ${active.length}</div>${active.map(row).join('')}` : '') +
+      (rest.length ? `<div class="lbl">一時停止・完了 ${rest.length}</div>${rest.map(row).join('')}` : '') + '<div class="lbl">数字 = 関係する知識（v3 の project 欄・リンク）</div>';
+  }
+  function knowledgeNav(route) {
+    const v3 = DATA.pages.filter(p => knowledge(p) && p.origin === 'v3');
+    const kinds = V3_KINDS.map(([id, title]) => [id, title, v3.filter(p => p.kind === id).length]).filter(([, , n]) => n);
+    return '<div class="lbl">内容カテゴリ</div>' + topicNavigation() +
+      (kinds.length ? '<div class="lbl">v3 の種類</div>' + kinds.map(([id, title, n]) => `<a href="#/k/${id}" class="${route === 'k/' + id ? 'on' : ''}"><span>${esc(title)}</span><span class="n">${n}</span></a>`).join('') : '');
+  }
+
   // ---------- サイドバー ----------
   function sidebar(route) {
     const n = f => DATA.pages.filter(f).length;
     const edges = new Set(); DATA.pages.forEach(p => p.related.forEach(k => { if (BYKEY[k]) edges.add([p.key, k].sort().join('\u0000')); }));
     $('#tiles').innerHTML = [[DATA.pages.length, 'ページ', '#/'], [n(p => p.important), '進行中の案件', '#/st/active'], [edges.size, 'つながり', '#/graph'], [n(p => p.status === 'draft'), '未確認', '#/st/draft']].map(([v, l, h]) => `<a class="tile" href="${h}"><b>${v}</b><span>${l}</span></a>`).join('');
-    $('#nav').innerHTML = `<a href="#/" class="${route === '' ? 'on' : ''}">ホーム</a><a href="#/graph" class="${route === 'graph' ? 'on' : ''}">グラフ</a><div class="lbl">知識の内容カテゴリ</div>` + topicNavigation() + `<div class="lbl">種類</div>` +
+    const tab = leftTab();
+    const tabs = `<div class="seg" role="tablist" aria-label="左の並び">${[['projects', 'プロジェクト'], ['knowledge', '知識']].map(([id, title]) => `<button type="button" role="tab" id="left-${id}" aria-controls="left-panel" aria-selected="${tab === id}" tabindex="${tab === id ? 0 : -1}" data-left="${id}">${title}</button>`).join('')}</div>`;
+    $('#nav').innerHTML = `<a href="#/" class="${route === '' ? 'on' : ''}">ホーム</a><a href="#/daily" class="${route === 'daily' ? 'on' : ''}"><span>📅 毎日メモ</span>${DAILY && !DAILY.error ? `<span class="n">${DAILY.days.length}</span>` : ''}</a><a href="#/graph" class="${route === 'graph' ? 'on' : ''}">グラフ</a>` +
+      tabs + `<div class="left-panel" id="left-panel" role="tabpanel" aria-labelledby="left-${tab}">${tab === 'projects' ? projectNav(route) : knowledgeNav(route)}</div><div class="lbl">種類</div>` +
       DATA.collections.filter(k => k.name !== 'notes' && k.name !== 'v3').map(k => `<a href="#/c/${esc(k.name)}" class="${route === 'c/' + k.name ? 'on' : ''}"><span>${esc(k.label)}</span><span class="n">${n(p => p.collection === k.name)}</span></a>`).join('') + `<div class="lbl">移行履歴</div><a href="#/c/v3">出どころ: v3</a>`;
+    const buttons = [...document.querySelectorAll('[data-left]')];
+    buttons.forEach((button, index) => {
+      button.addEventListener('click', () => { LEFT = button.dataset.left; try { localStorage.setItem('wiki-left-tab', LEFT); } catch (e) {} sidebar(ROUTE); $(`[data-left="${LEFT}"]`).focus(); });
+      button.addEventListener('keydown', event => { if (['ArrowLeft', 'ArrowRight'].includes(event.key)) { event.preventDefault(); buttons[(index + 1) % buttons.length].click(); } });
+    });
     $('#brand').textContent = DATA.root_name || 'ワークスペース';
     $('#foot').innerHTML = `データ ${esc((DATA.generated || '').replace('T', ' '))}<br>Sveltia で直したら、このタブに戻ると最新になります<br>直したものは、次に AI と話すときに AI が中身を見て記録（commit）します`;
   }
@@ -670,12 +838,19 @@
     if (!path) html = home();
     else if (seg[0] === 'c') html = collection(seg[1]), route = 'c/' + seg[1];
     else if (seg[0] === 't') html = [':none', ':pending', ...(DATA.topics || []).map(topic => topic.id)].includes(seg[1]) ? collection('notes', seg[1]) : '<div class="empty">カテゴリが見つかりません</div>';
+    else if (seg[0] === 'k') html = V3_KINDS.some(([id]) => id === seg[1]) ? collection('v3', '', seg[1]) : '<div class="empty">種類が見つかりません</div>', route = 'k/' + seg[1];
+    else if (seg[0] === 'daily') { if (ROUTE !== 'daily' && DAILY) loadDaily(); route = 'daily'; ROUTE = route; html = daily(seg[1]); }
     else if (seg[0] === 'p') html = page(seg.slice(1).join('/'));
     else if (seg[0] === 'graph') html = graph();
     else if (seg[0] === 'q') html = search(seg.slice(1).join('/'));
     else if (seg[0] === 'st') { const items = byUpdated(DATA.pages.filter(p => p.status === seg[1] && (seg[1] !== 'active' || p.collection === 'projects'))); html = sec(`状態: ${esc(STATUS[seg[1]] || seg[1])}`, items.length, grid(items)); }
     else html = home();
-    $('#main').innerHTML = html; sidebar(route); if (!keepScroll) window.scrollTo(0, 0);
+    ROUTE = route; $('#main').innerHTML = html; sidebar(route); if (!keepScroll) window.scrollTo(0, 0);
+    document.querySelectorAll('.daily .col').forEach(col => {  // 選んだ月・日を、その列の中で見える所へ（狭い幅では横、広い幅では縦）
+      const on = col.querySelector('a.on'); if (!on) return;
+      if (col.scrollWidth > col.clientWidth) col.scrollLeft = on.offsetLeft - (col.clientWidth - on.offsetWidth) / 2;
+      else if (col.scrollHeight > col.clientHeight) col.scrollTop = on.offsetTop - (col.clientHeight - on.offsetHeight) / 2;
+    });
     const tabs = [...document.querySelectorAll('[data-project-tab]')];
     tabs.forEach((tab, index) => {
       tab.addEventListener('click', () => { location.hash = location.hash.split('?')[0] + '?tab=' + tab.dataset.projectTab; });
@@ -685,7 +860,7 @@
         event.preventDefault(); tabs[next].click();
       });
     });
-    document.title = (seg[0] === 'p' && BYKEY[seg.slice(1).join('/')] ? BYKEY[seg.slice(1).join('/')].title + ' — ' : '') + 'Wiki — ワークスペース';
+    document.title = (seg[0] === 'p' && BYKEY[seg.slice(1).join('/')] ? BYKEY[seg.slice(1).join('/')].title + ' — ' : seg[0] === 'daily' ? '毎日メモ' + (isDate(seg[1]) ? ' ' + seg[1] : '') + ' — ' : '') + 'Wiki — ワークスペース';
   }
   let probed3d = false;
   async function load() {
@@ -702,13 +877,19 @@
     COL = Object.fromEntries(DATA.collections.map(k => [k.name, k.label]));
     BYKEY = Object.fromEntries(DATA.pages.map(p => [p.key, p]));
     BYPATH = Object.fromEntries(DATA.pages.map(p => [p.path, p]));
+    PROJ_COUNT = projectCounts();
     render(true);
+    if (ROUTE === 'daily') loadDaily();  // タブに戻ったとき、毎日メモも最新に
   }
   $('#q').addEventListener('keydown', e => { if (e.key === 'Enter') { const v = e.target.value.trim(); location.hash = v ? `#/q/${encodeURIComponent(v)}` : '#/'; } });
   window.addEventListener('hashchange', event => {
+    const dailyRoute = url => /#\/daily(?:\/|$)/.test(url);
+    if (dailyRoute(event.oldURL) && dailyRoute(event.newURL)) {  // 毎日メモの中で日を替えたら、ページのいちばん上（狭い幅では左の並び）へ戻さず、毎日メモを見える所に
+      render(true); const box = $('.daily'); if (box && box.getBoundingClientRect().top < 0) box.scrollIntoView({ block:'start' }); return;
+    }
     const samePage = event.oldURL.split('?')[0] === event.newURL.split('?')[0];
     render(samePage);
-    if (samePage) document.querySelector('[role="tab"][aria-selected="true"]')?.focus();
+    if (samePage) document.querySelector('.project-tabs [role="tab"][aria-selected="true"]')?.focus();  // 左のタブではなく、案件のタブへ
   });
   window.addEventListener('focus', () => { if (DATA && location.hash.replace(/^#\/?/, '').split('/')[0] !== 'graph') load(); });  // タブに戻ったら最新に（Sveltia で直したあと）。グラフは動かしている途中なので読み直さない
   load();

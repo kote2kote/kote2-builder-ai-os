@@ -1,0 +1,4 @@
+interface:
+  display_name: "プロジェクトを図解"
+  short_description: "複雑な要件や仕組みを、相手に合わせた図解と4K画像へ整理する"
+  default_prompt: "Use $visualize-project-architecture to explain this project with an evidence-based visual designed for the intended audience."

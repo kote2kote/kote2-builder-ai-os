@@ -12,7 +12,7 @@ import { once } from "node:events";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { pathToFileURL } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 function parseArgs(argv) {
   const opt = { positional: [] };
@@ -99,22 +99,47 @@ async function main() {
     process.exit(2);
   }
   const html = path.resolve(htmlArg);
+  if (!fs.existsSync(html) || !fs.statSync(html).isFile()) throw new Error(`HTML がありません: ${html}`);
   const browser = findBrowser(opt.browser);
   if (!browser) throw new Error("Chrome / Edge / Chromium が見つかりません。--browser <実行ファイルのパス> を付けてください");
   const ffmpeg = opt.stills ? null : (process.env.FFMPEG_PATH || commandPath("ffmpeg"));
   if (!opt.stills && !ffmpeg) throw new Error("ffmpeg が見つかりません(Mac: brew install ffmpeg / Windows: winget install Gyan.FFmpeg)");
 
   const profile = fs.mkdtempSync(path.join(os.tmpdir(), "explainer-chrome-"));
+  const profileIdentity = fs.lstatSync(profile);
   const child = spawn(browser, [
     "--headless=new", "--remote-debugging-pipe", "--no-first-run", "--no-default-browser-check",
-    "--hide-scrollbars", "--mute-audio", "--disable-extensions", `--user-data-dir=${profile}`, "about:blank",
+    "--hide-scrollbars", "--mute-audio", "--disable-extensions", "--disable-sync",
+    "--disable-background-networking", "--disable-component-update", "--disable-features=MediaRouter",
+    "--force-webrtc-ip-handling-policy=disable_non_proxied_udp",
+    "--proxy-server=http://127.0.0.1:9", "--proxy-bypass-list=localhost;127.0.0.1",
+    "--block-new-web-contents", `--user-data-dir=${profile}`, "about:blank",
   ], { stdio: ["ignore", "ignore", "pipe", "pipe", "pipe"], windowsHide: true });
   let stderrTail = "";
   child.stderr.on("data", d => { stderrTail = (stderrTail + d).slice(-2000); });
+  let browserError = null;
+  child.on("error", error => { browserError = error; });
   child.on("exit", code => { if (code) console.error(`ブラウザが終了しました(code ${code})\n${stderrTail}`); });
 
   const dt = new Devtools(child);
-  const pageErrors = [], pageWarnings = [];
+  const pageErrors = [], pageWarnings = [], disallowedRequests = [];
+  const pageRoots = [fs.realpathSync(path.dirname(html)), fs.realpathSync(path.resolve(path.dirname(fileURLToPath(import.meta.url)), ".."))];
+  const inside = file => pageRoots.some(root => { const rel = path.relative(root, file); return rel === "" || (rel !== ".." && !rel.startsWith(".." + path.sep) && !path.isAbsolute(rel)); });
+  const permitted = url => {
+    if (/^(about:|data:|blob:)/i.test(url)) return true;
+    if (/^file:/i.test(url)) {
+      try { return inside(fs.realpathSync(fileURLToPath(url))); } catch { return false; }
+    }
+    return false;
+  };
+  dt.on("Network.requestWillBeSent", p => { if (p.request?.url && !permitted(p.request.url)) disallowedRequests.push(p.request.url); });
+  let pageSession = null; // この Devtools はイベントにセッションを渡さないので、ページのセッションを覚えて返事に使う
+  dt.on("Fetch.requestPaused", p => {
+    const allow = permitted(p.request.url);
+    if (!allow) disallowedRequests.push(p.request.url);
+    dt.send(allow ? "Fetch.continueRequest" : "Fetch.failRequest", allow ? { requestId: p.requestId } : { requestId: p.requestId, errorReason: "BlockedByClient" }, pageSession)
+      .catch(e => pageErrors.push(`要求の遮断に失敗: ${e.message}`));
+  });
   dt.on("Runtime.exceptionThrown", p => pageErrors.push(p.exceptionDetails?.exception?.description || p.exceptionDetails?.text));
   dt.on("Runtime.consoleAPICalled", p => {
     const text = p.args.map(a => a.value ?? a.description).join(" ");
@@ -122,11 +147,18 @@ async function main() {
   });
 
   try {
+    let startupTimer;
+    try {
+      await Promise.race([dt.send("Browser.getVersion"), new Promise((_, reject) => { startupTimer = setTimeout(() => reject(new Error(`ブラウザと接続できません: ${browserError?.message || stderrTail || "時間切れ"}`)), 10000); })]);
+    } finally { clearTimeout(startupTimer); }
     const { targetId } = await dt.send("Target.createTarget", { url: "about:blank" });
     const { sessionId } = await dt.send("Target.attachToTarget", { targetId, flatten: true });
+    pageSession = sessionId;
     const S = (m, p) => dt.send(m, p, sessionId);
     await S("Page.enable");
     await S("Runtime.enable");
+    await S("Network.enable");
+    await S("Fetch.enable", { patterns: [{ urlPattern: "*" }] });
     const evalJs = async expression => {
       const r = await S("Runtime.evaluate", { expression, awaitPromise: true, returnByValue: true });
       if (r.exceptionDetails) throw new Error(r.exceptionDetails.exception?.description || r.exceptionDetails.text);
@@ -141,6 +173,7 @@ async function main() {
     await evalJs("Promise.resolve(window.ready).then(() => true)");
     const failOnPageErrors = () => {
       if (pageErrors.length) throw new Error("ページ側のエラー(場面データを直してから撮り直してください):\n" + [...new Set(pageErrors)].join("\n"));
+      if (disallowedRequests.length) throw new Error("許可外の通信・ファイル読取を検出しました:\n" + [...new Set(disallowedRequests)].join("\n"));
     };
     failOnPageErrors();   // 読み込み時点の書き間違いは、撮り始める前に止める
     // 文字のはみ出しなどは止めずに知らせる(静止画で目視して直す)
@@ -187,8 +220,14 @@ async function main() {
     // Chrome は返事をせずに閉じることがあるので、返事・終了・3 秒のどれか早い方で先へ進む(待ち続けると固まる)
     const exited = child.exitCode !== null ? Promise.resolve() : once(child, "exit");
     await Promise.race([dt.send("Browser.close").catch(() => {}), exited, new Promise(r => setTimeout(r, 3000))]);
-    if (child.exitCode === null) child.kill();
-    try { fs.rmSync(profile, { recursive: true, force: true }); } catch { /* Windows でロック中なら残す */ }
+    if (child.exitCode === null) {
+      child.kill();
+      await Promise.race([once(child, "exit").catch(() => {}), new Promise(r => setTimeout(r, 3000))]);
+    }
+    const now = fs.lstatSync(profile);
+    if (path.dirname(profile) !== os.tmpdir() || !path.basename(profile).startsWith("explainer-chrome-") || !now.isDirectory() || now.ino !== profileIdentity.ino || now.dev !== profileIdentity.dev) throw new Error("一時プロファイルの所有を確認できません");
+    try { fs.rmSync(profile, { recursive: true }); }
+    catch (e) { throw new Error(`一時プロファイルが残りました（未確認）: ${e.message}`); }
   }
 }
 

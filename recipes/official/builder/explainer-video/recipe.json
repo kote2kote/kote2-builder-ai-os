@@ -9,6 +9,7 @@
   "version": "1.1.0",
   "builder_min_version": "3.41.0",
   "status": "verified",
+  "superseded_by": "tools/skills/explainer-video",
   "tested": {
     "mac": "pass",
     "win": "untested"

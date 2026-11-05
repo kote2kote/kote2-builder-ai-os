@@ -12,6 +12,8 @@
 
 # explainer-video — 説明映像(キャラが図の横で解説する動画)
 
+> **このレシピは導入しません（2026-11-05、過去の記録）。** 説明動画は OS の初期スキル `tools/skills/explainer-video/`（Claude Code 専用）として最初から入っています。頼まれたらそちらを使ってください。以下は旧ビルダーでの設計と確認の記録です。本文中の `templates/core/explainer-video/`・`.claude/skills/explainer-video/`・`output/` などは旧ビルダーの置き場で、このパッケージにはスキル一式を同梱していません。
+
 箱と矢印の「地図」をカメラで順に寄りながら、キャラクター(同梱のひまわり猫・差し替え可・無しも可)が字幕で解説する 1920×1080 の映像を作る**スキル 1 つ**を、**ビルダー直下**の `.claude/skills/explainer-video/` に足す拡張レシピ(`target: builder`)。AI は場面データ(`scene.js`)を書くだけで、再生(ブラウザ)と MP4 書き出しは同梱のエンジンが受け持つ。生成プロジェクトには**頼まれた時だけ**写す(Codex の図解スキル `visualize-project-architecture` と同じ立ち位置の「動く版」)。
 
 - **対応 AI**: **Claude Code 専用・モデルは Opus 5.5 推奨**(kote2 決定 2026-10-09)。Codex での映像づくりは未検証(§9)

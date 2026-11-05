@@ -19,7 +19,7 @@ FIELDS = {"製品名": "name", "用途分類": "usecase", "検証ステータス
 STATES = {"legacy": {"verified": "✅", "experimental": "🧪", "skeleton": "🚧"},
           "os": {"draft": "📝", "confirmed": "✅"}}
 TESTED = {"pass": "✅", "untested": "⬜", "na": "➖", "n/a": "➖"}
-LISTED = ("title", "name", "id", "summary", "status", "target", "recipe_kind", "usecase")
+LISTED = ("title", "name", "id", "summary", "status", "target", "recipe_kind", "usecase", "superseded_by")
 INVISIBLE = re.compile("[‎‏‪-‮⁦-⁩]")
 
 
@@ -217,6 +217,8 @@ def table(entries, warnings):
             signoff = entry.get("signoff")
             verified = "✅" if isinstance(signoff, dict) and signoff.get("date") else "✅" if signoff == "✅" else "—"
             usecase = "🧩 ワークスペースに追加" if entry.get("target") == "builder" else "判断・選定" if entry.get("recipe_kind") == "decision" else entry.get("usecase", "制作")
+            if str(entry.get("superseded_by") or "").startswith("tools/skills/"):
+                usecase = "OSの初期スキルに統合（導入しない）"
             title = ("📦 " if entry["format"] == "legacy" and entry["path"].endswith(("/RECIPE.md", "/recipe.json")) else "📄 ") + cell(entry.get("name"), 60)
             values = [str(number), f"[{title}]({quote(entry['path'], safe='/')})", cell(entry["id"]),
                       cell(entry["category"]), cell(entry.get("summary")), cell(usecase),
@@ -226,6 +228,10 @@ def table(entries, warnings):
                   "形の印: 📦=旧形式のパッケージ、📄=単体MarkdownまたはOS形式。形の印だけでは旧/新や確認状態を判断しません。付属10件はすべて旧形式です。",
                   "凡例: ✅=記録上の確認済み、⬜=未検証（動かない確証ではありません）、➖=対象外、—=記録なし、📝=下書き、🧪=試作、🚧=骨組み。",
                   "旧形式の状態・Mac・Win・検証は旧ビルダーでの記録です。現OSでの再制作や今回の動作を確認した印ではありません。OS形式の✅はconfirmed（レシピに記した条件内で確認済み）です。"]
+    merged = [entry for entry in entries if str(entry.get("superseded_by") or "").startswith("tools/skills/")]
+    if merged:
+        lines += ["統合済み: " + "、".join(f"{cell(entry['id'])} → `{cell(entry['superseded_by'])}`" for entry in merged)
+                  + "。過去の記録として読めますが、レシピとしては導入しません。OSの初期スキルを使います。"]
     if warnings:
         lines += ["", "注意（一覧は未確認項目を含みます）:", *("- " + cell(warning, 300) for warning in warnings)]
     return "\n".join(lines) + "\n"

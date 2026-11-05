@@ -8,6 +8,7 @@
   python3 tools/wiki_view.py stop                         裏のサーバーを止める
   python3 tools/wiki_view.py serve [--port N]             前でサーバーを動かす（止めるまで）
   python3 tools/wiki_view.py json                         index.json を出すだけ（確かめ用）
+  python3 tools/wiki_view.py daily [--root ワークスペース]          毎日メモの画面の材料（daily.json）を出すだけ（確かめ用。WIKI_VIEW_TODAY=YYYY-MM-DD で今日を差し替え）
   python3 tools/wiki_view.py diagnose [--root ワークスペース]       関係の読取専用診断を JSON で出す（修復・保存はしない）
   python3 tools/wiki_view.py audit [--root ワークスペース]          Markdownの入口不足を点検する（指摘ありは終了コード1。保存しない）
         --migration-completion で移行完了時のコピー先・生成案内・状態も確認（孤立・日付差は参考情報）。後日の通常点検では指定しない。
@@ -18,7 +19,9 @@
 - 線 = (1) 本文の中の相対リンク（[..](../notes/x.md) など）(2) v3 から移したカードの related:（v3 の「種類/名前」）
   (3) 案件ページの recipe: <id>@<版> → そのレシピ。案件の path:（成果物の場所）はページではないので線にしない。
 - 大きさ = つながりの数（ほかのページから参照された数を重く数える）。色 = 種類。進行中の案件は光輪、一時停止は暗く、未確認（draft）は少し薄く。
-- 配るのは画面（tools/wiki-view/）と index.json だけ。127.0.0.1 だけで待ち受け、Host・Origin が手元でなければ断る。
+- 毎日メモ（daily.json）は、ページの日付つきの行・wiki/ の Git の保存記録（git log。読むだけ）・imports/v3/wiki/daily/*.md（v3 の毎日メモの写し）から
+  その場で集める。新しいファイルは作らない。Git や写しがないワークスペースでは、出せる材料だけで出す。
+- 配るのは画面（tools/wiki-view/）と index.json・daily.json だけ。127.0.0.1 だけで待ち受け、Host・Origin が手元でなければ断る。
 - 画面で動いてよいスクリプトは、画面に書いてあるものと、画面が中身を固定した（integrity）CDN のファイルだけ（CSP。csp() を見る）。
 """
 import argparse
@@ -38,7 +41,7 @@ import time
 import urllib.request
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import unquote
+from urllib.parse import quote, unquote
 
 for _s in (sys.stdout, sys.stderr):  # Windows のコンソールでも落ちない
     try:
@@ -433,6 +436,268 @@ def view_index(root):
     return data
 
 
+# ---------------------------------------------------------------- 毎日メモ（日付の索引。読むだけで、新しいファイルは作らない）
+# その日の中身は次の材料から自動で集める（AI の判断も、記録の手間も足さない）:
+#   その日の記録 = wiki/ のページの日付つきの行（v3 から移した知識 wiki/notes/v3/ と、索引の index.md は除く。案件ページの要約と重なるため）
+#   増えた・直したページ = wiki/ の Git の保存記録（git log。読むだけ）。OS の更新・移行・ページの多い commit は1行にまとめる
+#   復習 = 1日前・1週間前・1か月前に増えた知識（v3 の知識は created:、OS で増えた知識は Git で最初に足された日）
+#   v3 の毎日メモの写し = imports/v3/wiki/daily/YYYY-MM-DD.md（imports/ で読むのはここだけ）。中のリンクは移した先のページへ
+DATE_LINE = re.compile(r"^\s*(?:>\s*)*(?:(?:[-*+]|\d{1,3}[.)])\s+)?(?:\[[ xX]\]\s+)?(?:\*\*|__)?\[?(\d{4}-\d{2}-\d{2})(?!\d)")
+DATE_TABLE = re.compile(r"^\s*\|\s*(?:\*\*|__)?(\d{4}-\d{2}-\d{2})(?!\d)")
+DATE_HEADING = re.compile(r"^\s{0,3}#{1,6}\s+(?:\*\*|__)?\[?(\d{4}-\d{2}-\d{2})(?!\d)")
+REVIEW_AGO = ((1, "1 日前"), (7, "1 週間前"), (30, "1 か月前"))
+NO_REVIEW = {"unverified", "outdated"}  # v3 で「参照しない」にしていた知識は復習に出さない（v3 と同じ）
+BULK_PAGES = 20  # 1つの commit でこれ以上の Wiki のページが変わったら、まとめて1行
+GIT_LIMIT = 5000
+WEEKDAYS = "月火水木金土日"
+
+
+def valid_date(value):
+    try:
+        return isinstance(value, str) and re.fullmatch(r"\d{4}-\d{2}-\d{2}", value) and datetime.date.fromisoformat(value).isoformat() == value
+    except ValueError:
+        return False
+
+
+def plain_line(text):
+    """日付つきの行の、日付のあとの部分を表示用の文字にする（リンクは文字だけ・強調の印は外す）。"""
+    text = re.sub(r"!\[([^\]]*)\]\([^)]*\)", r"\1", text)
+    text = re.sub(r"\[([^\]]+)\]\([^)]*\)", r"\1", text)
+    text = re.sub(r"\*\*|__|`", "", text)
+    text = re.sub(r"\s+", " ", text).strip()
+    return re.sub(r"^[\]）)]*\s*[:：|・\-–—]?\s*", "", text).strip()
+
+
+def shorten(text, size):
+    return text if len(text) <= size else text[:size - 1].rstrip() + "…"
+
+
+def dated_lines(body):
+    """本文の日付つきの行 → [(日付, 短い文, 長い文)]。箇条書き・段落・見出しの先頭の日付と、表の最初の列の日付。コードとコメントの中は数えない。"""
+    out, fence, comment, in_list = [], None, False, False
+    for line in body.splitlines():
+        if comment:
+            if "-->" not in line:
+                continue
+            line, comment = line.split("-->", 1)[1], False
+        line = re.sub(r"<!--.*?-->", "", line)
+        if "<!--" in line:
+            line, comment = line.split("<!--", 1)[0], True
+        opening = re.match(r"^\s{0,3}(`{3,}|~{3,})(.*)$", line)
+        if fence:
+            if opening and opening[1][0] == fence[0] and len(opening[1]) >= len(fence) and not opening[2].strip():
+                fence = None
+            continue
+        if opening:
+            fence = opening[1]
+            continue
+        indent = len(line) - len(line.lstrip(" "))
+        if line.strip() and indent < 4:
+            in_list = bool(re.match(r"^\s*(?:>\s*)*(?:[-*+]|\d{1,3}[.)])\s", line)) or (in_list and indent >= 2)
+        if (indent >= 4 or line.startswith("\t")) and not in_list:
+            continue  # 字下げのコード（箇条書きの中の字下げは数える）
+        table = DATE_TABLE.match(line)
+        if table:
+            cells = [cell.strip() for cell in line.strip().strip("|").split("|")]
+            date, text = table[1], " · ".join(cell for cell in cells[1:] if cell)
+        else:
+            found = DATE_LINE.match(line) or DATE_HEADING.match(line)
+            if not found:
+                continue
+            date, text = found[1], line[found.end():]
+        if valid_date(date):
+            full = plain_line(text)
+            out.append((date, shorten(full, 80), shorten(full, 400)))
+    return out
+
+
+def git_wiki_history(root):
+    """wiki/ の Git の保存記録（読むだけ）→ (状態, 新しい順の commit)。状態: ok / none（Git やこのワークスペース自身の repo がない）/ error。
+    外の設定に左右されないよう GIT_ で始まる環境変数は渡さず、親のフォルダの repo は探さない（GIT_CEILING_DIRECTORIES）。"""
+    if not (root / ".git").exists():
+        return "none", []
+    env = {key: value for key, value in os.environ.items() if not key.startswith("GIT_")}
+    env.update(GIT_CEILING_DIRECTORIES=str(root.parent), GIT_OPTIONAL_LOCKS="0", GIT_TERMINAL_PROMPT="0")
+    base = ["git", "--no-pager", "--literal-pathspecs", "-C", str(root), "-c", "core.quotepath=off", "-c", "core.fsmonitor=false"]
+
+    def run(*args):
+        return subprocess.run(base + list(args), capture_output=True, env=env, timeout=20, stdin=subprocess.DEVNULL)
+    try:
+        top = run("rev-parse", "--show-toplevel")
+        if top.returncode != 0 or os.path.normcase(os.path.realpath(top.stdout.decode("utf-8", "replace").strip())) != os.path.normcase(os.path.realpath(root)):
+            return "none", []
+        log = run("log", "-z", "--no-color", "--no-ext-diff", "--no-textconv", "-M", "--raw", "--date=short",
+                  f"--max-count={GIT_LIMIT}", "--format=%x1e%H%x1f%ad%x1f%s%x1f%b%x1f", "--", "wiki")
+        if log.returncode != 0:
+            return ("ok", []) if run("rev-parse", "--verify", "-q", "HEAD").returncode != 0 else ("error", [])  # まだ commit がない
+    except FileNotFoundError:  # Git が入っていない
+        return "none", []
+    except (OSError, subprocess.SubprocessError):
+        return "error", []
+    commits = []
+    for chunk in log.stdout.decode("utf-8", "replace").split("\x1e")[1:]:
+        head, _, rest = chunk.partition("\x1f\x00")
+        fields = head.split("\x1f", 3)
+        if len(fields) < 4 or not valid_date(fields[1]):
+            continue
+        tokens, files, index = [token.strip("\n") for token in rest.split("\x00")], [], 0
+        while index < len(tokens):
+            raw = tokens[index].split()  # :元の種類 今の種類 元の中身 今の中身 状態
+            if len(raw) < 5 or not raw[0].startswith(":"):
+                index += 1
+                continue
+            status, links = raw[4], {raw[0][1:], raw[1]} & {"120000", "160000"}  # リンク・別の repo は数えない
+            if status[0] in "RC":
+                old, path, index = tokens[index + 1] if index + 1 < len(tokens) else "", tokens[index + 2] if index + 2 < len(tokens) else "", index + 3
+            else:
+                old, path, index = "", tokens[index + 1] if index + 1 < len(tokens) else "", index + 2
+            parts = path.split("/")
+            if (not links and path.startswith("wiki/") and path.endswith(".md")
+                    and not any(part.startswith(".") or part.casefold() == "node_modules" for part in parts)):
+                files.append({"status": "A" if status[0] == "C" else status[0], "path": path, "old": old})
+        body = fields[3]
+        bulk = ("os_update" if "Builder-OS-Plan:" in body else "migration" if "計画の番号:" in body
+                else "many" if len({item["path"] for item in files}) >= BULK_PAGES else "")
+        commits.append({"date": fields[1], "subject": fields[2].strip(), "bulk": bulk, "files": files})
+    return "ok", commits
+
+
+def v3_daily_link(target, pages, by_path):
+    """v3 の毎日メモの中のリンク先（v3 の wiki/ の中の場所）→ 移した先のページ。見つからない・曖昧なら None。"""
+    if not target.startswith("wiki/"):
+        return None
+    rest = target[len("wiki/"):]
+    if by_path.get("wiki/notes/v3/" + rest):
+        return by_path["wiki/notes/v3/" + rest]
+    name = posixpath.splitext(posixpath.basename(rest))[0]
+    if rest.startswith("projects/"):
+        hits = [page for page in pages if page["collection"] == "projects" and (
+            page["id"] == name or page["path"] == f"wiki/projects/{name}.md"
+            or posixpath.basename(str(page["fm"].get("v3_path") or "").rstrip("/")) == name)]
+    else:
+        hits = [page for page in pages if page["origin"] == "v3" and str(page["fm"].get("source") or "") in (f"v3 {target}", f"v3 {rest}")]
+    return hits[0] if len({page["key"] for page in hits}) == 1 else None
+
+
+def v3_daily_body(text, pages, by_path):
+    """v3 の毎日メモの写しの本文。自動の欄の印（コメント）とタスク・今月の目標の欄は外し、リンク ../<種類>/<名前>.md は移した先のページ（#/p/…）へ。
+    移していない先・外へ向く相対リンクは文字だけにする（http(s)・mailto はそのまま）。"""
+    _, body = front_matter(text)
+    body = re.sub(r"<!--.*?(?:-->|\Z)", "", body, flags=re.S)
+    body = re.sub(r"^## [^\n]*(?:今日のタスク|明日のタスク|今月の目標)[^\n]*(?:\n|\Z)(?:(?!## ).*(?:\n|\Z))*", "", body, flags=re.M)
+
+    def link(match):
+        image, label, href = match[1], match[2], match[3]
+        if image:
+            return label
+        if re.match(r"^(?:https?|mailto):", href, re.I):
+            return match[0]
+        path = unquote(href.split("#", 1)[0])
+        page = v3_daily_link(posixpath.normpath(posixpath.join("wiki/daily", path)), pages, by_path) if path and local_reference(href) else None
+        return f"[{label}](#/p/" + "/".join(quote(part, safe="") for part in page["key"].split("/")) + ")" if page else label
+    return re.sub(r"(!?)\[([^\]\n]*)\]\(((?:[^()\s]|\([^()\s]*\))+)(?:\s+\"[^\"\n]*\")?\)", link, body).strip()
+
+
+def daily_index(root, today=None):
+    """毎日メモの画面（#/daily）用の JSON。日は新しい順。材料のある日と今日だけ（今日より先の日付は予定かもしれないので出さない）。"""
+    root = Path(root).resolve()
+    today = today or os.environ.get("WIKI_VIEW_TODAY") or datetime.date.today().isoformat()
+    if not valid_date(today):
+        raise ValueError("WIKI_VIEW_TODAY は YYYY-MM-DD で指定してください")
+    index = build_index(root)
+    pages = [page for page in index["pages"] if page["path"].startswith("wiki/")]
+    by_path = {page["path"]: page for page in pages}
+    days = {}
+
+    def day(date):
+        return days.setdefault(date, {"date": date, "records": [], "changes": [], "review": [], "v3": None})
+
+    rank = {"projects": 0, "notes": 1, "me": 2, "other": 3}
+    for page in pages:
+        if page["collection"] == "v3":
+            continue
+        found = {}
+        for date, text, full in dated_lines(page["body"]):
+            if date <= today:
+                found.setdefault(date, []).append({"text": text, "full": full})
+        for date, lines in found.items():
+            day(date)["records"].append({"key": page["key"], "title": page["title"], "collection": page["collection"],
+                                         "status": page["status"], "lines": lines})
+    for item in days.values():
+        item["records"].sort(key=lambda record: (rank.get(record["collection"], 9), record["status"] != "active",
+                                                 -len(record["lines"]), record["title"]))
+
+    git_state, commits = git_wiki_history(root)
+    order = {"added": 0, "modified": 1, "renamed": 2, "deleted": 3}
+    by_date = {}
+    for commit in commits:  # 新しい順のまま日ごとに分ける
+        if commit["files"] and commit["date"] <= today:
+            by_date.setdefault(commit["date"], []).append(commit)
+    for date, same_day in by_date.items():
+        changed, bulk = {}, []
+        for commit in same_day:
+            if commit["bulk"]:
+                bulk.append({"bulk": commit["bulk"], "count": len({item["path"] for item in commit["files"]}), "subject": commit["subject"]})
+                continue
+            for item in commit["files"]:
+                if excluded_page(root, item["path"]):
+                    continue  # いまリンク・ハードリンク・README など画面のページでないものは、名前も出さない（消したページは出す）
+                status = {"A": "added", "D": "deleted", "R": "renamed"}.get(item["status"], "modified")
+                entry = changed.get(item["path"])
+                if entry is None:
+                    page = by_path.get(item["path"])
+                    changed[item["path"]] = {"status": status, "path": item["path"], "old": item["old"],
+                                             "key": page["key"] if page else "", "title": page["title"] if page else posixpath.basename(item["path"])[:-3]}
+                elif status == "added" and entry["status"] != "deleted":
+                    entry["status"] = "added"  # その日に足して、そのあと直した
+        day(date)["changes"] = sorted(changed.values(), key=lambda entry: (order[entry["status"]], entry["title"])) + bulk
+
+    added_at = {}  # OS で増えたページの、Git で最初に足された日（OS の更新・移行でまとめて入った日は数えない = None）
+    for commit in reversed(commits):
+        for item in commit["files"]:
+            if item["path"] in added_at:
+                continue
+            if item["status"] == "A":
+                added_at[item["path"]] = None if commit["bulk"] in ("os_update", "migration") else commit["date"]
+            elif item["status"] == "R":
+                added_at[item["path"]] = added_at.get(item["old"], commit["date"])
+    created = {}
+    for page in pages:
+        if page["role"] != "notes" or page["navigation"]:
+            continue
+        if page["origin"] == "v3":
+            date = page["created"] if page["previous_status"] not in NO_REVIEW else ""
+        else:
+            date = added_at.get(page["path"]) or page["created"]
+        if valid_date(date):
+            created.setdefault(date, []).append(page)
+
+    v3_files = [path for path in safe_files(root, root / "imports/v3/wiki/daily", "*.md")
+                if path.parent == root / "imports/v3/wiki/daily" and valid_date(path.stem)]
+    for path in v3_files:
+        if path.stem <= today:
+            day(path.stem)["v3"] = {"path": path.relative_to(root).as_posix(),
+                                    "body": v3_daily_body(path.read_text(encoding="utf-8", errors="replace"), pages, by_path)}
+
+    day(today)
+    for item in days.values():
+        current = datetime.date.fromisoformat(item["date"])
+        item["review"] = [{"ago": label, "key": page["key"], "title": page["title"], "summary": shorten(page["summary"], 120),
+                           "origin": page["origin"], "kind_label": page["kind_label"]}
+                          for ago, label in REVIEW_AGO
+                          for page in sorted(created.get((current - datetime.timedelta(days=ago)).isoformat(), []), key=lambda page: page["title"])]
+        changes = [entry for entry in item["changes"] if not entry.get("bulk")]
+        item["counts"] = {"records": sum(len(record["lines"]) for record in item["records"]),
+                          "added": sum(entry["status"] == "added" for entry in changes),
+                          "modified": sum(entry["status"] != "added" for entry in changes),
+                          "bulk": sum(entry["count"] for entry in item["changes"] if entry.get("bulk")),
+                          "review": len(item["review"])}
+        date = datetime.date.fromisoformat(item["date"])
+        item["title"] = f"{date.year}年{date.month}月{date.day}日({WEEKDAYS[date.weekday()]})"
+    return {"generated": time.strftime("%Y-%m-%dT%H:%M:%S"), "today": today, "git": git_state, "v3_daily": len(v3_files),
+            "bulk_pages": BULK_PAGES, "read_only": True, "days": sorted(days.values(), key=lambda item: item["date"], reverse=True)}
+
+
 def markdown_destination(text, offset):
     start = offset
     angle = offset < len(text) and text[offset] == "<"
@@ -777,12 +1042,13 @@ def make_handler(root, port):
                 self.send_header("X-Wiki-Root", rid)
                 self.end_headers()
                 return
-            if path == "/view/index.json":
+            if path in ("/view/index.json", "/view/daily.json"):
+                daily = path == "/view/daily.json"
                 try:
-                    body, code = json.dumps(view_index(root), ensure_ascii=False).encode("utf-8"), 200
+                    body, code = json.dumps(daily_index(root) if daily else view_index(root), ensure_ascii=False).encode("utf-8"), 200
                 except Exception as e:  # 壊れたページがあっても、理由だけ返す（フォルダの場所は出さない）
-                    print(f"wiki_view: index.json: {e!r}", file=sys.stderr)
-                    body, code = json.dumps({"error": type(e).__name__, "pages": [], "collections": []}).encode("utf-8"), 500
+                    print(f"wiki_view: {path[6:]}: {e!r}", file=sys.stderr)
+                    body, code = json.dumps({"error": type(e).__name__, **({"days": []} if daily else {"pages": [], "collections": []})}).encode("utf-8"), 500
                 return self.send(code, body, "application/json; charset=utf-8")
             if path in ("/view/", "/admin/"):
                 path += "index.html"
@@ -881,6 +1147,8 @@ def main():
     s.add_argument("--root", default=".")
     j = sub.add_parser("json")
     j.add_argument("--root", default=".")
+    daily = sub.add_parser("daily")
+    daily.add_argument("--root", default=".")
     d = sub.add_parser("diagnose")
     d.add_argument("--root", default=".")
     audit = sub.add_parser("audit")
@@ -897,6 +1165,8 @@ def main():
             data['migration_completion'] = audit_migration_completion(root)
         print(json.dumps(data, ensure_ascii=False, indent=1))
         raise SystemExit(1 if data["findings"] or data.get('migration_completion', {}).get('findings') else 0)
+    elif a.cmd == "daily":
+        print(json.dumps(daily_index(root), ensure_ascii=False, indent=1))
     elif a.cmd in ("json", "diagnose"):
         data = build_index(root) if a.cmd == "diagnose" else view_index(root)
         print(json.dumps(data["diagnostics"] if a.cmd == "diagnose" else data, ensure_ascii=False, indent=1))
