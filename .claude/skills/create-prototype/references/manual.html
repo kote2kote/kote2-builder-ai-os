@@ -1,0 +1,147 @@
+<!doctype html>
+<!-- AI: プロトタイプの試し方マニュアルの雛型(create-prototype スキルの「5. マニュアル」)。
+     {{ }} を埋め、「AI:」で始まる案内コメントは書き終えたら消す(残っていないことを grep で確認)。
+     章の順番は変えない。中身が無い章(例: 画面の見本で「本物につなぐ時」が無い)は、1 行で「この用途では無し」と書く。 -->
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{名前}} プロトタイプの試し方</title>
+<style>
+  :root { --bg:#f0efe2; --frame:#71804b; --ink:#2f3a1c; --ink-soft:#5a6242; --accent:#b05c2e; --card:#ffffff; --card-line:#d9dcc3; --badge-bg:#dde0c8; --dark-box:#333f1f; }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--frame); color:var(--ink); font-family:"Hiragino Kaku Gothic ProN","Hiragino Sans","Yu Gothic","Noto Sans JP",sans-serif; line-height:1.75; font-size:15px; }
+  .page { background:var(--bg); margin:18px; padding:48px 56px 40px; min-height:calc(100vh - 36px); max-width:980px; }
+  @media (min-width:1060px) { .page { margin:18px auto; } }
+  @media (max-width:640px) { .page { margin:10px; padding:24px 20px 28px; } }
+  .eyebrow { font-size:12px; font-weight:700; letter-spacing:.25em; color:var(--frame); text-transform:uppercase; margin-bottom:6px; }
+  h1 { font-size:30px; font-weight:800; margin-bottom:4px; }
+  .sub { color:var(--ink-soft); font-size:13px; margin-bottom:8px; }
+  h2 { font-size:18px; font-weight:800; margin:44px 0 12px; padding-left:10px; border-left:5px solid var(--frame); }
+  h2 .no { color:var(--frame); margin-right:6px; }
+  h3 { font-size:15px; font-weight:800; margin:22px 0 8px; }
+  p { margin:8px 0; }
+  ul, ol { margin:8px 0 8px 22px; } li { margin:4px 0; }
+  a { color:var(--accent); text-decoration:none; } a:hover { text-decoration:underline; }
+  code { background:var(--card); border:1px solid var(--card-line); padding:1px 6px; border-radius:4px; font-family:"SF Mono",Menlo,Consolas,monospace; font-size:13px; }
+  pre { background:#2b3320; color:#eef0e0; border-radius:10px; padding:14px 18px; overflow-x:auto; font-family:"SF Mono",Menlo,Consolas,monospace; font-size:13px; line-height:1.6; margin:10px 0; }
+  table { width:100%; border-collapse:collapse; background:var(--card); border:1px solid var(--card-line); border-radius:10px; overflow:hidden; font-size:13.5px; margin:12px 0; }
+  th { background:var(--badge-bg); text-align:left; padding:8px 12px; font-size:12px; letter-spacing:.06em; }
+  td { padding:8px 12px; border-top:1px solid var(--card-line); vertical-align:top; }
+  .callout { background:#fbf9ee; border:1px solid var(--accent); border-left:6px solid var(--accent); border-radius:8px; padding:14px 18px; margin:18px 0; font-size:14px; }
+  .callout strong { color:var(--accent); }
+  .note { background:var(--card); border:1px solid var(--card-line); border-radius:8px; padding:12px 16px; margin:12px 0; font-size:13.5px; }
+  .badge { display:inline-block; background:var(--badge-bg); color:var(--ink); font-size:12px; font-weight:800; letter-spacing:.1em; padding:2px 10px; border-radius:99px; }
+  figure { margin:14px 0 18px; }
+  figure img { width:100%; border-radius:10px; border:1px solid var(--card-line); display:block; background:#fff; }
+  figure.narrow img { width:420px; max-width:100%; }
+  figcaption { font-size:12.5px; color:var(--ink-soft); margin-top:6px; }
+  .steps { counter-reset:s; list-style:none; margin-left:0; }
+  .steps > li { counter-increment:s; position:relative; padding-left:34px; margin:10px 0; }
+  .steps > li::before { content:counter(s); position:absolute; left:0; top:1px; width:24px; height:24px; border-radius:50%; background:var(--dark-box); color:#fff; font-size:12.5px; font-weight:800; display:grid; place-items:center; }
+  .toc { background:var(--card); border:1px solid var(--card-line); border-radius:10px; padding:14px 20px; margin:18px 0; font-size:14px; columns:2; column-gap:28px; }
+  .toc a { display:block; padding:2px 0; color:var(--ink); }
+  @media (max-width:760px) { .toc { columns:1; } }
+  .q { background:var(--card); border:1px dashed var(--frame); border-radius:8px; padding:10px 14px; margin:8px 0; font-size:14px; }
+  footer.meta { margin-top:40px; padding-top:14px; border-top:1px solid var(--card-line); font-size:11.5px; color:var(--ink-soft); }
+  @media print { body { background:#fff; } .page { margin:0; padding:24px 28px; } h2 { break-after:avoid; } table, .callout, pre, figure { break-inside:avoid; } }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="eyebrow">PROTOTYPE / {{日付 YYYY-MM-DD}}</div>
+  <h1>{{名前}} プロトタイプの試し方</h1>
+  <p class="sub">{{何のプロトタイプか 1 文}}。<span class="badge">架空のデータ</span> この PC の中だけで動き、外とは通信しません。所要時間はおよそ {{N}} 分。</p>
+
+  <div class="callout"><strong>このプロトタイプで決めたいこと</strong>: {{設計書の中で、触って決めたい点を 1〜2 文。例: 承認してから台帳に入れるか、自動で入れるか}}</div>
+
+  <nav class="toc">
+    <a href="#s0">0. わかること・まだわからないこと</a>
+    <a href="#s1">1. 開き方</a>
+    <a href="#s2">2. 3 分で全体を見る</a>
+    <a href="#s3">3. {{画面・機能の名前}}</a>
+    <!-- AI: 3 章以降の画面・機能ごとの章を増やしたら、ここにも足す -->
+    <a href="#real">本物につなぐ時</a>
+    <a href="#ask">見てほしいところ</a>
+    <a href="#decided">決まったこと</a>
+    <a href="#data">架空のデータ一覧</a>
+    <a href="#trouble">困った時</a>
+    <a href="#checked">確かめたこと</a>
+  </nav>
+
+  <h2 id="s0"><span class="no">0.</span>わかること・まだわからないこと</h2>
+  <table>
+    <tr><th style="width:50%">わかること(このプロトタイプで確かめられる)</th><th>まだわからないこと(本番で確かめる)</th></tr>
+    <tr><td>
+      <ul>
+        <li>{{例: 画面の並びと、どこを押すと何が出るか}}</li>
+      </ul>
+    </td><td>
+      <ul>
+        <li>{{例: 本物の AI の判定の精度(ここでは見本の答えを出しています)}}</li>
+      </ul>
+    </td></tr>
+  </table>
+  <p class="note">ここに出てくる人・会社・数字はすべて架空です。本物のサービスには一切つないでいません。</p>
+
+  <h2 id="s1"><span class="no">1.</span>開き方</h2>
+  <ol class="steps">
+    <li>このマニュアルと同じフォルダの <code>index.html</code> をダブルクリックします(ブラウザで開きます)。</li>
+    <li>{{最初の画面で見るところ・押すところ}}</li>
+  </ol>
+  <!-- AI: 画面写真は shots/ にある。shots.json の name と合わせる -->
+  <figure><img src="shots/01-top.png" alt="{{最初の画面}}"><figcaption>{{最初の画面の説明}}</figcaption></figure>
+
+  <h2 id="s2"><span class="no">2.</span>3 分で全体を見る</h2>
+  <!-- AI: 動く試作は「全部流す」で台本を最初から最後まで流す手順。画面の見本は画面を順に見ていく手順 -->
+  <ol class="steps">
+    <li>{{例: 右上の「全部流す」を押すと、架空の 1 日分の出来事が 2 秒おきに届きます}}</li>
+  </ol>
+  <figure><img src="shots/02-{{名前}}.png" alt="{{全体の流れ}}"><figcaption>{{何が起きたところか}}</figcaption></figure>
+
+  <h2 id="s3"><span class="no">3.</span>{{画面・機能の名前}}</h2>
+  <!-- AI: 画面・機能ごとに 1 章。「何ができるか → どう触るか → 画面写真」の順。章は必要な数だけ複製する -->
+  <p>{{この画面でできること}}</p>
+  <figure><img src="shots/03-{{名前}}.png" alt="{{画面}}"><figcaption>{{説明}}</figcaption></figure>
+
+  <h2 id="real">本物につなぐ時(このプロトタイプでは未実施)</h2>
+  <!-- AI: 代役にしたもの(LINE・メール・AI・スプレッドシート等)ごとに、本番で要るもの(アカウント・鍵・料金の有無)を 1 行ずつ。画面の見本で外部サービスが無ければ「この用途では無し」 -->
+  <table>
+    <tr><th>このプロトタイプでの代役</th><th>本番では</th><th>要るもの</th></tr>
+    <tr><td>{{例: お試し LINE}}</td><td>{{例: 本物の LINE 公式アカウント}}</td><td>{{例: LINE の開発者アカウント(無料)・チャネルの鍵}}</td></tr>
+  </table>
+
+  <h2 id="ask">見てほしいところ(感想を聞かせてください)</h2>
+  <!-- AI: 3〜5 問。設計書の中で人が決める分岐を問いにする。答えやすいように選択肢を添える -->
+  <div class="q">Q1. {{例: 届いた内容は、承認してから台帳に入れたいですか? それとも自動で入れて後から直す方が楽ですか?}}</div>
+  <p>感想は AI にそのまま話しかけてください。設計書に反映してから、本番を作ります。</p>
+
+  <h2 id="decided">決まったこと(設計書に戻した差分)</h2>
+  <!-- AI: 感想を設計書に戻すたびに 1 行足す(PROTOTYPE.md §9)。最初は下の 1 行のまま -->
+  <p class="note">まだありません。</p>
+
+  <h2 id="data">架空のデータ一覧</h2>
+  <table>
+    <tr><th>もの</th><th>中身</th><th>置き場</th></tr>
+    <tr><td>{{例: 台本}}</td><td>{{例: 架空の 1 日分の問い合わせ 12 件}}</td><td><code>data/scenario.js</code></td></tr>
+  </table>
+
+  <h2 id="trouble">困った時</h2>
+  <table>
+    <tr><th>こうなった</th><th>こうする</th></tr>
+    <tr><td>最初からやり直したい</td><td>{{例: 画面右上の「最初から」を押す(保存した架空データを消します)}}</td></tr>
+    <tr><td>画面が古いまま</td><td>ブラウザで再読み込み(Mac は ⌘+R、Windows は Ctrl+R)</td></tr>
+    <tr><td>画面写真を撮り直したい</td><td>作った AI に「試作の写真を撮り直して」と頼んでください(撮影の道具は OS の側にあり、このフォルダには入っていません)</td></tr>
+  </table>
+
+  <h2 id="checked">確かめたこと</h2>
+  <!-- AI: 実際に確かめたことだけを書く。撮れなかった・試していないものは「確かめていない」に書く -->
+  <ul>
+    <li>{{日付}}・{{OS}}・{{ブラウザ}}: 撮影の道具で {{N}} 枚を撮影し、主な流れが最後まで通ることを確認(ページのエラー・外への通信なし)</li>
+    <li>確かめていない: {{例: Windows での見え方・スマホでの見え方}}</li>
+  </ul>
+
+  <footer class="meta">Builder AI OS {{VERSION}} で作ったプロトタイプです。出てくるデータはすべて架空です。</footer>
+</div>
+</body>
+</html>

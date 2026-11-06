@@ -1,8 +1,200 @@
 {
   "files": {
+    ".agents/skills/create-prototype/SKILL.md": {
+      "mode": 420,
+      "sha256": "c348dfe2c32e417925f485135593e32267d046b29236543158e93cdccbb1ea03"
+    },
+    ".agents/skills/create-prototype/references/builder-handoff.md": {
+      "mode": 420,
+      "sha256": "903b3b37e93e34f7c91563f562938bc37be5f8950cc71c1135ab0a4c4f1aac0b"
+    },
+    ".agents/skills/create-prototype/references/kinds.md": {
+      "mode": 420,
+      "sha256": "865c43d2fa99439bde2664090974efa84692d981500a687539c32c3bfee47461"
+    },
+    ".agents/skills/create-prototype/references/manual.html": {
+      "mode": 420,
+      "sha256": "6cea5f9ffb215b43ce3401893b6327bcf1b5072dab2b14685c4dd8a0cfa8bea6"
+    },
+    ".agents/skills/create-prototype/scripts/shot.mjs": {
+      "mode": 420,
+      "sha256": "d0560e3e531b5f046035d8b2b377cfdb3758e0e0f59855c8fc4d1194c437d014"
+    },
+    ".agents/skills/design-review/SKILL.md": {
+      "mode": 420,
+      "sha256": "78fef092f91d286f41281b47cce1b359fc646f681d058d3f70f793aa52ba4296"
+    },
+    ".agents/skills/design-review/scripts/shot.mjs": {
+      "mode": 420,
+      "sha256": "d0560e3e531b5f046035d8b2b377cfdb3758e0e0f59855c8fc4d1194c437d014"
+    },
+    ".agents/skills/visualize-project-architecture/SKILL.md": {
+      "mode": 420,
+      "sha256": "a2a74236cc3e7b1d0a9e21d2786cb92eea4152e049aa61c049cb10ccf32bdb96"
+    },
+    ".agents/skills/visualize-project-architecture/agents/openai.yaml": {
+      "mode": 420,
+      "sha256": "b23efaa35f7fb26ddb3596d17bce2fc3f9e847acd059c4ff8b8b604d03304a26"
+    },
+    ".agents/skills/visualize-project-architecture/references/diagram-strategy.md": {
+      "mode": 420,
+      "sha256": "50df0d6f38bdfb32958fbd0a70f1627a83f02cfeb862e971ca0d4fb45b6ee96b"
+    },
+    ".agents/skills/visualize-project-architecture/references/visual-style.md": {
+      "mode": 420,
+      "sha256": "90db95baf6009a2f2b792d40b8cb87321b77e1f1d1e68b6df76f964a7da3e7c1"
+    },
+    ".agents/skills/visualize-project-architecture/scripts/shot.mjs": {
+      "mode": 420,
+      "sha256": "d0560e3e531b5f046035d8b2b377cfdb3758e0e0f59855c8fc4d1194c437d014"
+    },
+    ".claude/rules/builder-os-safety.md": {
+      "mode": 420,
+      "sha256": "f08f3945d3f5b3af8c38e69ddb4592bf043d8e76254b910292458fbd8b8fdf0a"
+    },
     ".claude/settings.json": {
       "mode": 420,
       "sha256": "a3fa1b33376f2f8fc369f4a4987be7657bc2a68b9067072f0e8237de7a5b47c5"
+    },
+    ".claude/skills/create-prototype/SKILL.md": {
+      "mode": 420,
+      "sha256": "c348dfe2c32e417925f485135593e32267d046b29236543158e93cdccbb1ea03"
+    },
+    ".claude/skills/create-prototype/references/builder-handoff.md": {
+      "mode": 420,
+      "sha256": "903b3b37e93e34f7c91563f562938bc37be5f8950cc71c1135ab0a4c4f1aac0b"
+    },
+    ".claude/skills/create-prototype/references/kinds.md": {
+      "mode": 420,
+      "sha256": "865c43d2fa99439bde2664090974efa84692d981500a687539c32c3bfee47461"
+    },
+    ".claude/skills/create-prototype/references/manual.html": {
+      "mode": 420,
+      "sha256": "6cea5f9ffb215b43ce3401893b6327bcf1b5072dab2b14685c4dd8a0cfa8bea6"
+    },
+    ".claude/skills/create-prototype/scripts/shot.mjs": {
+      "mode": 420,
+      "sha256": "d0560e3e531b5f046035d8b2b377cfdb3758e0e0f59855c8fc4d1194c437d014"
+    },
+    ".claude/skills/design-review/SKILL.md": {
+      "mode": 420,
+      "sha256": "78fef092f91d286f41281b47cce1b359fc646f681d058d3f70f793aa52ba4296"
+    },
+    ".claude/skills/design-review/scripts/shot.mjs": {
+      "mode": 420,
+      "sha256": "d0560e3e531b5f046035d8b2b377cfdb3758e0e0f59855c8fc4d1194c437d014"
+    },
+    ".claude/skills/explainer-video/SKILL.md": {
+      "mode": 420,
+      "sha256": "39bafebd0d2d93e0650ad286387bf9e7864a708170425897b5bfc67731cf92e8"
+    },
+    ".claude/skills/explainer-video/character/TERMS.md": {
+      "mode": 420,
+      "sha256": "e5dd2922aa454c83d9a67147ce95fedd821a919fbf4b0d1e87dc4a162863a9c5"
+    },
+    ".claude/skills/explainer-video/character/cat1.png": {
+      "mode": 420,
+      "sha256": "37d33332e6518ef954655ad2033d6e62e749dc826b64da7f964e398f4c5cadb7"
+    },
+    ".claude/skills/explainer-video/character/cat2.png": {
+      "mode": 420,
+      "sha256": "f943d494f8e7e898791df99b61ffe9570165621f987c921a54c7b972ae7d1e0f"
+    },
+    ".claude/skills/explainer-video/character/cat3.png": {
+      "mode": 420,
+      "sha256": "3b86aecf29307485330d9f16819ad8d259ea3b25d859be9f261da5bf5344c92c"
+    },
+    ".claude/skills/explainer-video/character/cat4.png": {
+      "mode": 420,
+      "sha256": "0479a895c4c2d4c578b3ae9536709335ce4b3a09b47ca8d613f9e26709e53825"
+    },
+    ".claude/skills/explainer-video/character/cat5.png": {
+      "mode": 420,
+      "sha256": "31b90732c9a01bcbe1d6d5043da4c23cdd50b493543420284d271e384b46093f"
+    },
+    ".claude/skills/explainer-video/character/cat6.png": {
+      "mode": 420,
+      "sha256": "61cd538f120825def39120e953c43aafa4ecb9ec72a3dfff96ea71ee3b61081b"
+    },
+    ".claude/skills/explainer-video/character/cat7.png": {
+      "mode": 420,
+      "sha256": "94c991f8303acc910dc3e23f2226eafb6d700e5a9fe28868906a7920a7f36b61"
+    },
+    ".claude/skills/explainer-video/character/cat8.png": {
+      "mode": 420,
+      "sha256": "033106bc0755e9e52b53ce4d2440db7a46ac62846b03e6dc3655c82ac5dc0e7a"
+    },
+    ".claude/skills/explainer-video/character/character.js": {
+      "mode": 420,
+      "sha256": "308bab8c3a61ab09bf75f77b3240ca90e5cd2f4ae64a66c8f75ae9e7684e5968"
+    },
+    ".claude/skills/explainer-video/engine/explainer.css": {
+      "mode": 420,
+      "sha256": "19bd1be33362f88d02419bde739b533668b7822bc93a4dd7fc378f5f8932a533"
+    },
+    ".claude/skills/explainer-video/engine/explainer.js": {
+      "mode": 420,
+      "sha256": "e94e4e090ae7f73ceb69d6dc3cb59d1d90a318d3829b98c8df5d4643a2bdd51b"
+    },
+    ".claude/skills/explainer-video/engine/icons.js": {
+      "mode": 420,
+      "sha256": "bc4a8ceb53cb280f200276bd1f80299e555ec64db242b6211d6386faea4384bc"
+    },
+    ".claude/skills/explainer-video/engine/render-video.mjs": {
+      "mode": 420,
+      "sha256": "34be0b3d09933fe1cc6188175348444c0092a59932e953a3bfd1033091867ff8"
+    },
+    ".claude/skills/explainer-video/examples/mcp/evidence.md": {
+      "mode": 420,
+      "sha256": "d52805caa7a1573af7374fbaefdea7282f4d3e01e21f058ea0a74254821d3914"
+    },
+    ".claude/skills/explainer-video/examples/mcp/index.html": {
+      "mode": 420,
+      "sha256": "bc7416247f9b5771d3b9db1fde028f1b3480d1813e1c8bf58f08cb2a70570e50"
+    },
+    ".claude/skills/explainer-video/examples/mcp/plan.md": {
+      "mode": 420,
+      "sha256": "621a4b08ebb69f8317bdac225cce62ecdeb5084f93bc3cb97852d46cc01900eb"
+    },
+    ".claude/skills/explainer-video/examples/mcp/scene.js": {
+      "mode": 420,
+      "sha256": "3cf3177456171ef14832989415761272410a5cde9e205d2ce4389fd383976d81"
+    },
+    ".claude/skills/explainer-video/references/icon-catalog/index.html": {
+      "mode": 420,
+      "sha256": "f38c9abd32a000a6f6e7ae125e3f58369f5a10b5ed74f646de50fc9dbce7f5d8"
+    },
+    ".claude/skills/explainer-video/references/icon-catalog/scene.js": {
+      "mode": 420,
+      "sha256": "84c87a43c728e65ca684c39006d382f41920eeddfb899f9b583e6ec276e5dc08"
+    },
+    ".claude/skills/explainer-video/references/scene-format.md": {
+      "mode": 420,
+      "sha256": "f5d5c93a28b62bdab577f203680a014691c8e83c7a90b35694503d2f17810a85"
+    },
+    ".claude/skills/visualize-project-architecture/SKILL.md": {
+      "mode": 420,
+      "sha256": "a2a74236cc3e7b1d0a9e21d2786cb92eea4152e049aa61c049cb10ccf32bdb96"
+    },
+    ".claude/skills/visualize-project-architecture/agents/openai.yaml": {
+      "mode": 420,
+      "sha256": "b23efaa35f7fb26ddb3596d17bce2fc3f9e847acd059c4ff8b8b604d03304a26"
+    },
+    ".claude/skills/visualize-project-architecture/references/diagram-strategy.md": {
+      "mode": 420,
+      "sha256": "50df0d6f38bdfb32958fbd0a70f1627a83f02cfeb862e971ca0d4fb45b6ee96b"
+    },
+    ".claude/skills/visualize-project-architecture/references/visual-style.md": {
+      "mode": 420,
+      "sha256": "90db95baf6009a2f2b792d40b8cb87321b77e1f1d1e68b6df76f964a7da3e7c1"
+    },
+    ".claude/skills/visualize-project-architecture/scripts/shot.mjs": {
+      "mode": 420,
+      "sha256": "d0560e3e531b5f046035d8b2b377cfdb3758e0e0f59855c8fc4d1194c437d014"
+    },
+    ".codex/config.toml": {
+      "mode": 420,
+      "sha256": "397d6945cbe755e9ac46d275d00705c546d328f3c83a23f58b86482a054bcedb"
     },
     ".gitignore": {
       "mode": 420,
@@ -10,7 +202,7 @@
     },
     "AGENTS.md": {
       "mode": 420,
-      "sha256": "b6b1da2acc840f36240b6a3effe712f3a62de9f6d916a18bdef8c4f91c303283"
+      "sha256": "88091d069c8ee1ba543fd71dddf8a11ae63b99db9bc29a5c93141cf53104f394"
     },
     "CLAUDE.md": {
       "mode": 420,
@@ -34,15 +226,15 @@
     },
     "README.md": {
       "mode": 420,
-      "sha256": "954a873c45f9fc42f06be2afd51bb8da78c55b00135e28add5c8e4f75f4983e4"
+      "sha256": "3b710a805d1d2e4b466e29bfb9301e9e358876e5de7ce817483ae7cfd5592513"
     },
     "THIRD_PARTY.md": {
       "mode": 420,
-      "sha256": "ead4e283dd2013d20d1b4a2df819f68e3a2946d8210359dbe0e6068d8dfaaa19"
+      "sha256": "ea9a3a97d206e197924abdddef0d318ea62903d2c69cfff4bf85b13ea0f596e8"
     },
     "VERSION": {
       "mode": 420,
-      "sha256": "8722a3e4c8ef0feb2e7a669f5f854c72d5d6390b25598f9745dc95e5ffe51dce"
+      "sha256": "d4e4d4e812e1dafc4e760f5ee12c48ef76f8af41d27cbf3bf2ff065505b9cfe6"
     },
     "projects/.gitkeep": {
       "mode": 420,
@@ -50,7 +242,7 @@
     },
     "recipes/README.md": {
       "mode": 420,
-      "sha256": "2e4ff0fa40023053511f61400e2ea9fe5d1ecf3df12f689f2ebe6bba8fbc59be"
+      "sha256": "443e6761ad05976db5175de39931827594a7b33efa868840203d53865a0eed65"
     },
     "recipes/official/automation/n8n-home-tunnel/RECIPE.md": {
       "mode": 420,
@@ -246,7 +438,7 @@
     },
     "recipes/official/builder/explainer-video/RECIPE.md": {
       "mode": 420,
-      "sha256": "173adf67308ef03863b4ffe5342aa8a06c65d95e1683e977cabe0f90a208e65d"
+      "sha256": "2408a405253e0458d0d4fe2afc5281abbd4ce231cfeb8c34c4cef3a59447ab0f"
     },
     "recipes/official/builder/explainer-video/assets/screens/01-scene-with-cat-pc.webp": {
       "mode": 420,
@@ -262,7 +454,7 @@
     },
     "recipes/official/builder/explainer-video/recipe.json": {
       "mode": 420,
-      "sha256": "bb381c57dc520848069659c830956cb442299fea94a3cd161840b972f96b423c"
+      "sha256": "774f040809145d70ad56ae7b642d0f6256aed3b035f0781984635ac71e1999f2"
     },
     "recipes/official/builder/explainer-video/tests/explainer-guard.sh": {
       "mode": 493,
@@ -448,9 +640,13 @@
       "mode": 420,
       "sha256": "755d31308f489f3b0d5c4700ddb04c9ae2d984480e430bc7db0ef7064c314d23"
     },
+    "tools/ai-preferences.md": {
+      "mode": 420,
+      "sha256": "7ceea81ed4bce945d876b02e07a2e56e4fb46c81eaca81f9b8c79f92c105c0fa"
+    },
     "tools/building/design.md": {
       "mode": 420,
-      "sha256": "248f2182c9e152857a4ecf4d24ad2d1dde9467f5758784263165ee4d7f3a409b"
+      "sha256": "4c01e684ca2480da85a6bdc565886943c6c8a4630b44023665f48ca64548dc16"
     },
     "tools/building/existing-projects.md": {
       "mode": 420,
@@ -462,7 +658,7 @@
     },
     "tools/building/index.md": {
       "mode": 420,
-      "sha256": "96e20729e43d1f952bd5b2a84d40bb4b53722ebc7115b784bfdfc9b17764da18"
+      "sha256": "76d6c68cd32676943d96a57e4eead445cc8e432109efcfa432fd162186492415"
     },
     "tools/building/legacy-recipes.md": {
       "mode": 420,
@@ -474,15 +670,15 @@
     },
     "tools/building/settings.md": {
       "mode": 420,
-      "sha256": "146942d9fdbe98d9367e92dd4730b7039421de5de81ed47d533b6ca2cdc712d6"
+      "sha256": "430cecf911071da13fd0e4392d496f159718a055464f9c866e783f6331e29a1c"
     },
     "tools/building/skills.md": {
       "mode": 420,
-      "sha256": "acb88fd830280357029d2a687f9cf1c0b9a2e08750d6c058311a74c24462d108"
+      "sha256": "05328263ccfa619f6553440fc8b823455775caa619b12348e8bf29a0503ed5bc"
     },
     "tools/building/templates/AGENTS.md.in": {
       "mode": 420,
-      "sha256": "8b157858b5faf56aaa82bc07057c2be20298fc14c304d89f4939ff22dfc0f5a4"
+      "sha256": "37d18cf33b3a5326c2f5efbee70d885031dadeb77e6c02dbaa269731c861e153"
     },
     "tools/building/templates/CLAUDE.md.in": {
       "mode": 420,
@@ -502,7 +698,7 @@
     },
     "tools/building/templates/codex-config.toml": {
       "mode": 420,
-      "sha256": "6ae989e7f6ec6a69513d63855825eee68c8a7d5c94801ffa275151b1bc632a45"
+      "sha256": "397d6945cbe755e9ac46d275d00705c546d328f3c83a23f58b86482a054bcedb"
     },
     "tools/building/templates/project-wiki.md.in": {
       "mode": 420,
@@ -514,11 +710,11 @@
     },
     "tools/building_check.py": {
       "mode": 420,
-      "sha256": "0fe244a3cc8340c184e7df4d91905901ccec8e652aae151c42dcbdc13f242d5b"
+      "sha256": "7a441a8b15bfe358dcec008f5f79ca01aece919aaaaa67f3fc4b4bb5272092b6"
     },
     "tools/design.md": {
       "mode": 420,
-      "sha256": "55657592e43ebf41cd9340b1503074a0507dea12744bd85a496cdc4d0492f9b1"
+      "sha256": "8ea0c9721f1c88a94aba9ea93af6c07858e649551f5cc5f6a4f046aba03c4cf2"
     },
     "tools/experience.md": {
       "mode": 420,
@@ -526,7 +722,7 @@
     },
     "tools/interview.md": {
       "mode": 420,
-      "sha256": "77a3513c04a3534202149ed59667e8125ed2b43e8fe8c901790915e31257767f"
+      "sha256": "8a9461b11a9ac9a92ddd63ec93ffab6fdd65b25a15ec0b94a31c4a21197a7667"
     },
     "tools/migrate_v3.py": {
       "mode": 420,
@@ -534,19 +730,19 @@
     },
     "tools/native-defaults.json": {
       "mode": 420,
-      "sha256": "44f82e0ec8e5f8087d843a0a3cb88afcc6b7330b162aaf3cfae9710aba32c367"
+      "sha256": "2c43f29075afa81112bf7bceb18d7be269981da92ebff3f0aa64ab0a04a7e12d"
     },
     "tools/onboarding.md": {
       "mode": 420,
-      "sha256": "b3746d8236ed20df94d51fef0fb0e97e758bb3039d15e9726a783fddfd0493eb"
+      "sha256": "93209be002b147474fe1fab93fe0339f748353ae78697fc1b80d1fd96fc1e11a"
     },
     "tools/os-files.txt": {
       "mode": 420,
-      "sha256": "8578ab9e2ddc44dc133277624d64c069159827b0e4c14618c8f24bede672b404"
+      "sha256": "64a415ec2355b05c21a315e0ec56959c066ddb06e6090c43a79dc816ee9ed8bd"
     },
     "tools/os-update.md": {
       "mode": 420,
-      "sha256": "be86736f838f561e075a166c18bba92666b737d700ff7acd505e8001ccef0679"
+      "sha256": "4dbb0cb0cf2d93580558792b739b9bec53db1726d69c68313a45fff233148af7"
     },
     "tools/output_migration.py": {
       "mode": 420,
@@ -558,7 +754,7 @@
     },
     "tools/prototypes.md": {
       "mode": 420,
-      "sha256": "3e0ff2f045ced2890b368e28aa513a979b869b6c5f4d486c9a9f31dc456af599"
+      "sha256": "93331486a55ca40182964426d6e3bf10e4591dfe4535e56be0889adf4cf46265"
     },
     "tools/recipe-reproduce.md": {
       "mode": 420,
@@ -566,15 +762,15 @@
     },
     "tools/recipe_list.py": {
       "mode": 420,
-      "sha256": "7769cdf895e74825b58d10220c37ad40c5da5579c5fc180ed5abedd75aac2064"
+      "sha256": "05afd6dc621fcbf9c98725c52fcd1236062a9bf099a955ba7e3a4858f18ee005"
     },
     "tools/recipe_zip.py": {
       "mode": 420,
-      "sha256": "f547ff00d346d70c4fa5e5fea420a8b571995cbd6673a4bbecbc3abfffa4847b"
+      "sha256": "c1b83600db17f4df37aada7d7c46edd9fbc9ebc662c7ad6857be4ddf95f1ed69"
     },
     "tools/recipes.md": {
       "mode": 420,
-      "sha256": "c3003c5fd6bddc6a8c239bbef84fe9630137dea9fe260cfee9ad6d551c401d64"
+      "sha256": "caf6bddada2c70a4c20da599dd116ab7ba523dec338c1b363708a72e27a48065"
     },
     "tools/release_package.py": {
       "mode": 420,
@@ -598,139 +794,19 @@
     },
     "tools/skills/create-prototype/SKILL.md": {
       "mode": 420,
-      "sha256": "659cac42416076a75299c9fb6e86c751b49438b9f866b48d36b589e39dd2d10c"
-    },
-    "tools/skills/create-prototype/references/builder-handoff.md": {
-      "mode": 420,
-      "sha256": "903b3b37e93e34f7c91563f562938bc37be5f8950cc71c1135ab0a4c4f1aac0b"
-    },
-    "tools/skills/create-prototype/references/kinds.md": {
-      "mode": 420,
-      "sha256": "865c43d2fa99439bde2664090974efa84692d981500a687539c32c3bfee47461"
-    },
-    "tools/skills/create-prototype/references/manual.html": {
-      "mode": 420,
-      "sha256": "6cea5f9ffb215b43ce3401893b6327bcf1b5072dab2b14685c4dd8a0cfa8bea6"
-    },
-    "tools/skills/create-prototype/scripts/shot.mjs": {
-      "mode": 420,
-      "sha256": "d0560e3e531b5f046035d8b2b377cfdb3758e0e0f59855c8fc4d1194c437d014"
+      "sha256": "06293a9594d24505faea772c970e187bebcdf976a4718f800a1f8d088f000630"
     },
     "tools/skills/design-review/SKILL.md": {
       "mode": 420,
-      "sha256": "a8862006b9960d67feb075e9e0f442a9a36639e9774867d3e23179dcde261f31"
-    },
-    "tools/skills/design-review/scripts/shot.mjs": {
-      "mode": 420,
-      "sha256": "d0560e3e531b5f046035d8b2b377cfdb3758e0e0f59855c8fc4d1194c437d014"
+      "sha256": "df1d4d71c960b56bc39f36fd1468b9ea5dbcb0e31ba6e2f487e364583a8d656a"
     },
     "tools/skills/explainer-video/SKILL.md": {
       "mode": 420,
-      "sha256": "5861b016ad3851ebb757cd669cc67ee4b7891cd1c62cbf55a203aef74330e630"
-    },
-    "tools/skills/explainer-video/character/TERMS.md": {
-      "mode": 420,
-      "sha256": "e5dd2922aa454c83d9a67147ce95fedd821a919fbf4b0d1e87dc4a162863a9c5"
-    },
-    "tools/skills/explainer-video/character/cat1.png": {
-      "mode": 420,
-      "sha256": "37d33332e6518ef954655ad2033d6e62e749dc826b64da7f964e398f4c5cadb7"
-    },
-    "tools/skills/explainer-video/character/cat2.png": {
-      "mode": 420,
-      "sha256": "f943d494f8e7e898791df99b61ffe9570165621f987c921a54c7b972ae7d1e0f"
-    },
-    "tools/skills/explainer-video/character/cat3.png": {
-      "mode": 420,
-      "sha256": "3b86aecf29307485330d9f16819ad8d259ea3b25d859be9f261da5bf5344c92c"
-    },
-    "tools/skills/explainer-video/character/cat4.png": {
-      "mode": 420,
-      "sha256": "0479a895c4c2d4c578b3ae9536709335ce4b3a09b47ca8d613f9e26709e53825"
-    },
-    "tools/skills/explainer-video/character/cat5.png": {
-      "mode": 420,
-      "sha256": "31b90732c9a01bcbe1d6d5043da4c23cdd50b493543420284d271e384b46093f"
-    },
-    "tools/skills/explainer-video/character/cat6.png": {
-      "mode": 420,
-      "sha256": "61cd538f120825def39120e953c43aafa4ecb9ec72a3dfff96ea71ee3b61081b"
-    },
-    "tools/skills/explainer-video/character/cat7.png": {
-      "mode": 420,
-      "sha256": "94c991f8303acc910dc3e23f2226eafb6d700e5a9fe28868906a7920a7f36b61"
-    },
-    "tools/skills/explainer-video/character/cat8.png": {
-      "mode": 420,
-      "sha256": "033106bc0755e9e52b53ce4d2440db7a46ac62846b03e6dc3655c82ac5dc0e7a"
-    },
-    "tools/skills/explainer-video/character/character.js": {
-      "mode": 420,
-      "sha256": "308bab8c3a61ab09bf75f77b3240ca90e5cd2f4ae64a66c8f75ae9e7684e5968"
-    },
-    "tools/skills/explainer-video/engine/explainer.css": {
-      "mode": 420,
-      "sha256": "19bd1be33362f88d02419bde739b533668b7822bc93a4dd7fc378f5f8932a533"
-    },
-    "tools/skills/explainer-video/engine/explainer.js": {
-      "mode": 420,
-      "sha256": "e94e4e090ae7f73ceb69d6dc3cb59d1d90a318d3829b98c8df5d4643a2bdd51b"
-    },
-    "tools/skills/explainer-video/engine/icons.js": {
-      "mode": 420,
-      "sha256": "bc4a8ceb53cb280f200276bd1f80299e555ec64db242b6211d6386faea4384bc"
-    },
-    "tools/skills/explainer-video/engine/render-video.mjs": {
-      "mode": 420,
-      "sha256": "34be0b3d09933fe1cc6188175348444c0092a59932e953a3bfd1033091867ff8"
-    },
-    "tools/skills/explainer-video/examples/mcp/evidence.md": {
-      "mode": 420,
-      "sha256": "d52805caa7a1573af7374fbaefdea7282f4d3e01e21f058ea0a74254821d3914"
-    },
-    "tools/skills/explainer-video/examples/mcp/index.html": {
-      "mode": 420,
-      "sha256": "bc7416247f9b5771d3b9db1fde028f1b3480d1813e1c8bf58f08cb2a70570e50"
-    },
-    "tools/skills/explainer-video/examples/mcp/plan.md": {
-      "mode": 420,
-      "sha256": "621a4b08ebb69f8317bdac225cce62ecdeb5084f93bc3cb97852d46cc01900eb"
-    },
-    "tools/skills/explainer-video/examples/mcp/scene.js": {
-      "mode": 420,
-      "sha256": "3cf3177456171ef14832989415761272410a5cde9e205d2ce4389fd383976d81"
-    },
-    "tools/skills/explainer-video/references/icon-catalog/index.html": {
-      "mode": 420,
-      "sha256": "f38c9abd32a000a6f6e7ae125e3f58369f5a10b5ed74f646de50fc9dbce7f5d8"
-    },
-    "tools/skills/explainer-video/references/icon-catalog/scene.js": {
-      "mode": 420,
-      "sha256": "84c87a43c728e65ca684c39006d382f41920eeddfb899f9b583e6ec276e5dc08"
-    },
-    "tools/skills/explainer-video/references/scene-format.md": {
-      "mode": 420,
-      "sha256": "f5d5c93a28b62bdab577f203680a014691c8e83c7a90b35694503d2f17810a85"
+      "sha256": "b82891ef96b412a8b8dcc2796347e61069e6e42e4dfb1320762e56cd1fccbac2"
     },
     "tools/skills/visualize-project-architecture/SKILL.md": {
       "mode": 420,
-      "sha256": "852d214a65c3db33e0cda44d5478347f9f6abd6b43f81b73c4b5895ee523915d"
-    },
-    "tools/skills/visualize-project-architecture/agents/openai.yaml": {
-      "mode": 420,
-      "sha256": "b23efaa35f7fb26ddb3596d17bce2fc3f9e847acd059c4ff8b8b604d03304a26"
-    },
-    "tools/skills/visualize-project-architecture/references/diagram-strategy.md": {
-      "mode": 420,
-      "sha256": "50df0d6f38bdfb32958fbd0a70f1627a83f02cfeb862e971ca0d4fb45b6ee96b"
-    },
-    "tools/skills/visualize-project-architecture/references/visual-style.md": {
-      "mode": 420,
-      "sha256": "90db95baf6009a2f2b792d40b8cb87321b77e1f1d1e68b6df76f964a7da3e7c1"
-    },
-    "tools/skills/visualize-project-architecture/scripts/shot.mjs": {
-      "mode": 420,
-      "sha256": "d0560e3e531b5f046035d8b2b377cfdb3758e0e0f59855c8fc4d1194c437d014"
+      "sha256": "b820fb09e30702a3f5175cb26e0370c2d8db72af6019ea3bea2668340159195e"
     },
     "tools/update_os.py": {
       "mode": 493,
@@ -766,7 +842,7 @@
     },
     "wiki/README.md": {
       "mode": 420,
-      "sha256": "112e94f0f202b7ad1745909323316d5bc51e6a0d4f46693396323f6ed5238995"
+      "sha256": "d046ab87174ee0010d2146f9789a30a6ac3d55e175648b713f9438cb94303a6e"
     },
     "wiki/index.md": {
       "mode": 420,
@@ -790,5 +866,5 @@
     }
   },
   "format": 1,
-  "version": "4.3.1"
+  "version": "4.4.0"
 }

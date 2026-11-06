@@ -1,6 +1,38 @@
+# Requires permission-profile support. A loaded legacy sandbox_mode overrides this.
 approval_policy = "on-request"
-sandbox_mode = "workspace-write"
+default_permissions = "builder-os"
 web_search = "disabled"
 
-[sandbox_workspace_write]
-network_access = false
+[shell_environment_policy]
+inherit = "core"
+ignore_default_excludes = false
+
+[permissions.builder-os]
+extends = ":workspace"
+
+[permissions.builder-os.filesystem]
+glob_scan_max_depth = 12
+"~/.ssh" = "deny"
+"~/.aws" = "deny"
+"~/.cloudflared" = "deny"
+"~/.config/gcloud" = "deny"
+"~/.kube" = "deny"
+"~/.codex/auth.json" = "deny"
+"~/.claude/.credentials.json" = "deny"
+
+[permissions.builder-os.filesystem.":workspace_roots"]
+"**/.env" = "deny"
+"**/.env.*" = "deny"
+"**/.envrc" = "deny"
+"**/.dev.vars" = "deny"
+"**/.dev.vars.*" = "deny"
+"**/*.pem" = "deny"
+"**/*.key" = "deny"
+"**/credentials.json" = "deny"
+"**/service-account*.json" = "deny"
+"**/.npmrc" = "deny"
+"**/.pypirc" = "deny"
+"**/.netrc" = "deny"
+
+[permissions.builder-os.network]
+enabled = false

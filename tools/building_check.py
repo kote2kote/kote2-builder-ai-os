@@ -187,15 +187,16 @@ def inspect_project(root):
         def codex_settings():
             require(tomllib is not None, "Python 3.11以上が必要です")
             settings = tomllib.loads(read(root, ".codex/config.toml").decode("utf-8"))
-            require(isinstance(settings.get("sandbox_workspace_write"), dict), "設定の型が不正です")
-            require(set(settings["sandbox_workspace_write"]) == {"network_access"},
-                    "標準外の書込範囲/サンドボックス設定です")
-            require(settings.get("approval_policy") == "on-request"
-                    and settings.get("sandbox_mode") == "workspace-write"
-                    and settings.get("web_search") == "disabled"
-                    and settings.get("sandbox_workspace_write", {}).get("network_access") is False,
-                    "標準安全項目が異なります")
-            if set(settings) - {"approval_policy", "sandbox_mode", "web_search", "sandbox_workspace_write"}:
+            if any(k in settings for k in ("sandbox_mode", "sandbox_workspace_write")):
+                warnings.append("旧sandbox方式です。秘密の読取保護は未導入。既存設定を保持し、移行差分を確認してください")
+            require(not any(k in settings for k in ("sandbox_mode", "sandbox_workspace_write")),
+                    "旧sandbox方式です。秘密の読取保護は未導入。既存設定を保持し、移行差分を確認してください")
+            baseline = tomllib.loads(read(TEMPLATES, "codex-config.toml").decode("utf-8"))
+            for key, value in baseline.items():
+                require(settings.get(key) == value, "標準安全項目が異なります: " + key)
+            require(not any(k in settings for k in ("sandbox_mode", "sandbox_workspace_write", "profiles")),
+                    "旧sandboxまたは別profileとの混在があります")
+            if set(settings) - set(baseline):
                 warnings.append("Codexの追加設定は別の権限・通信・hooks点検が必要です。")
         check(".codex/config.toml", codex_settings)
     for skill in contract["skills"]:

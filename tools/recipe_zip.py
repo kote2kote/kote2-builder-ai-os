@@ -145,7 +145,7 @@ def locate(argument):
                 raise Stop(f"{name} が普通のファイルではありません（リンクなど）")
         if (path / "recipe.json").is_file():
             merged = json.loads((path / "recipe.json").read_text(encoding="utf-8")).get("superseded_by")
-            if isinstance(merged, str) and merged.startswith("tools/skills/"):
+            if isinstance(merged, str) and merged.startswith(("tools/skills/", ".agents/skills/", ".claude/skills/")):
                 raise Stop(f"このレシピはOSの初期スキルに統合しました（{safe_location(merged)}）。過去の記録なのでZIPにはしません")
             return path, "legacy-package"
         if (path / "RECIPE.md").is_file():

@@ -110,7 +110,7 @@ Report your version, environment, and reproduction steps in the official reposit
 
 The core is licensed under the [Apache License 2.0](LICENSE). Also review the [attribution notices](NOTICE) and [third-party terms](THIRD_PARTY.md).
 
-The Himawari cat images are **not** covered by the Apache License 2.0. You may use them in explainer videos, publish and commercially use those videos, and redistribute the images as part of the complete OS package. Redistributing or selling the images on their own, or selling merchandise featuring the character alone, is prohibited. [Image usage terms](tools/skills/explainer-video/character/TERMS.md) (Japanese).
+The Himawari cat images are **not** covered by the Apache License 2.0. You may use them in explainer videos, publish and commercially use those videos, and redistribute the images as part of the complete OS package. Redistributing or selling the images on their own, or selling merchandise featuring the character alone, is prohibited. [Image usage terms](.claude/skills/explainer-video/character/TERMS.md) (Japanese).
 
 kote2 does not claim rights to the deliverables you create with this OS. Check the terms of any materials and external services you use separately. This is not an official Anthropic or OpenAI product, is not affiliated with either company, and does not guarantee operation or results.
 
@@ -119,3 +119,7 @@ kote2 does not claim rights to the deliverables you create with this OS. Check t
 At the start of a new conversation, or when resuming a long one, automatically check only the OS version if at least 24 hours have passed since the previous check. Briefly notify the user of a newer version only once. Do not automatically download or apply it. See [how to disable or resume checks and the detailed conditions](tools/os-update.md#利用時の自動確認) (Japanese).
 
 Use [AGENTS.md](AGENTS.md) for everyday work and [updates, undo, and recovery](tools/os-update.md) for OS updates and notification settings. For first-time setup checks, follow the [setup guide](tools/setup.md); do not skip verification. These guides are currently in Japanese.
+
+### 4.2.0 / 4.3.0 upgrades
+
+Native skill paths require the transition release first. This development candidate has not been published; its immutable public transition commit will be added after approval. Do not bypass the old verifier or execute candidate code before installation. See `tools/os-update.md` for the two-stage route and conflict preservation.
