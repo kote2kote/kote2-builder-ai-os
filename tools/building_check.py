@@ -150,9 +150,37 @@ def inspect_project(root):
                 values = permissions.get(field)
                 require(isinstance(values, list) and all(isinstance(value, str) for value in values)
                         and set(baseline[field]) <= set(values), "標準安全項目が不足しています")
+            for field in ("deny", "ask", "allow"):
+                rules = permissions.get(field, [])
+                require(isinstance(rules, list) and all(isinstance(rule, str) for rule in rules), "権限規則の型が不正です")
+                require(not any(re.match(r"\s*(?:Read|Edit)\(\s*!", rule) for rule in rules),
+                        "否定規則による例外は標準安全検査で認定しません")
             require(permissions.get("defaultMode", "default") not in {"bypassPermissions", "dontAsk"},
                     "標準外の承認方式です")
-            if (set(settings) - {"permissions"} or set(permissions) - {"deny", "ask"}):
+            sandbox = settings.get("sandbox", {})
+            standard = unique_json(read(TEMPLATES, "claude-settings.json"))["sandbox"]
+            for key in ("enabled", "failIfUnavailable", "autoAllowBashIfSandboxed", "allowUnsandboxedCommands"):
+                require(sandbox.get(key) is standard[key], "Claude sandboxの標準安全項目が異なります")
+            filesystem = sandbox.get("filesystem", {})
+            require(isinstance(filesystem, dict), "sandbox.filesystemの型が不正です")
+            for field in ("denyRead", "denyWrite"):
+                values = filesystem.get(field, [])
+                require(isinstance(values, list) and all(isinstance(rule, str) for rule in values), "sandboxの拒否規則の型が不正です")
+                require(not any(re.match(r"\s*!", rule) for rule in values), "sandboxの否定規則は標準安全検査で認定しません")
+            require(set(standard["filesystem"]["denyRead"]) <= set(filesystem.get("denyRead", [])),
+                    "Claude sandboxの秘密保護項目が不足しています")
+            additional = set(sandbox) - set(standard)
+            additional |= {"filesystem." + key for key in set(filesystem) - set(standard["filesystem"]) - {"denyWrite"}}
+            if additional:
+                warnings.append("sandboxの追加設定は未点検です: " + "、".join(sorted(additional)))
+            credentials = sandbox.get("credentials", {})
+            values = credentials.get("envVars", []) if isinstance(credentials, dict) else []
+            require(isinstance(values, list), "環境変数保護の型が不正です")
+            for protected in standard["credentials"]["envVars"]:
+                entries = [entry for entry in values if isinstance(entry, dict) and entry.get("name") == protected["name"]]
+                require(entries == [protected], "環境変数の標準denyが欠けるか重複/変更されています: " + protected["name"])
+            require(not sandbox.get("excludedCommands"), "sandbox外のコマンドがあります")
+            if (set(settings) - {"permissions", "sandbox"} or set(permissions) - {"deny", "ask"}):
                 warnings.append("Claudeの追加設定（hooks/allow/追加範囲/承認方式等）は別の権限点検が必要です。")
         check(".claude/settings.json", claude_settings)
     if "codex" in contract["ai"]:

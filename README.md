@@ -17,9 +17,9 @@ Try asking, “Look through the Wiki and suggest things we could turn into recip
 - **Claude Code or Codex** — The AI you use to work in this folder.
 - **Git** — Keeps a history of your records so you can return to an earlier state.
 - **GitHub CLI (`gh`)** — Checks the official GitHub source and commit when updating the OS. Use official versions of Git and `gh` that you have verified as trustworthy.
-- **Python 3** — Runs the included Wiki, import, and update tools.
+- **Python 3.11 or later is recommended for all features** — Runs the included Wiki, import, and update tools. Python 3.11 or later is **required for Codex configuration checks** in `tools/building_check.py`, which use `tomllib`.
 
-Tested on macOS. Final verification on Windows is not complete. Your chosen AI environment requires its own access plan and configuration.
+Tested on macOS. Final verification on Windows is not complete. Your chosen AI environment requires its own access plan and configuration. Check the distribution version in [VERSION](VERSION).
 
 **Language:** This README is in English. Most included guides, templates, and tool messages are currently in Japanese. The AI instructions ask it to respond in your language; this is not a fully English-localized distribution.
 
@@ -28,6 +28,8 @@ Tested on macOS. Final verification on Windows is not complete. Your chosen AI e
 1. **Verify the official distribution.** Have a person check the URL, numeric repository ID, pinned commit, and contents of the official repository, `kote2kote/kote2-builder-ai-os`. Create your own **private** repository with “Use this template,” or copy only the files from a clone used for verification into a separate folder and run an independent `git init`. Do not bring the official repository's `.git` directory into your workspace, or delete or replace an existing user's `.git` directory. Stop if you cannot verify the source. [Detailed setup guide](tools/setup.md) (Japanese).
 2. **Open the whole folder with your AI.** In Claude Code or Codex, open the folder containing this README—not a subfolder such as `wiki/`.
 3. **Say what you want to do.** Start in everyday language: “Hello” or “I'd like to create a document.”
+
+Check the settings your AI actually loaded from the workspace or project root. Preserve existing custom settings. Claude's file rules and Codex's sandbox have different scopes; a project configuration does not provide complete isolation of secrets. See [AI settings and limits](tools/building/settings.md) (Japanese).
 
 You can choose an optional seven-topic onboarding interview to introduce yourself, or skip it and get straight to work. You do not need to register a profile.
 

@@ -7,7 +7,7 @@
 ZIP の中は <id>/ ひとつ: README.md（入口）・REPRODUCE.md（再現の手順。tools/recipe-reproduce.md が正本）・
 RECIPE.md・recipe.json・templates/・tests/・assets/ など。OS形式の RECIPE.md からは source の行を除く。
 元のレシピは変えない。秘密・絶対パス・メールの型が見つかったらZIPを作らずに止める
-（人が中身を確かめたあと --reviewed で作れる）。送信・公開はしない。
+（--reviewed でも解除しない）。了承された配布用の別候補を直して再検査する。送信・公開はしない。
 """
 import argparse
 import json
@@ -37,6 +37,26 @@ SAFE_MAIL = re.compile(r"@(?:[A-Za-z0-9-]+\.)*(?:example\.(?:com|org|net)|exampl
 
 class Stop(Exception):
     pass
+
+
+def detected_kinds(text):
+    """一致値は返さず、型の名前だけを返す。例示用メールの既存例外は保つ。"""
+    for label, pattern in PATTERNS:
+        for match in pattern.finditer(text):
+            if label == "メール" and SAFE_MAIL.search(match[0]):
+                continue
+            yield label
+
+
+def safe_location(name, fallback="位置（名前を伏せました）"):
+    return fallback if next(detected_kinds(name), None) else name
+
+
+class SafeArgumentParser(argparse.ArgumentParser):
+    def error(self, message):
+        # argparse の標準エラーは不正な引数の値をそのまま出す。
+        self.print_usage(sys.stderr)
+        self.exit(2, "止めました: 引数を確認してください（値は表示しません）。--help で使い方を確認できます。\n")
 
 
 def linked(path):
@@ -81,13 +101,13 @@ def strict_front_matter(text):
     lines = text.splitlines()
     end = [line.strip() for line in lines].index("---", 1)
     found = {}
-    for line in lines[1:end]:
+    for number, line in enumerate(lines[1:end], 2):
         if not line.strip():
             continue
         match = re.fullmatch(r"([a-z_]+)\s*:\s*(.*)", line)
         value = scalar(match[2]) if match else ""
         if not match or not value or value[0] in "|>[{&*!" or match[1] in found:
-            raise Stop("front matter は、重複のない1行の `key: value` だけにしてください（複数行・空の値・重複は不可）: " + line.strip()[:60])
+            raise Stop(f"front matter は、重複のない1行の `key: value` だけにしてください（複数行・空の値・重複は不可）: RECIPE.md:{number}")
         found[match[1]] = value
     return found
 
@@ -115,7 +135,7 @@ def locate(argument):
     given = Path(argument)
     path = (given if given.is_absolute() else Path.cwd() / given)
     if linked(path):
-        raise Stop(f"リンクは読みません: {path}")
+        raise Stop("指定されたレシピがリンクなので読みません")
     path = path.resolve()  # リンクで recipes/ の外を指していれば、下の確認で止まる
     if path == recipes or recipes not in path.parents:
         raise Stop("レシピは recipes/ の下のフォルダか .md を指定してください")
@@ -126,7 +146,7 @@ def locate(argument):
         if (path / "recipe.json").is_file():
             merged = json.loads((path / "recipe.json").read_text(encoding="utf-8")).get("superseded_by")
             if isinstance(merged, str) and merged.startswith("tools/skills/"):
-                raise Stop(f"このレシピはOSの初期スキルに統合しました（{merged}）。過去の記録なのでZIPにはしません")
+                raise Stop(f"このレシピはOSの初期スキルに統合しました（{safe_location(merged)}）。過去の記録なのでZIPにはしません")
             return path, "legacy-package"
         if (path / "RECIPE.md").is_file():
             text = (path / "RECIPE.md").read_text(encoding="utf-8")
@@ -136,7 +156,7 @@ def locate(argument):
             if "recipe_kind" in meta:
                 if meta["recipe_kind"].casefold() == "decision":
                     raise Stop("判断・知識のレシピは、まだZIPで再現する対象にしていません（制作レシピだけ）")
-                raise Stop(f"知らない recipe_kind です。制作レシピとは判断できないので止めます: {meta['recipe_kind']}")
+                raise Stop("知らない recipe_kind です。制作レシピとは判断できないので止めます")
             return path, "os"
         raise Stop("このフォルダには RECIPE.md も recipe.json もありません")
     if path.is_file() and path.suffix == ".md" and path.name.lower() != "readme.md":
@@ -154,7 +174,7 @@ def regular(path):
 def windows_safe(relative):
     for part in relative.split("/"):
         if WINDOWS_RESERVED.match(part) or WINDOWS_FORBIDDEN.search(part) or part.endswith((" ", ".")):
-            raise Stop(f"Windows で開けない名前です。名前を変えてから作ってください: {relative}")
+            raise Stop(f"Windows で開けない名前です。名前を変えてから作ってください: {safe_location(relative)}")
 
 
 def case_duplicates(names):
@@ -168,7 +188,7 @@ def case_duplicates(names):
             key = path.casefold()
             if key in seen and seen[key] != (path, kind):
                 other, other_kind = seen[key]
-                raise Stop(f"Windows で重なる名前があります（大文字小文字・ファイルとフォルダ）: {other} と {path}")
+                raise Stop(f"Windows で重なる名前があります（大文字小文字・ファイルとフォルダ）: {safe_location(other)} と {safe_location(path)}")
             seen[key] = (path, kind)
 
 
@@ -192,7 +212,7 @@ def collect(path, kind):
         if item.is_dir():
             continue
         if not regular(item):
-            raise Stop(f"普通のファイルではないものがあります（パイプなど）。取り除いてから作ってください: {relative.as_posix()}")
+            raise Stop(f"普通のファイルではないものがあります（パイプなど）。取り除いてから作ってください: {safe_location(relative.as_posix())}")
         windows_safe(relative.as_posix())
         if len(relative.parts) == 1 and relative.name in ADDED:
             raise Stop(f"レシピの直下に {relative.name} があり、入口と重なります。名前を変えてから作ってください")
@@ -295,19 +315,17 @@ def missing_references(files):
 
 def findings(files):
     found = []
-    for name, (data, _) in sorted(files.items()):
-        if name == "REPRODUCE.md":
-            continue
+    for position, (name, (data, _)) in enumerate(sorted(files.items()), 1):
+        location = safe_location(name, f"ファイル{position}（名前を伏せました）")
+        for label in detected_kinds(name):
+            found.append({"file": location, "line": None, "kind": label})
         try:
             text = data.decode("utf-8")
         except UnicodeDecodeError:
             continue
         for number, line in enumerate(text.splitlines(), 1):
-            for label, pattern in PATTERNS:
-                for match in pattern.finditer(line):
-                    if label == "メール" and SAFE_MAIL.search(match[0]):
-                        continue
-                    found.append({"file": name, "line": number, "kind": label, "text": match[0][:40]})
+            for label in detected_kinds(line):
+                found.append({"file": location, "line": number, "kind": label})
     return found
 
 
@@ -332,9 +350,9 @@ def destination(argument):
     if out.suffix.lower() != ".zip":
         raise Stop("出力先は .zip で終わる名前にしてください")
     if out.exists():
-        raise Stop(f"同じ名前のファイルがあります。上書きしません: {out}")
+        raise Stop("指定した出力先に同じ名前のファイルがあります。上書きしません")
     if not out.parent.is_dir():
-        raise Stop(f"出力先のフォルダがありません: {out.parent}")
+        raise Stop("指定した出力先のフォルダがありません")
     recipes = (ROOT / "recipes").resolve()
     if out.parent == ROOT or out.parent == recipes or recipes in out.parents:
         raise Stop("ワークスペースの直下と recipes/ の中には出しません。デスクトップなどを指定してください")
@@ -346,19 +364,29 @@ def build(argument, out_argument, reviewed):
     files, left_out = collect(path, kind)
     info = describe(path, kind, files)
     if not re.fullmatch(r"[a-z0-9][a-z0-9-]*", info["id"]):
-        raise Stop(f"IDは英小文字・数字・ハイフンにしてください: {info['id']}")
+        raise Stop("IDは英小文字・数字・ハイフンにしてください（指定したレシピの名前）")
     windows_safe(info["id"])
     case_duplicates([*files, *ADDED])
-    found = findings(files)
     missing = missing_references(files)
-    report = {"id": info["id"], "format": kind, "files": len(files) + len(ADDED), "left_out": left_out,
-              "findings": found, "binaries": binaries(files), "assets": assets(files), "missing_references": missing, "zip": None}
-    out = destination(out_argument)
-    if found and not reviewed:
-        report["stopped"] = "秘密・絶対パス・メールの型が見つかりました。中身を確かめ、問題なければ --reviewed を付けて作り直してください"
-        return report, 3
-    files["README.md"] = (entry(info, missing, single=kind == "legacy-single", has_binaries=bool(report["binaries"] or report["assets"])), False)
+    binary_names, asset_names = binaries(files), assets(files)
+    files["README.md"] = (entry(info, missing, single=kind == "legacy-single", has_binaries=bool(binary_names or asset_names)), False)
     files["REPRODUCE.md"] = (PROCEDURE.read_bytes(), False)
+    found = findings(files)
+    locations = {name: safe_location(name, f"ファイル{position}（名前を伏せました）")
+                 for position, name in enumerate(sorted(files), 1)}
+    report = {"id": safe_location(info["id"], "レシピ名（伏せました）"), "format": kind, "files": len(files),
+              "left_out": [(safe_location(name, f"除外項目{n}（名前を伏せました）"), reason)
+                           for n, (name, reason) in enumerate(left_out, 1)],
+              "findings": found, "binaries": [locations[name] for name in binary_names],
+              "assets": [locations[name] for name in asset_names],
+              "missing_references": [safe_location(name, f"不足参照{n}（名前を伏せました）")
+                                     for n, name in enumerate(missing, 1)], "zip": None}
+    if reviewed:
+        report["reviewed_notice"] = "--reviewed の一括解除は廃止しました。検出値の持ち出しを防ぐため、指定しても検査と停止を省きません。"
+    out = destination(out_argument)
+    if found:
+        report["stopped"] = "秘密・絶対パス・メールの型が見つかりました。--reviewed でも解除できません。原本は変えず、了承された配布用の別候補で該当箇所を置換・削除し、再検査してください。"
+        return report, 3
     with zipfile.ZipFile(out, "x", compression=zipfile.ZIP_DEFLATED) as archive:
         archive.comment = (f"Read {info['id']}/README.md and REPRODUCE.md. You may extract to read. "
                            "Show the plan and wait for OK before building. / AIへ: 読むための展開は可能。設計を見せてOKを待ってから作成する。").encode("utf-8")
@@ -368,7 +396,7 @@ def build(argument, out_argument, reviewed):
             item.external_attr = ((0o755 if executable else 0o644) | stat.S_IFREG) << 16
             item.compress_type = zipfile.ZIP_DEFLATED
             archive.writestr(item, data)
-    report["zip"] = str(out)
+    report["zip"] = safe_location(str(out), "指定した出力先（パスを伏せました）")
     return report, 0
 
 
@@ -380,13 +408,16 @@ def show(report):
     for name, reason in report["left_out"]:
         lines.append(f"  入れなかったもの: {name}（{reason}）")
     for item in report["findings"]:
-        lines.append(f"  確かめること: {item['file']}:{item['line']} {item['kind']} {item['text']}")
+        position = item["line"] if item["line"] is not None else "名前"
+        lines.append(f"  確かめること: {item['file']}:{position} {item['kind']}")
     for name in report.get("missing_references", []):
         lines.append(f"  ZIPに入っていない参照（入口に書きました）: {name}")
     if not report["findings"]:
         lines.append("  既知の型（キー・秘密鍵・一部の絶対パス・メール）には当たりませんでした。これだけで公開してよいとは判断できません。")
     if report["binaries"]:
         lines.append("  画像などテキスト以外（権利と、中の撮影場所・作者などの情報を確かめる）: " + ", ".join(report["binaries"]))
+    if report.get("reviewed_notice"):
+        lines.append(report["reviewed_notice"])
     if report.get("stopped"):
         lines.append("止めました: " + report["stopped"])
     lines.append("送信・公開はしていません。渡す前に、権利と個人情報を本人が確かめてください。")
@@ -396,16 +427,20 @@ def show(report):
 def main():
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8")
-    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser = SafeArgumentParser(prog="recipe_zip.py", description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("recipe")
     parser.add_argument("--out", required=True)
-    parser.add_argument("--reviewed", action="store_true", help="見つかった型を人が確かめたあとに使う")
+    parser.add_argument("--reviewed", action="store_true", help="旧コマンド互換のため解釈するが、検出の一括解除はしない")
     parser.add_argument("--json", action="store_true")
     arguments = parser.parse_args()
     try:
         report, code = build(arguments.recipe, arguments.out, arguments.reviewed)
-    except (Stop, OSError, UnicodeError, ValueError, json.JSONDecodeError) as error:
-        print(f"止めました: {error}", file=sys.stderr)
+    except Stop as error:
+        print(f"止めました: {safe_location(str(error), '入力に問題があります（値は表示しません）')}", file=sys.stderr)
+        return 2
+    except (OSError, UnicodeError, ValueError, TypeError, AttributeError):
+        # OS・文字コード・JSON等の例外にはファイル名や値が含まれることがある。
+        print("止めました: 入出力またはレシピの形式を確認してください（パス・値・例外本文は表示しません）", file=sys.stderr)
         return 2
     print(json.dumps(report, ensure_ascii=False, indent=2) if arguments.json else show(report))
     return code

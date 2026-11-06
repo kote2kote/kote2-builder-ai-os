@@ -2,7 +2,7 @@
   "files": {
     ".claude/settings.json": {
       "mode": 420,
-      "sha256": "fab3e0ed0ae044ea04bbf56b6c92495bce6844b836bd1f89b3b14afd3acaa046"
+      "sha256": "a3fa1b33376f2f8fc369f4a4987be7657bc2a68b9067072f0e8237de7a5b47c5"
     },
     ".gitignore": {
       "mode": 420,
@@ -10,7 +10,7 @@
     },
     "AGENTS.md": {
       "mode": 420,
-      "sha256": "77f47e5748ea6d187863557c7e443e4f16320bc70609cdb64237cbc4915a0072"
+      "sha256": "b6b1da2acc840f36240b6a3effe712f3a62de9f6d916a18bdef8c4f91c303283"
     },
     "CLAUDE.md": {
       "mode": 420,
@@ -34,7 +34,7 @@
     },
     "README.md": {
       "mode": 420,
-      "sha256": "cbb1e8a9cbbfe97c92548d4e536fadf37a842dfa44fc96072802a413bc30cb8c"
+      "sha256": "954a873c45f9fc42f06be2afd51bb8da78c55b00135e28add5c8e4f75f4983e4"
     },
     "THIRD_PARTY.md": {
       "mode": 420,
@@ -42,7 +42,7 @@
     },
     "VERSION": {
       "mode": 420,
-      "sha256": "1e5302003691b6fdc7bddc0736eef7ce3adc870e97afdfcfb497dde2a78ed545"
+      "sha256": "8722a3e4c8ef0feb2e7a669f5f854c72d5d6390b25598f9745dc95e5ffe51dce"
     },
     "projects/.gitkeep": {
       "mode": 420,
@@ -450,7 +450,7 @@
     },
     "tools/building/design.md": {
       "mode": 420,
-      "sha256": "92fd2ff983ba9bbfdd7a4f7ec6a4be60129d5f49130bca4498b04271efe98cba"
+      "sha256": "248f2182c9e152857a4ecf4d24ad2d1dde9467f5758784263165ee4d7f3a409b"
     },
     "tools/building/existing-projects.md": {
       "mode": 420,
@@ -470,11 +470,11 @@
     },
     "tools/building/project.md": {
       "mode": 420,
-      "sha256": "ebc4702fbecfb5c50672ec2554b115f83764be238cb31c7735b1266f71465409"
+      "sha256": "9275d9a39eec9b07295c72d1a38a709f1ceb75ed134a463354c3c7977b109c10"
     },
     "tools/building/settings.md": {
       "mode": 420,
-      "sha256": "5263fa5c39485e452f6933b79db3d75ed8ca2dcd442e6d88e7cd085fc254c594"
+      "sha256": "146942d9fdbe98d9367e92dd4730b7039421de5de81ed47d533b6ca2cdc712d6"
     },
     "tools/building/skills.md": {
       "mode": 420,
@@ -498,7 +498,7 @@
     },
     "tools/building/templates/claude-settings.json": {
       "mode": 420,
-      "sha256": "63d7c296cd2f64d1c2296d9ec2feef9d2dd635088f99175d56391c0ce4ef4251"
+      "sha256": "777f052418823949184f4f00dfc02bba298d86787473aa722683c728425f7d82"
     },
     "tools/building/templates/codex-config.toml": {
       "mode": 420,
@@ -506,7 +506,7 @@
     },
     "tools/building/templates/project-wiki.md.in": {
       "mode": 420,
-      "sha256": "ef3873c551e249065642a5bb8ab5ef912e31ac8cd5e6cd01195f7e200a5dbc54"
+      "sha256": "9e09aeab73954f1572494c2fa62081f34a02768dbcf292d3a1247a93446ab61f"
     },
     "tools/building/verification.md": {
       "mode": 420,
@@ -514,7 +514,7 @@
     },
     "tools/building_check.py": {
       "mode": 420,
-      "sha256": "b26b57ffef8a1d7ed9e780a845b801e61793a91a0de7b2cd9496648577f814bc"
+      "sha256": "0fe244a3cc8340c184e7df4d91905901ccec8e652aae151c42dcbdc13f242d5b"
     },
     "tools/design.md": {
       "mode": 420,
@@ -522,15 +522,19 @@
     },
     "tools/experience.md": {
       "mode": 420,
-      "sha256": "f6061c72962e6155089c13d5053c9d8d8118374ff67fcc5cdd76cb64a048c6b7"
+      "sha256": "ccabeabcc12ae206f4f9d6cd7a9929f282985ff31d1ee769aa1402eaf4ff7608"
     },
     "tools/interview.md": {
       "mode": 420,
-      "sha256": "0e939bcefc6c3bd9dbf9770dbbac544604de14d20a9b6d4b517a7387c0bcff98"
+      "sha256": "77a3513c04a3534202149ed59667e8125ed2b43e8fe8c901790915e31257767f"
     },
     "tools/migrate_v3.py": {
       "mode": 420,
       "sha256": "cd60291a52e340f136995828938d2dcb6d963d83fcef3856d5363a3b606d41bd"
+    },
+    "tools/native-defaults.json": {
+      "mode": 420,
+      "sha256": "44f82e0ec8e5f8087d843a0a3cb88afcc6b7330b162aaf3cfae9710aba32c367"
     },
     "tools/onboarding.md": {
       "mode": 420,
@@ -538,7 +542,7 @@
     },
     "tools/os-files.txt": {
       "mode": 420,
-      "sha256": "83cb268e21cef62457e75b9d9b8804f0befebc6ca5ee65653af1b35a9f440eca"
+      "sha256": "8578ab9e2ddc44dc133277624d64c069159827b0e4c14618c8f24bede672b404"
     },
     "tools/os-update.md": {
       "mode": 420,
@@ -566,19 +570,31 @@
     },
     "tools/recipe_zip.py": {
       "mode": 420,
-      "sha256": "9ac91950d2a4907f62a16fe64eb7865f28203507ac9595d9da4d761536a69b21"
+      "sha256": "f547ff00d346d70c4fa5e5fea420a8b571995cbd6673a4bbecbc3abfffa4847b"
     },
     "tools/recipes.md": {
       "mode": 420,
-      "sha256": "d4c853a72fed8d8ca79e9308310c493378099399a187bd1deebd28a6c52df688"
+      "sha256": "c3003c5fd6bddc6a8c239bbef84fe9630137dea9fe260cfee9ad6d551c401d64"
     },
     "tools/release_package.py": {
       "mode": 420,
-      "sha256": "b01c15e6685e37319836ab31dd249fa0a0b0557feee21b6c6b52da4d9cc54e48"
+      "sha256": "5689188668bd5d65992d6ed180f1052fc7875be493314c2810c7f36a533d5d63"
+    },
+    "tools/safety.md": {
+      "mode": 420,
+      "sha256": "40557dccb4a4a385b289ddf423f4787d09faf2c23d5da20993f48316282558de"
+    },
+    "tools/save-status.md": {
+      "mode": 420,
+      "sha256": "25d9fcf221036f88fd1b59090570bcf06b75a3083fd7cb8e2b9c683fba748ade"
+    },
+    "tools/save_status.py": {
+      "mode": 420,
+      "sha256": "0804bb3c6f56b3a6e75e40b03abfd06000dcbaed6cc2db32dd49d557b8f6f040"
     },
     "tools/setup.md": {
       "mode": 420,
-      "sha256": "249c4cfe3f01b70ce08f4b53211dd62dc7092429be1eab696bfe989045066586"
+      "sha256": "748b7c4586b7ec27349eb171af7b1542b391e572d406f2fc17324b72c257ebaa"
     },
     "tools/skills/create-prototype/SKILL.md": {
       "mode": 420,
@@ -718,7 +734,7 @@
     },
     "tools/update_os.py": {
       "mode": 493,
-      "sha256": "fe60dfe5003e922fc70ab25f2891d1493588735dd1bd98a97aafb792340b18cb"
+      "sha256": "f79fbc1a82e30e0b27140c7354acabed0b773f4a54b19c413d77e2127357adda"
     },
     "tools/v3-migration.md": {
       "mode": 420,
@@ -750,7 +766,7 @@
     },
     "wiki/README.md": {
       "mode": 420,
-      "sha256": "be549fa3c44afb370d876823caaaf7352f9415c7814a35cf061b56d5cf01abaa"
+      "sha256": "112e94f0f202b7ad1745909323316d5bc51e6a0d4f46693396323f6ed5238995"
     },
     "wiki/index.md": {
       "mode": 420,
@@ -774,5 +790,5 @@
     }
   },
   "format": 1,
-  "version": "4.3.0"
+  "version": "4.3.1"
 }

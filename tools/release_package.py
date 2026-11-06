@@ -32,6 +32,7 @@ AUTO_DIRECTORY = "tools/.state/os-update"
 ROOT_FILES = {"AGENTS.md", "CLAUDE.md", "README.md", "DESIGN.md", ".gitignore", ".claude/settings.json",
               "VERSION", "LICENSE", "NOTICE", "THIRD_PARTY.md", "CONTRIBUTING.md", INVENTORY}
 OS_ROOT_FILES = {"VERSION", "AGENTS.md", "CLAUDE.md", "README.md", "DESIGN.md", ".gitignore", ".claude/settings.json"}
+NATIVE_FILES = frozenset(['.agents/skills/create-prototype/SKILL.md', '.agents/skills/create-prototype/references/builder-handoff.md', '.agents/skills/create-prototype/references/kinds.md', '.agents/skills/create-prototype/references/manual.html', '.agents/skills/create-prototype/scripts/shot.mjs', '.agents/skills/design-review/SKILL.md', '.agents/skills/design-review/scripts/shot.mjs', '.agents/skills/visualize-project-architecture/SKILL.md', '.agents/skills/visualize-project-architecture/agents/openai.yaml', '.agents/skills/visualize-project-architecture/references/diagram-strategy.md', '.agents/skills/visualize-project-architecture/references/visual-style.md', '.agents/skills/visualize-project-architecture/scripts/shot.mjs', '.claude/rules/builder-os-safety.md', '.claude/skills/create-prototype/SKILL.md', '.claude/skills/create-prototype/references/builder-handoff.md', '.claude/skills/create-prototype/references/kinds.md', '.claude/skills/create-prototype/references/manual.html', '.claude/skills/create-prototype/scripts/shot.mjs', '.claude/skills/design-review/SKILL.md', '.claude/skills/design-review/scripts/shot.mjs', '.claude/skills/explainer-video/SKILL.md', '.claude/skills/explainer-video/character/TERMS.md', '.claude/skills/explainer-video/character/cat1.png', '.claude/skills/explainer-video/character/cat2.png', '.claude/skills/explainer-video/character/cat3.png', '.claude/skills/explainer-video/character/cat4.png', '.claude/skills/explainer-video/character/cat5.png', '.claude/skills/explainer-video/character/cat6.png', '.claude/skills/explainer-video/character/cat7.png', '.claude/skills/explainer-video/character/cat8.png', '.claude/skills/explainer-video/character/character.js', '.claude/skills/explainer-video/engine/explainer.css', '.claude/skills/explainer-video/engine/explainer.js', '.claude/skills/explainer-video/engine/icons.js', '.claude/skills/explainer-video/engine/render-video.mjs', '.claude/skills/explainer-video/examples/mcp/evidence.md', '.claude/skills/explainer-video/examples/mcp/index.html', '.claude/skills/explainer-video/examples/mcp/plan.md', '.claude/skills/explainer-video/examples/mcp/scene.js', '.claude/skills/explainer-video/references/icon-catalog/index.html', '.claude/skills/explainer-video/references/icon-catalog/scene.js', '.claude/skills/explainer-video/references/scene-format.md', '.claude/skills/visualize-project-architecture/SKILL.md', '.claude/skills/visualize-project-architecture/agents/openai.yaml', '.claude/skills/visualize-project-architecture/references/diagram-strategy.md', '.claude/skills/visualize-project-architecture/references/visual-style.md', '.claude/skills/visualize-project-architecture/scripts/shot.mjs', '.codex/config.toml'])
 SEEDS = {"wiki/README.md", "wiki/index.md", "wiki/me/profile.md", "wiki/me/proposals.md"}
 NAVIGATION_SEEDS = {"wiki/notes/index.md", "wiki/projects/index.md"}
 STABLE_DOCUMENTS = {"LICENSE", "NOTICE", "THIRD_PARTY.md", "CONTRIBUTING.md"}
@@ -102,7 +103,7 @@ def valid_path(name):
     require(all(part not in {"", ".", ".."} for part in parts), "不正な配布パスです")
     require(all(part.lower() not in {".git", ".hg", ".svn", "__pycache__", ".ds_store", ".state"}
                 and not part.lower().startswith(".env") for part in parts), "配布できないパスです")
-    require(name in ROOT_FILES or name in SEEDS or name in NAVIGATION_SEEDS or name == "projects/.gitkeep"
+    require(name in ROOT_FILES or name in NATIVE_FILES or name in SEEDS or name in NAVIGATION_SEEDS or name == "projects/.gitkeep"
             or name.startswith("tools/") or is_bundled_recipe(name), "配布範囲外のファイルです")
 
 
@@ -212,7 +213,7 @@ def manifest(root, tree):
         require(match is not None, "OS一覧の構文が不正です")
         historical, checksum, name = match.groups()
         valid_path(name)
-        require(name != MANIFEST and (name.startswith("tools/") or name in OS_ROOT_FILES or name == "wiki/README.md"), "OS一覧の対象が不正です")
+        require(name != MANIFEST and (name.startswith("tools/") or name in OS_ROOT_FILES or name in NATIVE_FILES or name == "wiki/README.md"), "OS一覧の対象が不正です")
         if historical:
             require((name, checksum) not in old, "old行が重複しています")
             old.add((name, checksum))
@@ -225,7 +226,7 @@ def manifest(root, tree):
     if re.fullmatch(STABLE_VERSION, versions[0]) or "VERSION" in tree:
         require("VERSION" in tree and product_version(root) == versions[0], "VERSIONとOS一覧の版が一致しません")
     expected = {name for name in tree if name != MANIFEST and
-                (name.startswith("tools/") or name in OS_ROOT_FILES or name == "wiki/README.md")}
+                (name.startswith("tools/") or name in OS_ROOT_FILES or name in NATIVE_FILES or name == "wiki/README.md")}
     require(set(files) == expected, "OS一覧と配布対象集合が一致しません")
     require(all(name in files for name, checksum in old), "old行の対象がOS一覧にありません")
     require(all(tree[name]["sha256"] == checksum for name, checksum in files.items()), "OS一覧のhashが一致しません")

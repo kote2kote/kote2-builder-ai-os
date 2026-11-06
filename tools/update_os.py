@@ -50,6 +50,7 @@ MANIFEST = "tools/os-files.txt"
 OS_FILES = {"VERSION", "AGENTS.md", "CLAUDE.md", "README.md", "DESIGN.md", ".gitignore", ".claude/settings.json", "wiki/README.md"}
 STABLE_VERSION = r"(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)"
 LEGACY_VERSION = r"[0-9]{4}-[0-9]{2}-[0-9]{2}\.[0-9]+"
+NATIVE_FILES = frozenset(['.agents/skills/create-prototype/SKILL.md', '.agents/skills/create-prototype/references/builder-handoff.md', '.agents/skills/create-prototype/references/kinds.md', '.agents/skills/create-prototype/references/manual.html', '.agents/skills/create-prototype/scripts/shot.mjs', '.agents/skills/design-review/SKILL.md', '.agents/skills/design-review/scripts/shot.mjs', '.agents/skills/visualize-project-architecture/SKILL.md', '.agents/skills/visualize-project-architecture/agents/openai.yaml', '.agents/skills/visualize-project-architecture/references/diagram-strategy.md', '.agents/skills/visualize-project-architecture/references/visual-style.md', '.agents/skills/visualize-project-architecture/scripts/shot.mjs', '.claude/rules/builder-os-safety.md', '.claude/skills/create-prototype/SKILL.md', '.claude/skills/create-prototype/references/builder-handoff.md', '.claude/skills/create-prototype/references/kinds.md', '.claude/skills/create-prototype/references/manual.html', '.claude/skills/create-prototype/scripts/shot.mjs', '.claude/skills/design-review/SKILL.md', '.claude/skills/design-review/scripts/shot.mjs', '.claude/skills/explainer-video/SKILL.md', '.claude/skills/explainer-video/character/TERMS.md', '.claude/skills/explainer-video/character/cat1.png', '.claude/skills/explainer-video/character/cat2.png', '.claude/skills/explainer-video/character/cat3.png', '.claude/skills/explainer-video/character/cat4.png', '.claude/skills/explainer-video/character/cat5.png', '.claude/skills/explainer-video/character/cat6.png', '.claude/skills/explainer-video/character/cat7.png', '.claude/skills/explainer-video/character/cat8.png', '.claude/skills/explainer-video/character/character.js', '.claude/skills/explainer-video/engine/explainer.css', '.claude/skills/explainer-video/engine/explainer.js', '.claude/skills/explainer-video/engine/icons.js', '.claude/skills/explainer-video/engine/render-video.mjs', '.claude/skills/explainer-video/examples/mcp/evidence.md', '.claude/skills/explainer-video/examples/mcp/index.html', '.claude/skills/explainer-video/examples/mcp/plan.md', '.claude/skills/explainer-video/examples/mcp/scene.js', '.claude/skills/explainer-video/references/icon-catalog/index.html', '.claude/skills/explainer-video/references/icon-catalog/scene.js', '.claude/skills/explainer-video/references/scene-format.md', '.claude/skills/visualize-project-architecture/SKILL.md', '.claude/skills/visualize-project-architecture/agents/openai.yaml', '.claude/skills/visualize-project-architecture/references/diagram-strategy.md', '.claude/skills/visualize-project-architecture/references/visual-style.md', '.claude/skills/visualize-project-architecture/scripts/shot.mjs', '.codex/config.toml'])
 OS_DIRS = ("tools/",)
 SKIP_NAMES = {".DS_Store", "__pycache__", ".state"}
 MERGE_LINES = {".gitignore"}  # 行の集まりなので、ワークスペースで足した行を残して足し合わせる
@@ -105,7 +106,7 @@ def is_os_path(rel):
         return False
     if any(p == ".git" or p.startswith(".git/") for p in parts):
         return False
-    if rel in OS_FILES:
+    if rel in OS_FILES or rel in NATIVE_FILES:
         return True
     return rel.startswith(OS_DIRS) and len(parts) >= 2 and not set(parts) & SKIP_NAMES
 
@@ -282,6 +283,128 @@ def merge_lines(new_bytes, cur_bytes):
     return ("\n".join(body + extra) + "\n").encode("utf-8")
 
 
+# Three small official baselines, not user state. They travel through the same journal.
+DEFAULTS = "tools/native-defaults.json"
+NATIVE_CONFIG = {"AGENTS.md", ".claude/settings.json", ".codex/config.toml"}
+
+
+def native_defaults(package):
+    state = package.get(DEFAULTS)
+    if state is None:
+        return {}
+    try:
+        value = json.loads(state_bytes(state))
+        if not isinstance(value, dict) or set(value) - NATIVE_CONFIG or any(not isinstance(v, str) for v in value.values()):
+            raise ValueError()
+        return value
+    except (ValueError, UnicodeError) as error:
+        raise Stop("公式設定の比較用データが不正です") from error
+
+
+def user_sections(text):
+    marks = ("<!-- builder-os:begin -->", "<!-- builder-os:end -->",
+             "<!-- builder-user:begin -->", "<!-- builder-user:end -->")
+    if any(text.count(mark) != 1 for mark in marks):
+        raise Stop("AGENTSの区画境界が不正です。手編集を保持して差分を確認してください")
+    positions = [text.index(mark) for mark in marks]
+    if positions != sorted(positions) or not text.startswith(marks[0]):
+        raise Stop("AGENTSの区画順序が不正です")
+    end = positions[1] + len(marks[1])
+    return text[:end], text[end:]
+
+
+def merge_native(rel, old, current, new):
+    """Return None for legacy/unsupported input; conflicts never mean overwrite permission."""
+    if old is None:
+        return None
+    try:
+        current, new = current.decode("utf-8"), new.decode("utf-8")
+        if rel == "AGENTS.md":
+            base_os, _ = user_sections(old)
+            cur_os, user = user_sections(current)
+            new_os, _ = user_sections(new)
+            if cur_os not in (base_os, new_os):
+                raise Stop("AGENTSのOS区画に独自編集があります。保持して差分を解決してください")
+            return (new_os + user).encode("utf-8")
+        if rel == ".claude/settings.json":
+            def unique(pairs):
+                result = {}
+                for key, val in pairs:
+                    if key in result:
+                        raise ValueError("duplicate JSON key")
+                    result[key] = val
+                return result
+            base, cur, nxt = [json.loads(t, object_pairs_hook=unique) for t in (old, current, new)]
+            # Validate known rule containers before merging. Invalid additions
+            # can make the CLI discard the settings file, including its denies.
+            for settings in (base, cur, nxt):
+                if not isinstance(settings, dict):
+                    raise Stop("Claude設定はobjectである必要があります")
+                permissions = settings.get("permissions", {})
+                sandbox = settings.get("sandbox", {})
+                if not isinstance(permissions, dict) or not isinstance(sandbox, dict):
+                    raise Stop("permissions/sandboxはobjectである必要があります")
+                filesystem = sandbox.get("filesystem", {})
+                if not isinstance(filesystem, dict):
+                    raise Stop("sandbox.filesystemはobjectである必要があります")
+                for container, fields, negation in (
+                        (permissions, ("deny", "ask", "allow"), r"\s*(?:Read|Edit)\(\s*!"),
+                        (filesystem, ("denyRead", "denyWrite"), r"\s*!")):
+                    for field in fields:
+                        rules = container.get(field, [])
+                        if not isinstance(rules, list) or not all(isinstance(rule, str) for rule in rules):
+                            raise Stop("権限規則は文字列の配列である必要があります: " + field)
+                        if any(re.match(negation, rule) for rule in rules):
+                            raise Stop("否定規則を含む権限配列は自動統合しません: " + rel)
+            absent = object()
+            def merge(a, b, c, path=()):
+                # Safety values may only preserve the baseline or strengthen lists.
+                safety = path[:1] in (("permissions",), ("sandbox",))
+                if b == a or b == c:
+                    return c
+                if isinstance(a, dict) and isinstance(b, dict) and isinstance(c, dict):
+                    out = {}
+                    for key in sorted(a.keys() | b.keys() | c.keys()):
+                        value = merge(a.get(key, absent), b.get(key, absent), c.get(key, absent), path + (key,))
+                        if value is not absent:
+                            out[key] = value
+                    return out
+                if path in (("permissions", "deny"), ("permissions", "ask"),
+                             ("sandbox", "filesystem", "denyRead"), ("sandbox", "filesystem", "denyWrite")):
+                    previous = [] if a is absent else a
+                    incoming = [] if c is absent else c
+                    if all(isinstance(v, list) for v in (previous, b, incoming)) and all(x in b for x in previous):
+                        return incoming + [x for x in b if x not in previous and x not in incoming]
+                if path == ("sandbox", "credentials", "envVars"):
+                    previous = [] if a is absent else a
+                    incoming = [] if c is absent else c
+                    if all(isinstance(v, list) for v in (previous, b, incoming)) and all(x in b for x in previous):
+                        if (all(isinstance(x, dict) and set(x) == {"name", "mode"} and isinstance(x["name"], str) and x["mode"] == "deny" for x in b)
+                                and len({x["name"] for x in b}) == len(b)):
+                            return incoming + [x for x in b if x not in previous and x not in incoming]
+                if a == c and not safety:
+                    return b
+                raise Stop("利用者設定と標準設定が競合しています: " + rel + " / " + ".".join(path))
+            return (json.dumps(merge(base, cur, nxt), ensure_ascii=False, indent=2) + "\n").encode("utf-8")
+        if rel == ".codex/config.toml":
+            import tomllib
+            base, cur, nxt = [tomllib.loads(t) for t in (old, current, new)]
+            # Preserve comments/unknown tables byte-for-byte. Ambiguous edits stop.
+            if not old or current.count(old) != 1:
+                raise Stop("Codex設定の書式または標準部分に独自編集があります。差分を確認してください")
+            result = current.replace(old, new, 1)
+            parsed = tomllib.loads(result)
+            for key in ("approval_policy", "default_permissions", "permissions", "web_search", "shell_environment_policy"):
+                if parsed.get(key) != nxt.get(key):
+                    raise Stop("Codex安全設定への追加・変更を自動統合しません: " + key)
+            if any(key in parsed for key in ("sandbox_mode", "sandbox_workspace_write", "profiles")):
+                raise Stop("Codex旧sandboxまたは別profileとの混在を解決してください")
+            return result.encode("utf-8")
+    except (ValueError, UnicodeError, ImportError) as error:
+        raise Stop("設定を安全に統合できません。元の内容を保持して差分を確認してください: " + rel) from error
+    return None
+
+
 def git(ws, *args, env=None, input=None):
     # --no-optional-locks: git status が index を書き直さない（check は git の状態も変えない）
     binary = isinstance(input, bytes)
@@ -439,6 +562,16 @@ def plan(ws, new):
     old_files, old_ver = read_manifest(ws)
     ignored = sorted(r for r in (old_files or {}) if not is_os_path(r))
     old_files = {r: h for r, h in (old_files or {}).items() if is_os_path(r)} if old_files is not None else None
+    old_defaults = {}
+    if (old_files or {}).get(DEFAULTS):
+        old_default_state = file_state(ws, DEFAULTS)
+        if old_default_state is None or sha(state_bytes(old_default_state)) != old_files[DEFAULTS]:
+            raise Stop("旧公式設定の比較用データが変更されています。何も書かずに停止しました")
+        old_defaults = native_defaults({DEFAULTS: old_default_state})
+    new_defaults = native_defaults(package)
+    for rel, value in new_defaults.items():
+        if rel not in package or value.encode("utf-8") != state_bytes(package[rel]):
+            raise Stop("新公式設定と比較用データが一致しません: " + rel)
     steps = []  # (rel, 何をするか, 書き換えられているか)
     merged = {}  # rel → 書く中身（足し合わせたファイル）
     for rel in sorted(new_files):
@@ -453,6 +586,16 @@ def plan(ws, new):
             continue
         base = (old_files or {}).get(rel)
         known = h == base or h in past.get(rel, set())  # 前の版の一覧か、昔の正式な版と同じ = 書き換えられていない
+        if rel in NATIVE_CONFIG and not known and rel in old_defaults and rel in new_defaults:
+            data = merge_native(rel, old_defaults[rel], state_bytes(before[rel]), state_bytes(package[rel]))
+            if data is not None:
+                if data == state_bytes(before[rel]) and before[rel]["mode"] == package[rel]["mode"]:
+                    continue
+                merged[rel] = data
+                steps.append((rel, "標準を更新（利用者の設定を保持）", False))
+                continue
+        if rel in NATIVE_FILES and not known:
+            raise Stop("公式配置に同名の独自ファイルがあります。上書きせず配置を確認してください: " + rel)
         if rel in MERGE_LINES and not known:
             data = merge_lines(state_bytes(package[rel]), state_bytes(before[rel]))
             if (data == state_bytes(before[rel]) and before[rel]["mode"] == package[rel]["mode"]
@@ -477,7 +620,23 @@ def plan(ws, new):
     if WINDOWS:
         key["git_modes"] = git_modes
     others = len(git(ws, "status", "--porcelain").splitlines())
-    info = {"old_ver": old_ver, "new_ver": new_ver, "no_base": old_files is None, "unused": unused, "ignored": ignored, "others": others,
+    retained_settings = []
+    if before.get(".claude/settings.json"):
+        try:
+            values = json.loads(state_bytes(before[".claude/settings.json"]))
+            standard = json.loads(new_defaults.get(".claude/settings.json", "{}"))
+            retained_settings += ["Claude: " + key for key in sorted(set(values) - set(standard))]
+        except (ValueError, TypeError):
+            retained_settings.append("Claude: 追加設定を解析できないため未点検")
+    if before.get(".codex/config.toml"):
+        try:
+            import tomllib
+            values = tomllib.loads(state_bytes(before[".codex/config.toml"]).decode("utf-8"))
+            standard = tomllib.loads(new_defaults.get(".codex/config.toml", ""))
+            retained_settings += ["Codex: " + key for key in sorted(set(values) - set(standard))]
+        except (ValueError, ImportError, UnicodeError):
+            retained_settings.append("Codex: 追加設定を解析できないため未点検")
+    info = {"retained_settings": retained_settings, "old_ver": old_ver, "new_ver": new_ver, "no_base": old_files is None, "unused": unused, "ignored": ignored, "others": others,
             "head": head, "head_ref": head_ref, "before": before, "expected": expected, "package": fingerprint(package), "index": key["index"], "plan": fingerprint(key)[:12]}
     if WINDOWS:
         info["git_modes"] = git_modes
@@ -503,6 +662,8 @@ def show(steps, pid, info):
         for rel, act, changed in steps:
             mark = "  ※ワークスペースで書き換えられている（--overwrite が要る）" if changed else ""
             print(f"- {act}: {rel}{mark}")
+    if info.get("retained_settings"):
+        print("保持・未点検（権限の安全認定ではありません）: " + "、".join(info["retained_settings"]))
     if info["unused"]:
         print("新しい版では使わない OS のファイル（消していない。消すかは本人と決める）: " + "、".join(info["unused"]))
     if info["ignored"]:
@@ -653,6 +814,8 @@ def ask_human(steps, info):
         msg = info["recovery"] + f"\n対象は OS 管理ファイル {len(info['expected'])} 個です。本人の追加編集を見つけた場合は停止します。"
     if changed:
         msg += "\n\nワークスペースで書き換えられていたファイルも置き換えます（前の中身は履歴に残ります）: " + "、".join(changed)
+    if info.get("retained_settings"):
+        msg += "\n\n保持・未点検の追加設定: " + "、".join(info["retained_settings"])
     if "approval" in info:
         msg += f"\n\nplan {info['plan']} / 承認 {info['approval']}\nパッケージ SHA-256: {info['package']}"
         msg += "\n対象とmode: " + "、".join(f"{rel} ({state['mode']:04o})" for rel, state in info["expected"].items())
