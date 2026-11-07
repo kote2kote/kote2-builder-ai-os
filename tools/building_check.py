@@ -158,28 +158,38 @@ def inspect_project(root):
             require(permissions.get("defaultMode", "default") not in {"bypassPermissions", "dontAsk"},
                     "標準外の承認方式です")
             sandbox = settings.get("sandbox", {})
-            standard = unique_json(read(TEMPLATES, "claude-settings.json"))["sandbox"]
-            for key in ("enabled", "failIfUnavailable", "autoAllowBashIfSandboxed", "allowUnsandboxedCommands"):
-                require(sandbox.get(key) is standard[key], "Claude sandboxの標準安全項目が異なります")
+            require(isinstance(sandbox, dict) and type(sandbox.get("enabled", False)) is bool,
+                    "sandbox/enabledの型が不正です")
+            for key in ("failIfUnavailable", "autoAllowBashIfSandboxed", "allowUnsandboxedCommands"):
+                require(key not in sandbox or type(sandbox[key]) is bool, "sandboxの真偽値が不正です")
             filesystem = sandbox.get("filesystem", {})
             require(isinstance(filesystem, dict), "sandbox.filesystemの型が不正です")
             for field in ("denyRead", "denyWrite"):
                 values = filesystem.get(field, [])
-                require(isinstance(values, list) and all(isinstance(rule, str) for rule in values), "sandboxの拒否規則の型が不正です")
+                require(isinstance(values, list) and all(isinstance(rule, str) for rule in values),
+                        "sandboxの拒否規則の型が不正です")
                 require(not any(re.match(r"\s*!", rule) for rule in values), "sandboxの否定規則は標準安全検査で認定しません")
-            require(set(standard["filesystem"]["denyRead"]) <= set(filesystem.get("denyRead", [])),
-                    "Claude sandboxの秘密保護項目が不足しています")
-            additional = set(sandbox) - set(standard)
-            additional |= {"filesystem." + key for key in set(filesystem) - set(standard["filesystem"]) - {"denyWrite"}}
-            if additional:
-                warnings.append("sandboxの追加設定は未点検です: " + "、".join(sorted(additional)))
             credentials = sandbox.get("credentials", {})
-            values = credentials.get("envVars", []) if isinstance(credentials, dict) else []
-            require(isinstance(values, list), "環境変数保護の型が不正です")
-            for protected in standard["credentials"]["envVars"]:
-                entries = [entry for entry in values if isinstance(entry, dict) and entry.get("name") == protected["name"]]
-                require(entries == [protected], "環境変数の標準denyが欠けるか重複/変更されています: " + protected["name"])
-            require(not sandbox.get("excludedCommands"), "sandbox外のコマンドがあります")
+            require(isinstance(credentials, dict) and isinstance(credentials.get("envVars", []), list),
+                    "環境変数保護の型が不正です")
+            warnings.append("Claudeのlocal・user・管理者設定と実効sandboxは未点検です。起動先で確認してください。")
+            if not sandbox.get("enabled", False):
+                warnings.append("共通設定はsandboxを有効化しません。Bash等の別経路の秘密アクセス制限を保証しません。")
+            else:
+                standard = unique_json(read(TEMPLATES, "claude-sandbox-settings.json"))["sandbox"]
+                for key in ("enabled", "failIfUnavailable", "autoAllowBashIfSandboxed", "allowUnsandboxedCommands"):
+                    require(sandbox.get(key) is standard[key], "Claude sandboxの標準安全項目が異なります")
+                require(set(standard["filesystem"]["denyRead"]) <= set(filesystem.get("denyRead", [])),
+                        "Claude sandboxの秘密保護項目が不足しています")
+                additional = set(sandbox) - set(standard)
+                additional |= {"filesystem." + key for key in set(filesystem) - set(standard["filesystem"]) - {"denyWrite"}}
+                if additional:
+                    warnings.append("sandboxの追加設定は未点検です: " + "、".join(sorted(additional)))
+                values = credentials.get("envVars", [])
+                for protected in standard["credentials"]["envVars"]:
+                    entries = [entry for entry in values if isinstance(entry, dict) and entry.get("name") == protected["name"]]
+                    require(entries == [protected], "環境変数の標準denyが欠けるか重複/変更されています: " + protected["name"])
+                require(not sandbox.get("excludedCommands"), "sandbox外のコマンドがあります")
             if (set(settings) - {"permissions", "sandbox"} or set(permissions) - {"deny", "ask"}):
                 warnings.append("Claudeの追加設定（hooks/allow/追加範囲/承認方式等）は別の権限点検が必要です。")
         check(".claude/settings.json", claude_settings)

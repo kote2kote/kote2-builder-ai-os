@@ -4,7 +4,11 @@
 
 ## Claude Code
 
-親と新規案件の設定にRead/Edit deny・公開等のask・公式sandboxを置く。Read denyだけではPython等の間接読取を網羅しないため、sandboxのdenyReadも併用する。`failIfUnavailable` と `allowUnsandboxedCommands:false` により、非対応時の暗黙の解除を避ける。macOS/Linux/WSL2で実効設定を確認する。native Windowsは対応環境へ移す必要がある。LinuxのdenyRead globは絶対パスの最初のディレクトリより後にだけ使える。標準の `./**/...` は設定のある作業フォルダを起点にする。依存ソフトの導入やホスト設定の変更は勝手に行わない。
+親と新規案件の共通設定に秘密ファイルのRead/Edit deny・危険Git操作のdeny・公開等のaskを置く。共通設定はsandboxを強制せず、Windowsネイティブでも利用できる構成にする。sandboxの無効化を強制する設定も配らない。上位設定が有効にしている場合は、その選択を保持する。
+
+sandboxが無効な場合、Read/Edit denyだけではBash・Python等による別経路のアクセス制限を保証しない。シェルと子プロセスはホストの権限で動き、共通ルールだけではファイルシステム・通信の隔離や環境変数の除去を提供しない。Windowsネイティブとsandbox未使用のMacを、sandbox有効時と同じ安全性とは説明しない。秘密のない素材と必要最小限の実行環境で作業し、秘密を扱う前に必要な隔離を確認する。
+
+macOS/Linux/WSL2では、利用者が [環境別の有効化手順](building/settings.md#macoslinuxwsl2で任意に隔離を有効にする) と任意の設定例を確認し、起動する親/案件の `.claude/settings.local.json` に追加できる。例は従来のsandboxのdenyRead・環境変数denyと `failIfUnavailable:true`・`allowUnsandboxedCommands:false` を保持し、選んだ隔離の暗黙の解除を避ける。Windowsネイティブで隔離が必要ならWSL2等の対応環境を選ぶ。LinuxのdenyRead globは絶対パスの最初のディレクトリより後にだけ使える。例の `./**/...` は設定のある作業フォルダを起点にする。既存設定・依存ソフト・ホスト設定は勝手に変更しない。
 
 sandboxはshellと子プロセス用。MCP・hooks・組込みツールなど全経路の一括保護ではない。設定元の上書き・excludedCommands・許可の追加も確認する。環境変数は列挙した名前だけdenyにするため、任意名の秘密は保護対象に追加するまで継承しない環境で作業する。秘密を読むためのsandbox外再試行はしない。
 

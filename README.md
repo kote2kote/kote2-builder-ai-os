@@ -31,6 +31,8 @@ Tested on macOS. Final verification on Windows is not complete. Your chosen AI e
 
 Check the settings your AI actually loaded from the workspace or project root. Preserve existing custom settings. Claude's file rules and Codex's sandbox have different scopes; a project configuration does not provide complete isolation of secrets. See [AI settings and limits](tools/building/settings.md) (Japanese).
 
+Claude Code's shared settings do not require a sandbox, so they can also be used on native Windows. They retain secret-file Read/Edit denies, dangerous Git denies, and ask rules for push/publish. Without a sandbox, these rules do not guarantee that Bash or other indirect access paths cannot reach secrets. On macOS, Linux, or WSL2, users can opt in using the [sandbox settings example](tools/building/templates/claude-sandbox-settings.json) and the [local setup instructions](tools/building/settings.md). Preserve custom settings; do not replace an existing settings file with the example.
+
 You can choose an optional seven-topic onboarding interview to introduce yourself, or skip it and get straight to work. You do not need to register a profile.
 
 For any topic, ask, “Interview me about…” or “Please start interview mode.” The AI asks one question at a time to help clarify your work, concerns, ideas, or requirements. It records key answers, organizes confirmed points at a stopping point, and uses relevant Wiki records in later conversations. You can pause or stop; ending an interview does not authorize building or external actions. [Interview guide](tools/interview.md) (Japanese).

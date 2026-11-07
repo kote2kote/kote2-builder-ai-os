@@ -54,7 +54,7 @@
     },
     ".claude/settings.json": {
       "mode": 420,
-      "sha256": "a3fa1b33376f2f8fc369f4a4987be7657bc2a68b9067072f0e8237de7a5b47c5"
+      "sha256": "8be7eb4a28383376dfa25cf1ce89422a03fcf5eb32ac05968e359c2ea67c86cb"
     },
     ".claude/skills/create-prototype/SKILL.md": {
       "mode": 420,
@@ -226,7 +226,7 @@
     },
     "README.md": {
       "mode": 420,
-      "sha256": "3b710a805d1d2e4b466e29bfb9301e9e358876e5de7ce817483ae7cfd5592513"
+      "sha256": "51e07dfef6f20f45ff5ee5596e57fafef0ad72026589b47700c45bdf7baed608"
     },
     "THIRD_PARTY.md": {
       "mode": 420,
@@ -670,7 +670,7 @@
     },
     "tools/building/settings.md": {
       "mode": 420,
-      "sha256": "430cecf911071da13fd0e4392d496f159718a055464f9c866e783f6331e29a1c"
+      "sha256": "3441bf2948975e2e6857b91d71b161b5918989006926277063c9685239594d55"
     },
     "tools/building/skills.md": {
       "mode": 420,
@@ -692,9 +692,13 @@
       "mode": 420,
       "sha256": "40f4762eb90239859f74ec4eff846b93af00b0a83eed57c581cc0d2540033c15"
     },
+    "tools/building/templates/claude-sandbox-settings.json": {
+      "mode": 420,
+      "sha256": "257ba3ef06e2401294ce24ac238f7a5134e81ab64f0d9e39addecd7bea5f2773"
+    },
     "tools/building/templates/claude-settings.json": {
       "mode": 420,
-      "sha256": "777f052418823949184f4f00dfc02bba298d86787473aa722683c728425f7d82"
+      "sha256": "d98356df70af54b97cf2bfb890d76929b23b75a7ab3c6a8f5905161654ac586d"
     },
     "tools/building/templates/codex-config.toml": {
       "mode": 420,
@@ -710,7 +714,7 @@
     },
     "tools/building_check.py": {
       "mode": 420,
-      "sha256": "7a441a8b15bfe358dcec008f5f79ca01aece919aaaaa67f3fc4b4bb5272092b6"
+      "sha256": "cfb1a21b4de0ef5cad55856691cf5d20f525b2559e6abcd57ff928967d17de4b"
     },
     "tools/design.md": {
       "mode": 420,
@@ -730,7 +734,7 @@
     },
     "tools/native-defaults.json": {
       "mode": 420,
-      "sha256": "2c43f29075afa81112bf7bceb18d7be269981da92ebff3f0aa64ab0a04a7e12d"
+      "sha256": "ddf1cf412194e84987fe9021af0c8a356d91a018c692ae51e827a9d42be71743"
     },
     "tools/onboarding.md": {
       "mode": 420,
@@ -738,11 +742,11 @@
     },
     "tools/os-files.txt": {
       "mode": 420,
-      "sha256": "64a415ec2355b05c21a315e0ec56959c066ddb06e6090c43a79dc816ee9ed8bd"
+      "sha256": "3599b2892664fb2316fa300cb90329ad5bc9475885042c6e5838498a8c1a77e6"
     },
     "tools/os-update.md": {
       "mode": 420,
-      "sha256": "4dbb0cb0cf2d93580558792b739b9bec53db1726d69c68313a45fff233148af7"
+      "sha256": "b434f11fb02f320b970ae44efb0be28b7d711717bb0839564f6c99d5370cae99"
     },
     "tools/output_migration.py": {
       "mode": 420,
@@ -778,7 +782,7 @@
     },
     "tools/safety.md": {
       "mode": 420,
-      "sha256": "40557dccb4a4a385b289ddf423f4787d09faf2c23d5da20993f48316282558de"
+      "sha256": "bb07ab0b4ad0373cc71e53e1d10e3a8bf02416d4f9c696d7adf00f35fa66cd4e"
     },
     "tools/save-status.md": {
       "mode": 420,
