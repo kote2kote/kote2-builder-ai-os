@@ -122,6 +122,6 @@ At the start of a new conversation, or when resuming a long one, automatically c
 
 Use [AGENTS.md](AGENTS.md) for everyday work and [updates, undo, and recovery](tools/os-update.md) for OS updates and notification settings. For first-time setup checks, follow the [setup guide](tools/setup.md); do not skip verification. These guides are currently in Japanese.
 
-### 4.2.0 / 4.3.0 upgrades
+### 4.1.x / 4.2.0 / 4.3.0 upgrades
 
-Native skill paths require the transition release first. This development candidate has not been published; its immutable public transition commit will be added after approval. Do not bypass the old verifier or execute candidate code before installation. See `tools/os-update.md` for the two-stage route and conflict preservation.
+Native skill paths require **4.3.1 first, then 4.4.0**. The immutable transition commit in this public repository is `fd8aa58cfdb8de30b210f626521605c3a07af91a`. From your workspace, use its installed, trusted tool: `python3 -I tools/release_package.py fetch --ref fd8aa58cfdb8de30b210f626521605c3a07af91a --ws .`. Review the returned package and plan, preserve customizations, and approve the normal update confirmation before applying. After installing 4.3.1, check the official version again and fetch the resolved full commit for 4.4.0. Each stage requires its own review and confirmation. If the transition commit cannot be fetched, stop; do not bypass the old verifier or execute candidate code before installation. See [the two-stage procedure](tools/os-update.md#41x420430から公式配置版への移行) (Japanese). Local preparation tests are not proof of GitHub availability; the transition becomes downloadable only when the public history containing it has been pushed.

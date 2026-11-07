@@ -226,7 +226,7 @@
     },
     "README.md": {
       "mode": 420,
-      "sha256": "51e07dfef6f20f45ff5ee5596e57fafef0ad72026589b47700c45bdf7baed608"
+      "sha256": "ea4641b7c88e9fb8a01b28141fc1c2beff5716e03eaeccea2a61977055144a73"
     },
     "THIRD_PARTY.md": {
       "mode": 420,
@@ -742,11 +742,11 @@
     },
     "tools/os-files.txt": {
       "mode": 420,
-      "sha256": "3599b2892664fb2316fa300cb90329ad5bc9475885042c6e5838498a8c1a77e6"
+      "sha256": "d42b8864d1fa186d3ae40a4e2f234802c09fb9d30afb3f809e95cb22007a38ed"
     },
     "tools/os-update.md": {
       "mode": 420,
-      "sha256": "b434f11fb02f320b970ae44efb0be28b7d711717bb0839564f6c99d5370cae99"
+      "sha256": "6cfcab5aa709ad6f785d53fffe6f3f0e01dc630affdd2cb7a24b182c94d76c26"
     },
     "tools/output_migration.py": {
       "mode": 420,
