@@ -2,7 +2,7 @@
   "files": {
     ".claude/settings.json": {
       "mode": 420,
-      "sha256": "a3fa1b33376f2f8fc369f4a4987be7657bc2a68b9067072f0e8237de7a5b47c5"
+      "sha256": "8be7eb4a28383376dfa25cf1ce89422a03fcf5eb32ac05968e359c2ea67c86cb"
     },
     ".gitignore": {
       "mode": 420,
@@ -34,7 +34,7 @@
     },
     "README.md": {
       "mode": 420,
-      "sha256": "954a873c45f9fc42f06be2afd51bb8da78c55b00135e28add5c8e4f75f4983e4"
+      "sha256": "8988b4249c821f441337b24433ff101942d99bad1a3151f78f62fe26b048cc9b"
     },
     "THIRD_PARTY.md": {
       "mode": 420,
@@ -42,7 +42,7 @@
     },
     "VERSION": {
       "mode": 420,
-      "sha256": "8722a3e4c8ef0feb2e7a669f5f854c72d5d6390b25598f9745dc95e5ffe51dce"
+      "sha256": "fbc46b597011d49d5f65319ba52aeff0e0683f1c56775214e5b2c8a9137e6ee8"
     },
     "projects/.gitkeep": {
       "mode": 420,
@@ -496,6 +496,10 @@
       "mode": 420,
       "sha256": "40f4762eb90239859f74ec4eff846b93af00b0a83eed57c581cc0d2540033c15"
     },
+    "tools/building/templates/claude-sandbox-settings.json": {
+      "mode": 420,
+      "sha256": "257ba3ef06e2401294ce24ac238f7a5134e81ab64f0d9e39addecd7bea5f2773"
+    },
     "tools/building/templates/claude-settings.json": {
       "mode": 420,
       "sha256": "777f052418823949184f4f00dfc02bba298d86787473aa722683c728425f7d82"
@@ -534,7 +538,7 @@
     },
     "tools/native-defaults.json": {
       "mode": 420,
-      "sha256": "44f82e0ec8e5f8087d843a0a3cb88afcc6b7330b162aaf3cfae9710aba32c367"
+      "sha256": "a494722effe49163bf83c5a021a81f6d393db4829316d4ec19b54826d3fe450c"
     },
     "tools/onboarding.md": {
       "mode": 420,
@@ -542,11 +546,11 @@
     },
     "tools/os-files.txt": {
       "mode": 420,
-      "sha256": "8578ab9e2ddc44dc133277624d64c069159827b0e4c14618c8f24bede672b404"
+      "sha256": "dfecbfbda94eecd5dec70711aade3bc9e818c1c9648e3b0e7179e11c20c69a16"
     },
     "tools/os-update.md": {
       "mode": 420,
-      "sha256": "be86736f838f561e075a166c18bba92666b737d700ff7acd505e8001ccef0679"
+      "sha256": "e6d8545876856f94b47df81d8c7f838d7d5fdf0dce07491f7df7970bd4ec2f13"
     },
     "tools/output_migration.py": {
       "mode": 420,
@@ -578,7 +582,7 @@
     },
     "tools/release_package.py": {
       "mode": 420,
-      "sha256": "5689188668bd5d65992d6ed180f1052fc7875be493314c2810c7f36a533d5d63"
+      "sha256": "312ec341cde99f25ed0d30969f34baecc7897e94007f7814c23017708b770956"
     },
     "tools/safety.md": {
       "mode": 420,
@@ -734,7 +738,7 @@
     },
     "tools/update_os.py": {
       "mode": 493,
-      "sha256": "f79fbc1a82e30e0b27140c7354acabed0b773f4a54b19c413d77e2127357adda"
+      "sha256": "93e7c37e36c898d2d11c6218f2f408c2b88dfbd0dc4fb00b418bd0379edf30c5"
     },
     "tools/v3-migration.md": {
       "mode": 420,
@@ -764,6 +768,10 @@
       "mode": 420,
       "sha256": "0a934a83ae6e5e6f9f3ff18160f536aac36656992cdb9baaeb8b30ad6b5da4dd"
     },
+    "tools/windows-upgrade.md": {
+      "mode": 420,
+      "sha256": "d7623481b755ef3e93e9d2dafa961ec36ddc7d8f366f48d4d43e2578d1d9099a"
+    },
     "wiki/README.md": {
       "mode": 420,
       "sha256": "112e94f0f202b7ad1745909323316d5bc51e6a0d4f46693396323f6ed5238995"
@@ -790,5 +798,5 @@
     }
   },
   "format": 1,
-  "version": "4.3.1"
+  "version": "4.3.2"
 }

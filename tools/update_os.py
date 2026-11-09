@@ -44,6 +44,7 @@ import stat
 import subprocess
 import sys
 import tempfile
+import time
 from pathlib import Path
 
 MANIFEST = "tools/os-files.txt"
@@ -508,6 +509,15 @@ def pending(ws):
         raise Stop(f"OS更新が中断しています。途中の状態をcommitしないでください。復旧: python3 -I '{path / 'recover.py'}' recover --ws '{ws}'", 7)
 
 
+def all_reasons(items):
+    return f"全{len(items)}件（以下に全件表示）:\n" + "\n".join("- " + item for item in items)
+
+
+def version_order(value):
+    """release_package.version_order と同じ順序。日付形式の旧版は安定版より前。"""
+    return (1 if re.fullmatch(STABLE_VERSION, value) else 0, *map(int, re.split(r"[-.]", value)))
+
+
 def plan(ws, new):
     pending(ws)
     check_git_locks(ws, git(ws, "rev-parse", "--symbolic-full-name", "HEAD").strip())
@@ -516,11 +526,14 @@ def plan(ws, new):
     if source_manifest and source_manifest["mode"] not in (0o644, 0o755):
         raise Stop("配布manifestのmodeは0644か0755にしてください")
     new_files, new_ver = read_manifest(new, past, state_bytes(source_manifest) if source_manifest else None)
+    _, installed_ver = read_manifest(ws)
+    if installed_ver and new_ver and version_order(new_ver) < version_order(installed_ver):
+        raise Stop(f"新しい版のフォルダ（{new_ver}）は、入っている版（{installed_ver}）より古い版です。古い版へは戻しません。何も変更していません", 2)
     if new_files is None or not (new / "AGENTS.md").is_file():
         raise Stop(f"{new} は新しい版のフォルダではありません（AGENTS.md と {MANIFEST} がありません）", 2)
     bad = [r for r in new_files if not is_os_path(r)]
     if bad:
-        raise Stop("新しい版の一覧に、OS のファイルになれない場所が入っています。何も書かずに止めました: " + "、".join(bad[:10]), 3)
+        raise Stop("新しい版の一覧に、OS のファイルになれない場所が入っています。何も書かずに止めました。範囲外 " + all_reasons(bad), 3)
     package = {MANIFEST: source_manifest}
     for rel, h in new_files.items():
         package[rel] = file_state(new, rel)
@@ -537,7 +550,7 @@ def plan(ws, new):
     dirty = git(ws, "status", "--porcelain", "--ignored", "--untracked-files=all", "--", *new_files, MANIFEST).splitlines()
     if dirty:
         raise Stop("OS のファイルに commit されていない変更（または git に入っていないファイル）があります。"
-                   "先に記録して commit するか、元に戻してから、もう一度実行してください: " + "、".join(l[3:] for l in dirty[:10]), 3)
+                   "先に記録して commit するか、元に戻してから、もう一度実行してください。" + all_reasons([line[3:] for line in dirty]), 3)
     flagged = git(ws, "ls-files", "-v", "-z", "--", *package).split("\0")
     if any(entry and not entry.startswith("H ") for entry in flagged):
         raise Stop("OS対象のindexにskip-worktree等の特別な設定があります。解除してから確認してください")
@@ -574,6 +587,7 @@ def plan(ws, new):
             raise Stop("新公式設定と比較用データが一致しません: " + rel)
     steps = []  # (rel, 何をするか, 書き換えられているか)
     merged = {}  # rel → 書く中身（足し合わせたファイル）
+    native_conflicts = []
     for rel in sorted(new_files):
         cur = ws / rel
         if cur.exists() and not cur.is_file():
@@ -595,7 +609,8 @@ def plan(ws, new):
                 steps.append((rel, "標準を更新（利用者の設定を保持）", False))
                 continue
         if rel in NATIVE_FILES and not known:
-            raise Stop("公式配置に同名の独自ファイルがあります。上書きせず配置を確認してください: " + rel)
+            native_conflicts.append(rel)
+            continue
         if rel in MERGE_LINES and not known:
             data = merge_lines(state_bytes(package[rel]), state_bytes(before[rel]))
             if (data == state_bytes(before[rel]) and before[rel]["mode"] == package[rel]["mode"]
@@ -605,6 +620,8 @@ def plan(ws, new):
             steps.append((rel, "新しい版の行を足す（ワークスペースで足した行は残す）", False))
             continue
         steps.append((rel, "新しくする", not known))
+    if native_conflicts:
+        raise Stop("公式配置に同名の独自ファイルがあります。上書きせず配置を確認してください。" + all_reasons(native_conflicts))
     unused = sorted(r for r in (old_files or {}) if r not in new_files and (ws / r).is_file())
     if (not steps and before[MANIFEST] == package[MANIFEST]
             and (not WINDOWS or current_index[MANIFEST] is not None and current_index[MANIFEST][0] == git_modes[MANIFEST])):
@@ -667,7 +684,7 @@ def show(steps, pid, info):
     if info["unused"]:
         print("新しい版では使わない OS のファイル（消していない。消すかは本人と決める）: " + "、".join(info["unused"]))
     if info["ignored"]:
-        print("ワークスペースの一覧に OS のファイルになれない場所があったので、無視した（触っていない）: " + "、".join(info["ignored"][:10]))
+        print("ワークスペースの一覧に OS のファイルになれない場所があったので、無視した（触っていない）。" + all_reasons(info["ignored"]))
     if steps is None:
         return
     if info["no_base"]:
@@ -785,27 +802,62 @@ def windows_powershell():
     return str(executable)
 
 
-def ask_windows(message):
+def cleanup_confirmation_folder(folder):
+    """確認窓専用の一時フォルダだけを片付ける。リンクがあれば削除せず、失敗しても本人の答えは変えない。"""
+    attempts = 6 if WINDOWS else 1  # Windowsでは終了直後のPowerShell/ウイルス検査が一瞬ファイルを掴むことがある
+    for attempt in range(attempts):
+        try:
+            if is_link(folder) or any(is_link(entry) for entry in Path(folder).rglob("*")):
+                print("警告: 確認窓の一時フォルダにリンクを検出したため削除しません。本人が確認してください: " + Path(folder).name,
+                      file=sys.stderr)
+            elif Path(folder).is_dir():
+                shutil.rmtree(folder)
+            return
+        except OSError:
+            if attempt + 1 < attempts:
+                time.sleep(0.5)
+    print("警告: 確認窓の一時フォルダを片付けられませんでした。使用中のプロセスを確認してから本人が片付けてください: "
+          + Path(folder).name, file=sys.stderr)
+
+
+def ask_windows(message, ws=None):
     payload = base64.b64encode(json.dumps(
         {"message": message, "seconds": ASK_SECONDS}, ensure_ascii=False
     ).encode("utf-8"))
     script = base64.b64encode(WINDOWS_APPROVAL_SCRIPT.encode("utf-16le")).decode("ascii")
+    # PowerShellはプロファイルの場所を決められないとModuleAnalysisCache等を作業フォルダへ相対で書く。
+    # 毎回新しい専用一時フォルダを作業フォルダ兼キャッシュ先にし、ワークスペースにもシステムフォルダにも書かせない。
     try:
-        result = subprocess.run(
-            [windows_powershell(), "-NoLogo", "-NoProfile", "-NonInteractive", "-STA", "-EncodedCommand", script],
-            input=payload, capture_output=True, timeout=ASK_SECONDS + 15,
-            creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
-        )
-    except subprocess.TimeoutExpired:
-        return "timeout"
-    except (OSError, AttributeError):
-        return "unavailable: Windowsの確認窓を起動できません"
-    if result.returncode == 0 and result.stdout in (b"yes", b"no", b"timeout"):
-        return result.stdout.decode("ascii")
-    return "unavailable: Windowsの確認窓を表示・確認できません"
+        base = Path(tempfile.gettempdir()).resolve()
+        if ws is not None and base.is_relative_to(Path(ws).resolve()):
+            return "unavailable: 確認窓の一時フォルダがワークスペース内です"
+        folder = Path(tempfile.mkdtemp(prefix="builder-os-confirm-", dir=base)).resolve()
+    except OSError:
+        return "unavailable: 確認窓の一時フォルダを作れません"
+    try:
+        if ws is not None and folder.is_relative_to(Path(ws).resolve()):
+            return "unavailable: 確認窓の一時フォルダがワークスペース内です"
+        # Windowsの環境変数名は大文字小文字を区別しないため、既存の同名変数を除いてから設定する
+        environment = {key: value for key, value in os.environ.items() if key.upper() != "PSMODULEANALYSISCACHEPATH"}
+        environment["PSModuleAnalysisCachePath"] = str(folder / "ModuleAnalysisCache")
+        try:
+            result = subprocess.run(
+                [windows_powershell(), "-NoLogo", "-NoProfile", "-NonInteractive", "-STA", "-EncodedCommand", script],
+                input=payload, capture_output=True, timeout=ASK_SECONDS + 15, cwd=str(folder), env=environment,
+                creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
+            )
+        except subprocess.TimeoutExpired:
+            return "timeout"
+        except (OSError, AttributeError):
+            return "unavailable: Windowsの確認窓を起動できません"
+        if result.returncode == 0 and result.stdout in (b"yes", b"no", b"timeout"):
+            return result.stdout.decode("ascii")
+        return "unavailable: Windowsの確認窓を表示・確認できません"
+    finally:
+        cleanup_confirmation_folder(folder)
 
 
-def ask_human(steps, info):
+def ask_human(steps, info, ws=None):
     """本人に聞く。本人が「更新する」を選んだときだけ "yes"。ほかは "no"（やめる）/ "timeout" / "unavailable: 理由"。"""
     changed = [r for r, _, c in steps if c]
     msg = (f"kote2 Builder AI OS を新しい版（{info['new_ver']}）にします。\n"
@@ -821,7 +873,7 @@ def ask_human(steps, info):
         msg += "\n対象とmode: " + "、".join(f"{rel} ({state['mode']:04o})" for rel, state in info["expected"].items())
     msg += "\n\nAI の説明を読んで、よければ「更新する」を押してください。あとで元に戻せます。"
     if WINDOWS:
-        return ask_windows(msg)
+        return ask_windows(msg, ws)
     if Path(OSASCRIPT).is_file():
         script = ["on run argv", "activate",
                   'display dialog (item 1 of argv) with title "kote2 Builder AI OS の更新" buttons {"やめる", "更新する"} '
@@ -1049,7 +1101,7 @@ def recover(ws):
                 "package": record["package"], "expected": record["expected"],
                 "recovery": "成立済みの更新commitを検査し、対象indexだけを整えます。" if committed else "中断更新の対象だけを更新前へ戻します。履歴は変更しません。"}
         print(f"復旧対象: {', '.join(record['before'])} / plan {record['plan']}", flush=True)
-        if ask_human([], info) != "yes":
+        if ask_human([], info, ws) != "yes":
             raise Stop("本人の承認がないので復旧していません", 6)
         finish_transaction(ws, record)
         print("更新commitの完了を確認しました" if committed else "中断した更新の対象だけを元に戻しました（履歴は変更なし）")
@@ -1070,7 +1122,7 @@ def apply(ws, new, steps, overwrite, merged, info, recheck):
                 compile(state_bytes(state), rel, "exec")
             except (SyntaxError, ValueError) as error:
                 raise Stop(f"新版のPython構文が不正です。実行も適用もしません: {rel}: {error}")
-    answer = ask_human(steps, info)
+    answer = ask_human(steps, info, ws)
     if answer != "yes":
         raise Stop(f"本人の承認がないので、何も変えていません（{answer}）", 6)
     if not recheck():

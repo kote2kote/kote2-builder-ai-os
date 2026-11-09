@@ -119,3 +119,6 @@ kote2 does not claim rights to the deliverables you create with this OS. Check t
 At the start of a new conversation, or when resuming a long one, automatically check only the OS version if at least 24 hours have passed since the previous check. Briefly notify the user of a newer version only once. Do not automatically download or apply it. See [how to disable or resume checks and the detailed conditions](tools/os-update.md#利用時の自動確認) (Japanese).
 
 Use [AGENTS.md](AGENTS.md) for everyday work and [updates, undo, and recovery](tools/os-update.md) for OS updates and notification settings. For first-time setup checks, follow the [setup guide](tools/setup.md); do not skip verification. These guides are currently in Japanese.
+
+
+4.3.2 Windows transition candidate: see [migration and stop conditions](tools/windows-upgrade.md). Use only a verified full commit and external receipt; after installing 4.3.2, update straight to the latest.

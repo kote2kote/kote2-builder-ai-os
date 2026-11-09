@@ -94,3 +94,6 @@ WindowsではJSON・Markdown等のファイル読書きにUTF-8を明示し、�
 停止が続くときは、AIは理由・HEAD・対象差分・対象indexを読み取りで示し、本人の判断を待ちます。別のGitが動いている間はlockを削除しません。lockの所有者が分からなければそのまま保留します。本人編集と復旧記録のbefore/expectedを確認して必要な内容を別途保全し、人が整合性を確かめた後だけ記録をgit領域の別名へ退避して再計画します。退避自体は復旧ではありません。記録の自動破棄・本人編集の上書きはしません。
 
 `builder-os-update-prepare-*` だけが残った場合は、対象に書く前の準備中断です。正式記録とは別なので再計画できます。`builder-os-update-finished-*` は対象処理を確定した後の片付け残りです。どちらもワークスペースのファイルを戻すために使わず、人が内容を確認して片付けます。電源断、同権限プロセスとの瞬間的な競合、ACL/xattr/所有者の保存、git領域と対象が別ファイルシステムの構成は保証していません。
+
+
+4.3.2 Windows transition candidate: see [migration and stop conditions](windows-upgrade.md). Use only a verified full commit and external receipt; after installing 4.3.2, update straight to the latest.
