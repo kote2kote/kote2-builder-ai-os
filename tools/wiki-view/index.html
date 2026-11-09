@@ -228,6 +228,19 @@
     .daily .col a.today { box-shadow:inset 0 -3px 0 var(--warn); }
     .daily .pg { max-height:none; padding:20px 18px 28px; }
   }
+  .cap-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,310px),1fr)); gap:18px; }
+  .cap-card { background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:18px; min-width:0; overflow-wrap:anywhere; }
+  .cap-card h2 { margin:0 0 8px; font-size:17px; }
+  .cap-card p { margin:10px 0; }
+  .cap-card code { white-space:pre-wrap; overflow-wrap:anywhere; }
+  .cap-card .cap-pair { padding:12px 0; border-top:1px solid var(--line); }
+  .cap-pair strong { display:block; margin-bottom:6px; }
+  .cap-pair .btn { margin:8px 0 0; }
+  .cap-toolbar { display:flex; flex-wrap:wrap; gap:12px; align-items:center; margin:18px 0; }
+  .cap-toolbar input { min-width:0; flex:1 1 220px; padding:10px; border:1px solid var(--line); border-radius:8px; font:inherit; }
+  .cap-guide { overflow-wrap:anywhere; }
+  .cap-guide pre { max-width:100%; overflow:auto; }
+  .cap-guide table { display:block; max-width:100%; overflow:auto; }
 </style>
 </head>
 <body>
@@ -254,6 +267,7 @@
   const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const STATUS = { active:'進行中', paused:'一時停止', done:'完了', draft:'未確認', confirmed:'確かめた' };
   let DATA = null, COL = {}, BYKEY = {}, BYPATH = {}, CUR = null;  // CUR = いま開いているページ（相対リンクを解く起点）
+  let CAPABILITIES = null, capabilitiesLoading = null;
   let DAILY = null, LEFT = null, ROUTE = '', PROJ_COUNT = {};  // DAILY = 毎日メモ（開いたときに読む）・LEFT = 左のタブ・ROUTE = いまの画面
   const arr = v => Array.isArray(v) ? v.map(String) : (typeof v === 'string' && v ? [v] : []);  // 壊れた値でも落ちない
   const normalize = p => { p.collection = p.role || p.collection; p.related = arr(p.related); p.tags = arr(p.tags); p.importance = Number.isFinite(p.importance) ? p.importance : 0; p.important = p.important === true; p.fm = p.fm && typeof p.fm === 'object' ? p.fm : {}; return p; };
@@ -291,6 +305,8 @@
     for (const s of raw.split('#')[0].split('/')) { if (s === '..') parts.pop(); else if (s && s !== '.') parts.push(s); }
     let target = parts.join('/'); try { target = decodeURIComponent(target); } catch (e) {}
     const p = BYPATH[target];
+    const guide = CAPABILITIES?.guides?.find(item => item.path === target);
+    if (guide) return '#/guide/' + encodeURIComponent(guide.id);
     return p ? esc(pageHref(p.key)) : safe(u, true);
   }
   function safe(u, local) { // 念のため、ブラウザ自身の読み方でも確かめる（http(s)・mailto 以外、相対なのに外へ向くものは #）
@@ -810,6 +826,46 @@
       (kinds.length ? '<div class="lbl">v3 の種類</div>' + kinds.map(([id, title, n]) => `<a href="#/k/${id}" class="${route === 'k/' + id ? 'on' : ''}"><span>${esc(title)}</span><span class="n">${n}</span></a>`).join('') : '');
   }
 
+  async function loadCapabilities(force = false) {
+    if (capabilitiesLoading || (CAPABILITIES && !force)) return capabilitiesLoading;
+    capabilitiesLoading = fetch('./capabilities.json', { cache:'no-store' }).then(response => {
+      if (!response.ok) throw new Error('HTTP ' + response.status);
+      return response.json();
+    }).then(data => { CAPABILITIES = data; }).catch(() => { CAPABILITIES = { error:true }; }).finally(() => {
+      capabilitiesLoading = null;
+      if (['skills', 'features', 'guide'].includes(ROUTE.split('/')[0])) render(true);
+    });
+    return capabilitiesLoading;
+  }
+  function skillCards(query = '') {
+    const items = (CAPABILITIES.skills?.items || []).filter(item => [item.name, item.description, item.agent, item.prompt, item.source].join(' ').toLowerCase().includes(query.toLowerCase()));
+    return `<p role="status">${items.length} 配置（同じ名前でもAI・置き場ごとに表示）</p><div class="cap-grid">${items.map(item => `<article class="cap-card"><h2>${esc(item.name)}</h2><span class="badge gray">${esc(item.agent)}</span> <span class="badge gray">${item.managed ? 'OS管理対象' : '追加'}</span><p>${esc(item.description.slice(0, 110))}${item.description.length > 110 ? "…" : ""}</p>${item.description.length > 110 ? `<details><summary>使う場面・条件をすべて見る</summary><p>${esc(item.description)}</p></details>` : ""}<p class="meta">${esc(item.scope)} · <code>${esc(item.source)}</code><br>${esc(item.invocation)}</p><div class="cap-pair"><strong>呼び出しコマンド（AIへの入力）</strong>${item.command ? `<code>${esc(item.command)}</code><br><button class="btn" type="button" data-copy="${esc(item.command)}" aria-label="${esc(item.name)}のコマンドをコピー">コマンドをコピー</button>` : '手動呼出は利用不可、または定義の確認が必要です。'}</div><div class="cap-pair"><strong>呼びかけ言葉（依頼文の例）</strong><span>${esc(item.prompt)}</span><br><button class="btn" type="button" data-copy="${esc(item.prompt)}" aria-label="${esc(item.name)}の呼びかけをコピー">呼びかけをコピー</button>${!item.command ? '<p>この依頼文も起動を保証しません。明示呼出不可の設定を迂回しません。</p>' : ''}</div></article>`).join('')}</div>`;
+  }
+  function capabilityPage(kind, identifier) {
+    const toolbar = `<div class="cap-toolbar"><a class="btn" href="#/features">OS機能一覧</a><a class="btn" href="#/skills">スキル</a><button class="btn" type="button" data-cap-reload>再読込</button><span role="status" id="cap-status"></span></div>`;
+    if (!CAPABILITIES) { loadCapabilities(); return toolbar + '<p>機能とスキルを読み込んでいます…</p>'; }
+    if (CAPABILITIES.error) return toolbar + '<p>一覧を取得できませんでした。再読込してください。既存サーバーの場合は停止して開き直してください。</p>';
+    if (kind === 'skills') return toolbar + `<h1>スキル</h1><div class="strip">コマンドは端末ではなく、対応するAIの入力欄へ渡します。この画面はコピーのみで実行しません。呼びかけ例は内容・条件を添えて使ってください。</div><details><summary>取得範囲・表示の意味・制約</summary><p>対象: 作業場直下と個人用の .agents/skills・.claude/skills、Codex設定先のskills。リンク・隠しフォルダ・案件内・祖先・プラグイン内部は対象外です。AIの有効設定や現在のセッションでの読込は別に確認してください。OS管理対象は配置の区分で、内容の未変更を保証しません。</p><p>追加・削除は開く／再読込／タブ復帰時に反映します。常駐監視・外部送信・自動導入はしません。</p><p>除外・読取不可: ${CAPABILITIES.skills?.skipped || 0} 件 ${CAPABILITIES.skills?.limited ? '／件数上限により一部未取得' : ''}</p></details><div class="cap-toolbar"><input id="skill-query" type="search" aria-label="スキルを検索" placeholder="名前・説明・対応AI・呼びかけで検索"></div><div id="skill-results">${skillCards()}</div><p><a href="#/guide/building-skills">スキルの追加方法・呼びかけ例の設定</a></p>`;
+    const guide = (CAPABILITIES.guides || []).find(item => item.id === (kind === 'features' ? 'features' : identifier));
+    if (!guide) return toolbar + '<p>この標準手順は見つかりません。OSの導入状態を確認してください。</p>';
+    CUR = { path:guide.path };
+    return toolbar + `<p class="meta">OSの標準手順 · 読み取り専用 · <code>${esc(guide.path)}</code></p><article class="md cap-guide"><h1>${esc(guide.title)}</h1>${md(guide.body.replace(/^# [^\n]*(?:\n|$)/, ''))}</article>`;
+  }
+  function bindCapabilities() {
+    $('[data-cap-reload]')?.addEventListener('click', async () => {
+      $('#cap-status').textContent = '再読込中…';
+      await loadCapabilities(true);
+      if ($('#cap-status')) $('#cap-status').textContent = CAPABILITIES.error ? '再読込に失敗しました' : '再読込しました';
+    });
+    $('#skill-query')?.addEventListener('input', event => { $('#skill-results').innerHTML = skillCards(event.target.value); });
+  }
+  $('#main').addEventListener('click', async event => {
+    const button = event.target.closest('[data-copy]');
+    if (!button) return;
+    try { await navigator.clipboard.writeText(button.dataset.copy); button.textContent = 'コピーしました'; }
+    catch { button.textContent = 'コピーできません。表示文を選んでコピーしてください'; }
+  });
+
   // ---------- サイドバー ----------
   function sidebar(route) {
     const n = f => DATA.pages.filter(f).length;
@@ -818,8 +874,9 @@
     const tab = leftTab();
     const tabs = `<div class="seg" role="tablist" aria-label="左の並び">${[['projects', 'プロジェクト'], ['knowledge', '知識']].map(([id, title]) => `<button type="button" role="tab" id="left-${id}" aria-controls="left-panel" aria-selected="${tab === id}" tabindex="${tab === id ? 0 : -1}" data-left="${id}">${title}</button>`).join('')}</div>`;
     $('#nav').innerHTML = `<a href="#/" class="${route === '' ? 'on' : ''}">ホーム</a><a href="#/daily" class="${route === 'daily' ? 'on' : ''}"><span>📅 毎日メモ</span>${DAILY && !DAILY.error ? `<span class="n">${DAILY.days.length}</span>` : ''}</a><a href="#/graph" class="${route === 'graph' ? 'on' : ''}">グラフ</a>` +
-      tabs + `<div class="left-panel" id="left-panel" role="tabpanel" aria-labelledby="left-${tab}">${tab === 'projects' ? projectNav(route) : knowledgeNav(route)}</div><div class="lbl">種類</div>` +
-      DATA.collections.filter(k => k.name !== 'notes' && k.name !== 'v3').map(k => `<a href="#/c/${esc(k.name)}" class="${route === 'c/' + k.name ? 'on' : ''}"><span>${esc(k.label)}</span><span class="n">${n(p => p.collection === k.name)}</span></a>`).join('') + `<div class="lbl">移行履歴</div><a href="#/c/v3">出どころ: v3</a>`;
+      `<div class="lbl">種類</div>` + DATA.collections.filter(k => k.name !== 'notes' && k.name !== 'v3').map(k => `<a href="#/c/${esc(k.name)}" class="${route === 'c/' + k.name ? 'on' : ''}"><span>${esc(k.label)}</span><span class="n">${n(p => p.collection === k.name)}</span></a>`).join('') +
+      `<a href="#/skills" class="${route === 'skills' ? 'on' : ''}">スキル</a><a href="#/features" class="${route === 'features' ? 'on' : ''}">OS機能一覧</a><div class="lbl">移行履歴</div><a href="#/c/v3">出どころ: v3</a>` +
+      tabs + `<div class="left-panel" id="left-panel" role="tabpanel" aria-labelledby="left-${tab}">${tab === 'projects' ? projectNav(route) : knowledgeNav(route)}</div>`;
     const buttons = [...document.querySelectorAll('[data-left]')];
     buttons.forEach((button, index) => {
       button.addEventListener('click', () => { LEFT = button.dataset.left; try { localStorage.setItem('wiki-left-tab', LEFT); } catch (e) {} sidebar(ROUTE); $(`[data-left="${LEFT}"]`).focus(); });
@@ -836,6 +893,7 @@
     let html, route = path;
     CUR = null;
     if (!path) html = home();
+    else if (['skills', 'features', 'guide'].includes(seg[0])) html = capabilityPage(seg[0], seg[1]);
     else if (seg[0] === 'c') html = collection(seg[1]), route = 'c/' + seg[1];
     else if (seg[0] === 't') html = [':none', ':pending', ...(DATA.topics || []).map(topic => topic.id)].includes(seg[1]) ? collection('notes', seg[1]) : '<div class="empty">カテゴリが見つかりません</div>';
     else if (seg[0] === 'k') html = V3_KINDS.some(([id]) => id === seg[1]) ? collection('v3', '', seg[1]) : '<div class="empty">種類が見つかりません</div>', route = 'k/' + seg[1];
@@ -846,6 +904,7 @@
     else if (seg[0] === 'st') { const items = byUpdated(DATA.pages.filter(p => p.status === seg[1] && (seg[1] !== 'active' || p.collection === 'projects'))); html = sec(`状態: ${esc(STATUS[seg[1]] || seg[1])}`, items.length, grid(items)); }
     else html = home();
     ROUTE = route; $('#main').innerHTML = html; sidebar(route); if (!keepScroll) window.scrollTo(0, 0);
+    bindCapabilities();
     document.querySelectorAll('.daily .col').forEach(col => {  // 選んだ月・日を、その列の中で見える所へ（狭い幅では横、広い幅では縦）
       const on = col.querySelector('a.on'); if (!on) return;
       if (col.scrollWidth > col.clientWidth) col.scrollLeft = on.offsetLeft - (col.clientWidth - on.offsetWidth) / 2;
@@ -879,6 +938,7 @@
     BYPATH = Object.fromEntries(DATA.pages.map(p => [p.path, p]));
     PROJ_COUNT = projectCounts();
     render(true);
+    if (['skills', 'features', 'guide'].includes(ROUTE.split('/')[0])) loadCapabilities(true);
     if (ROUTE === 'daily') loadDaily();  // タブに戻ったとき、毎日メモも最新に
   }
   $('#q').addEventListener('keydown', e => { if (e.key === 'Enter') { const v = e.target.value.trim(); location.hash = v ? `#/q/${encodeURIComponent(v)}` : '#/'; } });
@@ -889,6 +949,7 @@
     }
     const samePage = event.oldURL.split('?')[0] === event.newURL.split('?')[0];
     render(samePage);
+    if (['skills', 'features', 'guide'].includes(ROUTE.split('/')[0])) loadCapabilities(true);
     if (samePage) document.querySelector('.project-tabs [role="tab"][aria-selected="true"]')?.focus();  // 左のタブではなく、案件のタブへ
   });
   window.addEventListener('focus', () => { if (DATA && location.hash.replace(/^#\/?/, '').split('/')[0] !== 'graph') load(); });  // タブに戻ったら最新に（Sveltia で直したあと）。グラフは動かしている途中なので読み直さない

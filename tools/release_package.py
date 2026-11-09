@@ -59,6 +59,17 @@ class PackageError(Exception):
     pass
 
 
+def cleanup_failed_download(folder):
+    try:
+        if not no_links(folder) or any(not no_links(entry) for entry in Path(folder).rglob("*")):
+            print("警告: 今回の取得用TEMPにリンクを検出したため削除しません。元の取得エラーを優先します。本人が確認してください", file=sys.stderr)
+        elif Path(folder).is_dir():
+            shutil.rmtree(folder)
+    except OSError:
+        print("警告: 今回の取得用TEMPの片付けにも失敗しました。元の取得エラーを優先します。"
+              f"使用中のプロセスと内容を確認してから本人が片付けてください: {folder}", file=sys.stderr)
+
+
 def require(condition, message):
     if not condition:
         raise PackageError(message)
@@ -328,8 +339,7 @@ def safe_extract(zip_path, destination):
                     for name, (content, mode) in snapshots.items()), "ZIPと配布一覧のmodeが一致しません")
         return metadata
     except BaseException:
-        if no_links(destination) and destination.is_dir():
-            shutil.rmtree(destination)
+        cleanup_failed_download(destination)
         raise
 
 
@@ -453,7 +463,7 @@ def fetch_release(tag, workspace):
         (folder / "verified.json").write_text(json.dumps(receipt, sort_keys=True) + "\n", encoding="utf-8")
         return receipt
     except BaseException:
-        shutil.rmtree(folder)
+        cleanup_failed_download(folder)
         raise
 
 
@@ -739,7 +749,7 @@ def fetch(tag=None, workspace=".", ref=None):
         (folder / "verified.json").write_text(json.dumps(receipt, sort_keys=True) + "\n", encoding="utf-8")
         return receipt
     except BaseException:
-        shutil.rmtree(folder)
+        cleanup_failed_download(folder)
         raise
 
 

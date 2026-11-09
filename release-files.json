@@ -202,7 +202,7 @@
     },
     "AGENTS.md": {
       "mode": 420,
-      "sha256": "88091d069c8ee1ba543fd71dddf8a11ae63b99db9bc29a5c93141cf53104f394"
+      "sha256": "5e0afe6be6d1c3866d4e67f25183b15048b62a5f4f64c9d5acf0843172fa2a33"
     },
     "CLAUDE.md": {
       "mode": 420,
@@ -226,7 +226,7 @@
     },
     "README.md": {
       "mode": 420,
-      "sha256": "ea4641b7c88e9fb8a01b28141fc1c2beff5716e03eaeccea2a61977055144a73"
+      "sha256": "e655378be5ea3ea7a746385ff01f74b9a1effc3c86227554177e510b48f2324d"
     },
     "THIRD_PARTY.md": {
       "mode": 420,
@@ -234,7 +234,7 @@
     },
     "VERSION": {
       "mode": 420,
-      "sha256": "d4e4d4e812e1dafc4e760f5ee12c48ef76f8af41d27cbf3bf2ff065505b9cfe6"
+      "sha256": "67e28833d99a5cb09ef3142c738e71d538589fdb21cbed46bbd447b4bbf30060"
     },
     "projects/.gitkeep": {
       "mode": 420,
@@ -674,7 +674,7 @@
     },
     "tools/building/skills.md": {
       "mode": 420,
-      "sha256": "05328263ccfa619f6553440fc8b823455775caa619b12348e8bf29a0503ed5bc"
+      "sha256": "976f2a644b57880354f3d27eb3ec15ebadcff571ed76bf49b48ae249fed4a94f"
     },
     "tools/building/templates/AGENTS.md.in": {
       "mode": 420,
@@ -724,9 +724,13 @@
       "mode": 420,
       "sha256": "ccabeabcc12ae206f4f9d6cd7a9929f282985ff31d1ee769aa1402eaf4ff7608"
     },
+    "tools/features.md": {
+      "mode": 420,
+      "sha256": "b9120683dd539b6dcaed50276302e333adceaa457c281d872e0f0f3e750cb28f"
+    },
     "tools/interview.md": {
       "mode": 420,
-      "sha256": "8a9461b11a9ac9a92ddd63ec93ffab6fdd65b25a15ec0b94a31c4a21197a7667"
+      "sha256": "02cf90e1c406f93313bc492c7211c242ce60bedf07dc0e2334d2275e16a7ee54"
     },
     "tools/migrate_v3.py": {
       "mode": 420,
@@ -734,19 +738,19 @@
     },
     "tools/native-defaults.json": {
       "mode": 420,
-      "sha256": "ddf1cf412194e84987fe9021af0c8a356d91a018c692ae51e827a9d42be71743"
+      "sha256": "fa0966546d2443a602679c233c9773ea60a32fc72211a1369d31dc17562573e9"
     },
     "tools/onboarding.md": {
       "mode": 420,
-      "sha256": "93209be002b147474fe1fab93fe0339f748353ae78697fc1b80d1fd96fc1e11a"
+      "sha256": "21214c12a20d8b7054bfd25b5281f5b49e880369b96ca816b013794347309195"
     },
     "tools/os-files.txt": {
       "mode": 420,
-      "sha256": "d42b8864d1fa186d3ae40a4e2f234802c09fb9d30afb3f809e95cb22007a38ed"
+      "sha256": "184fa5f95c605a03c62a041f4ea489dfc0c56ded4fa37606a0d727f1765d0bf7"
     },
     "tools/os-update.md": {
       "mode": 420,
-      "sha256": "6cfcab5aa709ad6f785d53fffe6f3f0e01dc630affdd2cb7a24b182c94d76c26"
+      "sha256": "ea1072eab97f1eb8602773eabb257d70ef23f39c665212a4009d71feb3cf2e5b"
     },
     "tools/output_migration.py": {
       "mode": 420,
@@ -778,7 +782,7 @@
     },
     "tools/release_package.py": {
       "mode": 420,
-      "sha256": "5689188668bd5d65992d6ed180f1052fc7875be493314c2810c7f36a533d5d63"
+      "sha256": "312ec341cde99f25ed0d30969f34baecc7897e94007f7814c23017708b770956"
     },
     "tools/safety.md": {
       "mode": 420,
@@ -814,7 +818,7 @@
     },
     "tools/update_os.py": {
       "mode": 493,
-      "sha256": "f79fbc1a82e30e0b27140c7354acabed0b773f4a54b19c413d77e2127357adda"
+      "sha256": "93e7c37e36c898d2d11c6218f2f408c2b88dfbd0dc4fb00b418bd0379edf30c5"
     },
     "tools/v3-migration.md": {
       "mode": 420,
@@ -838,11 +842,15 @@
     },
     "tools/wiki-view/index.html": {
       "mode": 420,
-      "sha256": "dc9d79f07026210ec3cf1b07116bb8de070f2aa74fcca2ca76f266ff963d7399"
+      "sha256": "3b68ecc9a8df256634e64faa55c7ed18dc4d09a1c51c2fd308a8d96080a49cf2"
     },
     "tools/wiki_view.py": {
       "mode": 420,
-      "sha256": "0a934a83ae6e5e6f9f3ff18160f536aac36656992cdb9baaeb8b30ad6b5da4dd"
+      "sha256": "5b4c942b2e566730ffbfbd7bfa851149eb87982be63eeaab5742845fedbdcdd1"
+    },
+    "tools/windows-upgrade.md": {
+      "mode": 420,
+      "sha256": "d7623481b755ef3e93e9d2dafa961ec36ddc7d8f366f48d4d43e2578d1d9099a"
     },
     "wiki/README.md": {
       "mode": 420,
@@ -870,5 +878,5 @@
     }
   },
   "format": 1,
-  "version": "4.4.0"
+  "version": "4.5.1"
 }

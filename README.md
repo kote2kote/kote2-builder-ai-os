@@ -39,6 +39,8 @@ For any topic, ask, “Interview me about…” or “Please start interview mod
 
 ## Things you can ask
 
+The Wiki sidebar includes an **OS feature guide** and a **skills list**. Each skill shows its AI-specific invocation and a natural-language request you can copy. The list refreshes when opened, reloaded, or revisited; it does not execute or install skills. It discovers direct workspace and personal skill locations, not every plugin or nested project. [Feature guide](tools/features.md) (Japanese).
+
 | Goal | Example request |
 |---|---|
 | Discuss or create something | “I'd like to discuss…” / “I'd like to build…” |
@@ -108,6 +110,12 @@ The linked guides below are currently in Japanese.
 
 Report your version, environment, and reproduction steps in the official repository's [Issues](https://github.com/kote2kote/kote2-builder-ai-os/issues). Do not include personal information, secrets, or work records. External pull requests are not accepted. [Reporting guide](CONTRIBUTING.md) (Japanese).
 
+## Release notes
+
+- **4.5.1** — The first public release after 4.4.0. It adds the Wiki feature and skill guide, the unified "hearing mode" name ("interview" is accepted as an alias), and Windows migration fixes: the confirmation window's PowerShell runs in its own temporary folder and is cleaned up, diagnostics list every reason, and the corrected 4.3.2 transition bridge is supported.
+- **About 4.5.0** — The number 4.5.0 was used only for a pre-release candidate installed in a limited number of local workspaces. It was never published on GitHub. Because that candidate and the final package differ, the published version is 4.5.1, not a second 4.5.0. A workspace on that 4.5.0 updates to 4.5.1 through the normal update; do not reinstall or re-apply 4.5.0.
+- **Upgrade paths** — Skipped versions are fine: every published version from 4.3.1 on updates directly to the latest in one step (checked before each release). 4.4.0 → 4.5.1 directly. Pre-release 4.5.0 → 4.5.1. 4.0.0–4.3.0 need one transition release first, then go straight to the latest: native Windows → 4.3.2 → latest; other platforms → 4.3.1 → latest. 4.4.0 is no longer an intermediate stage. Each stage needs its own review and confirmation.
+
 ## License
 
 The core is licensed under the [Apache License 2.0](LICENSE). Also review the [attribution notices](NOTICE) and [third-party terms](THIRD_PARTY.md).
@@ -122,6 +130,13 @@ At the start of a new conversation, or when resuming a long one, automatically c
 
 Use [AGENTS.md](AGENTS.md) for everyday work and [updates, undo, and recovery](tools/os-update.md) for OS updates and notification settings. For first-time setup checks, follow the [setup guide](tools/setup.md); do not skip verification. These guides are currently in Japanese.
 
-### 4.1.x / 4.2.0 / 4.3.0 upgrades
+### 4.3.0 and older (4.0.0–4.3.0) upgrades
 
-Native skill paths require **4.3.1 first, then 4.4.0**. The immutable transition commit in this public repository is `fd8aa58cfdb8de30b210f626521605c3a07af91a`. From your workspace, use its installed, trusted tool: `python3 -I tools/release_package.py fetch --ref fd8aa58cfdb8de30b210f626521605c3a07af91a --ws .`. Review the returned package and plan, preserve customizations, and approve the normal update confirmation before applying. After installing 4.3.1, check the official version again and fetch the resolved full commit for 4.4.0. Each stage requires its own review and confirmation. If the transition commit cannot be fetched, stop; do not bypass the old verifier or execute candidate code before installation. See [the two-stage procedure](tools/os-update.md#41x420430から公式配置版への移行) (Japanese). Local preparation tests are not proof of GitHub availability; the transition becomes downloadable only when the public history containing it has been pushed.
+The tools installed in these versions cannot read the current layout, and their bundled guides do not know the transition release, so "update the OS" alone stops at the first fetch. Paste one of these sentences to your AI instead (they are Japanese, like the guides):
+
+- macOS and others: 「OSを最新版に更新して。4.3.0以前なので、公式READMEの手順どおり移行準備版4.3.1（`fd8aa58cfdb8de30b210f626521605c3a07af91a`）を経由して、同じ依頼のまま最新まで進めて」
+- Native Windows: 「OSを最新版に更新して。Windowsの4.3.0以前なので、公式READMEの手順どおり移行版4.3.2（`e1474089163b40c4cd3b0ea93d27ccd717b2746f`）を経由して、同じ依頼のまま最新まで進めて」
+
+**Other platforms (macOS and others):** Native skill paths require the **4.3.1 transition release first, then the latest**. The immutable transition commit in this public repository is `fd8aa58cfdb8de30b210f626521605c3a07af91a`. From your workspace, use its installed, trusted tool: `python3 -I tools/release_package.py fetch --ref fd8aa58cfdb8de30b210f626521605c3a07af91a --ws .`. Review the returned package and plan, preserve customizations, and approve the normal update confirmation before applying. After installing 4.3.1, continue the same request without asking the user to repeat it: check the official version again with the newly installed tools and fetch the resolved full commit of the latest version. 4.4.0 is not an intermediate stage. Each stage requires its own review, OK and confirmation, because the next stage's differences can only be checked after the previous stage is installed. If the transition commit cannot be fetched, stop; do not bypass the old verifier or execute candidate code before installation. See [the procedure](tools/os-update.md#430以前から公式配置版への移行) (Japanese).
+
+**Using 4.3.0 or older (4.0.0–4.3.0) on native Windows?** Do not install the old 4.3.1 bridge, which requires an unsupported sandbox. Use the corrected **4.3.2 transition bridge** (full commit `e1474089163b40c4cd3b0ea93d27ccd717b2746f` on the `transition/4.3.2-windows` branch), then go straight to the latest. Follow [Windows migration and stop conditions](tools/windows-upgrade.md), verify the full public commit and external inventory receipt at each stage, and use only installed trusted fetch/check tools. Preserve custom settings and conflicting skills; obtain human confirmation at every stage. Never run candidate updater code before installation or automatically approve a confirmation.

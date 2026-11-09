@@ -21,7 +21,7 @@
 - 大きさ = つながりの数（ほかのページから参照された数を重く数える）。色 = 種類。進行中の案件は光輪、一時停止は暗く、未確認（draft）は少し薄く。
 - 毎日メモ（daily.json）は、ページの日付つきの行・wiki/ の Git の保存記録（git log。読むだけ）・imports/v3/wiki/daily/*.md（v3 の毎日メモの写し）から
   その場で集める。新しいファイルは作らない。Git や写しがないワークスペースでは、出せる材料だけで出す。
-- 配るのは画面（tools/wiki-view/）と index.json・daily.json だけ。127.0.0.1 だけで待ち受け、Host・Origin が手元でなければ断る。
+- 配るのは画面（tools/wiki-view/）、index.json・daily.json、機能案内とスキルのメタデータ（capabilities.json）だけ。127.0.0.1 だけで待ち受け、Host・Origin が手元でなければ断る。
 - 画面で動いてよいスクリプトは、画面に書いてあるものと、画面が中身を固定した（integrity）CDN のファイルだけ（CSP。csp() を見る）。
 """
 import argparse
@@ -434,6 +434,151 @@ def view_index(root):
     data = build_index(root)
     data["diagnostics"].pop("references", None)
     return data
+
+
+GUIDES = {
+    "features": "tools/features.md", "readme": "README.md", "instructions": "AGENTS.md",
+    "wiki": "wiki/README.md", "design-standard": "DESIGN.md",
+    **{name.replace("/", "-"): "tools/" + name + ".md" for name in (
+        "setup", "onboarding", "interview", "recipes", "recipe-reproduce", "experience",
+        "prototypes", "design", "ai-preferences", "safety", "save-status", "os-update", "v3-migration",
+        "building/index", "building/design", "building/project", "building/existing-projects",
+        "building/settings", "building/skills", "building/verification", "building/freshness",
+        "building/legacy-recipes")},
+}
+
+
+def catalog_text(path, boundary, header=False):
+    if not path.is_relative_to(boundary) or any(parent.is_symlink() for parent in (path, *path.parents) if parent == boundary or boundary in parent.parents):
+        raise ValueError("link")
+    descriptor = os.open(path, os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_NONBLOCK", 0))
+    with os.fdopen(descriptor, "rb") as stream:
+        info = os.fstat(stream.fileno())
+        if not stat.S_ISREG(info.st_mode) or info.st_nlink != 1:
+            raise ValueError("not a regular single-link file")
+        limit = 32_768 if header else 262_144
+        if not header:
+            text = stream.read(limit + 1)
+        else:
+            lines, size = [], 0
+            while size <= limit:
+                line = stream.readline(limit + 1 - size)
+                size += len(line)
+                if not line:
+                    raise ValueError("missing header end")
+                lines.append(line)
+                if len(lines) == 1 and line.strip() != b"---":
+                    raise ValueError("missing header")
+                if len(lines) > 1 and line.strip() == b"---":
+                    break
+            text = b"".join(lines)
+        if len(text) > limit:
+            raise ValueError("too large")
+        return text.decode("utf-8", errors="strict")
+
+
+def skill_metadata(text, fallback=None):
+    fields, current = {}, None
+    for line in text.splitlines()[1:-1]:
+        match = re.match(r"^([a-zA-Z][a-zA-Z0-9_-]*):(?:\s+(.*))?$", line)
+        prompt = re.match(r"^  wiki-prompt:\s+(.+)$", line) if current == "metadata" else None
+        if prompt:
+            fields["wiki-prompt"] = scalar(prompt[1])
+        elif match:
+            current = match[1]
+            if current in fields:
+                raise ValueError("duplicate metadata")
+            value = match[2] or ""
+            fields[current] = "" if value in ("|", ">", "|-", ">-") else scalar(value)
+        elif line.startswith((" ", "\t")) and current in ("name", "description"):
+            fields[current] = str(fields.get(current, "")) + " " + line.strip()
+    if fallback:
+        fields.setdefault("name", fallback)
+        fields.setdefault("description", "説明が未設定です。使う前に内容と条件を確認してください。")
+    if not isinstance(fields.get("name"), str) or not re.fullmatch(r"[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}", fields["name"]):
+        raise ValueError("invalid skill name")
+    if not isinstance(fields.get("description"), str) or not fields["description"].strip():
+        raise ValueError("missing description")
+    return fields
+
+
+def skills_index(root, home=None):
+    root = Path(root).resolve()
+    home = Path.home() if home is None else Path(home)
+    sources = [(root / ".agents/skills", root, "Codex", ".agents/skills", True),
+               (root / ".claude/skills", root, "Claude Code", ".claude/skills", True),
+               (home / ".agents/skills", home, "Codex", "~/.agents/skills", False),
+               (home / ".claude/skills", home, "Claude Code", "~/.claude/skills", False)]
+    codex_home = Path(os.environ.get("CODEX_HOME", str(home / ".codex"))) if home == Path.home() else home / ".codex"
+    if codex_home.is_absolute():
+        sources.append((codex_home / "skills", codex_home, "Codex", "$CODEX_HOME/skills", False))
+    managed = set()
+    try:
+        for line in catalog_text(root / "tools/os-files.txt", root).splitlines():
+            match = re.fullmatch(r"[a-f0-9]{64}  (.+)", line)
+            if match:
+                managed.add(match[1])
+    except (OSError, ValueError, UnicodeError):
+        pass
+    suggestions = {"design-review": "この画面のデザインをレビューして", "create-prototype": "設計に沿って、触って試せる試作を作って",
+                   "visualize-project-architecture": "この案件の仕組みを図解して", "explainer-video": "この案件の仕組みを説明動画にして"}
+    skills, skipped, limited, seen = [], 0, False, set()
+    for base, boundary, agent, label, workspace in sources:
+        identity = (str(base), agent)
+        if identity in seen:
+            continue
+        seen.add(identity)
+        if not base.exists():
+            continue
+        if any(parent.is_symlink() for parent in (base, *base.parents) if parent == boundary or boundary in parent.parents):
+            skipped += 1
+            continue
+        try:
+            with os.scandir(base) as entries:
+                directories = []
+                for entry in entries:
+                    if len(directories) >= 256:
+                        limited = True
+                        break
+                    directories.append(entry.name)
+        except OSError:
+            skipped += 1
+            continue
+        for directory in sorted(directories):
+            if directory.startswith("."):
+                continue
+            path = base / directory / "SKILL.md"
+            try:
+                fields = skill_metadata(catalog_text(path, boundary, header=True), directory if agent == "Claude Code" else None)
+                name = fields["name"]
+                relative = path.relative_to(root).as_posix() if workspace else ""
+                standard = relative in managed
+                user = fields.get("user-invocable", "true")
+                model = fields.get("disable-model-invocation", "false")
+                valid = agent == "Codex" or user in ("true", "false") and model in ("true", "false")
+                command = ("$" if agent == "Codex" else "/") + name if valid and not (agent == "Claude Code" and user == "false") else ""
+                prompt = fields.get("wiki-prompt") or (suggestions.get(name) if standard else None) or f"{name}のスキルを使って、［やりたいこと］を進めて"
+                skills.append({"name": name, "description": fields["description"][:2000], "agent": agent,
+                               "source": label + "/" + directory, "scope": "ワークスペース" if workspace else "個人用",
+                               "managed": standard, "command": command, "prompt": str(prompt)[:1000],
+                               "invocation": "メタデータ要確認" if not valid else "手動・AI自動とも呼出不可" if not command and model == "true" else "AI選択のみ（手動呼出不可）" if not command else
+                               "明示指定が必要" if agent == "Claude Code" and model == "true" else "呼出候補（セッションで利用可否を確認）"})
+            except (OSError, ValueError, UnicodeError):
+                skipped += 1
+    return {"items": skills, "skipped": skipped, "limited": limited}
+
+
+def capabilities_index(root):
+    root = Path(root).resolve()
+    guides = []
+    for identifier, relative in GUIDES.items():
+        try:
+            body = catalog_text(root / relative, root)
+            title = next((line[2:].strip() for line in body.splitlines() if line.startswith("# ")), relative)
+            guides.append({"id": identifier, "path": relative, "title": title, "body": body})
+        except (OSError, ValueError, UnicodeError):
+            continue
+    return {"guides": guides, "skills": skills_index(root), "read_only": True}
 
 
 # ---------------------------------------------------------------- 毎日メモ（日付の索引。読むだけで、新しいファイルは作らない）
@@ -1042,10 +1187,11 @@ def make_handler(root, port):
                 self.send_header("X-Wiki-Root", rid)
                 self.end_headers()
                 return
-            if path in ("/view/index.json", "/view/daily.json"):
+            if path in ("/view/index.json", "/view/daily.json", "/view/capabilities.json"):
                 daily = path == "/view/daily.json"
                 try:
-                    body, code = json.dumps(daily_index(root) if daily else view_index(root), ensure_ascii=False).encode("utf-8"), 200
+                    data = capabilities_index(root) if path == "/view/capabilities.json" else daily_index(root) if daily else view_index(root)
+                    body, code = json.dumps(data, ensure_ascii=False).encode("utf-8"), 200
                 except Exception as e:  # 壊れたページがあっても、理由だけ返す（フォルダの場所は出さない）
                     print(f"wiki_view: {path[6:]}: {e!r}", file=sys.stderr)
                     body, code = json.dumps({"error": type(e).__name__, **({"days": []} if daily else {"pages": [], "collections": []})}).encode("utf-8"), 500
