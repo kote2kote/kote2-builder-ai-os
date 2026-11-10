@@ -10,6 +10,8 @@ python3 -I tools/save_status.py --ws . --project projects/monthly-report --json
 
 `--ws` は確認済みのワークスペースのルート。案件を直接開いている場合は親のルートと道具への実際のパスを指定する。`--project` はそのルートからの相対パス。省略時は `wiki/projects/` 直下の案件ページの既存 `path:` だけを調べる。索引・本文のリンクから外部を探索しない。登録のない案件を自動登録せず、所在なしの相談ページにも新しい必須欄を足さない。
 
+案件から残した、親Wikiへ未反映のメモも合わせて確かめる（読み取りだけ）: `python3 -I tools/wiki_pending.py list --ws .`。件数があれば「親Wikiへ未反映のメモがN件あります」と伝える。結果に `unsupported` があれば「未反映メモは未確認（この環境では扱えない）」と伝え、0件とは言わない。取り込みは `wiki/README.md` の「案件から開いていて、親Wikiへ書けないとき」。
+
 ## 結果の読み方
 
 - **親Wiki**: ファイルが存在すること、親Gitの最新commit、`wiki/` に関する最後のcommit、追跡中の項目と未commit・未追跡・ignoredを分ける。親Gitに別の変更があっても、Wiki内の状態とは混ぜない。

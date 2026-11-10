@@ -15,7 +15,7 @@ AIの入口・設定を追加/変更する時に読む。共通手順 `agent-set
 
 有効化したい利用者は [claude-sandbox-settings.json](templates/claude-sandbox-settings.json) を設定例として使う。このファイルは自動読込されない。親OSなら親のルート、案件を単独起動するなら案件のルートの `.claude/settings.local.json` に、内容を確認してsandboxブロックを追加する。ファイルがなければ作成できるが、既存ファイルがあれば丸ごとコピーせず、既存のキー・配列・hooks等を保持して差分を示す。既存sandboxとの競合や管理者の強制設定は勝手に解除しない。local設定はGit共有・OS更新の対象外とする。
 
-この例は `enabled:true`・`failIfUnavailable:true`・`autoAllowBashIfSandboxed:false`・`allowUnsandboxedCommands:false` と、従来の秘密パス/環境変数denyを維持する。利用者が選んだ隔離を利用できない時は停止する。Linux/WSL2ではbubblewrapとsocat等の依存を確認する。依存ソフトを勝手にインストールしない。有効化後は新しい会話で `/sandbox`・`/status`・`/permissions` を確認し、架空データで通常の制作と拒否を試す。
+この例は `enabled:true`・`failIfUnavailable:true`・`autoAllowBashIfSandboxed:false`・`allowUnsandboxedCommands:false` と、従来の秘密パス/環境変数denyを維持する。利用者が選んだ隔離を利用できない時は停止する。例には、OSの更新の確認・取得に使う通信先 `github.com` と `api.github.com` だけをあらかじめ許可する指定（`network.allowedDomains`）が入っている。これを外すと、更新の確認のたびに通信の許可を聞かれるか、確認できずに止まる（止まっても安全で、本人のターミナルから確認できる。[更新の手順](../os-update.md)）。4.5.1以前にこの例を有効化した利用者のlocal設定は、OS更新では変わらない。通信先の許可を足すかどうかは本人が選び、AIは変更案を見せて了承を得てから足す。sandboxを無効にする・sandboxの外で実行する・TLS検証を省く、といった変更はしない。Linux/WSL2ではbubblewrapとsocat等の依存を確認する。依存ソフトを勝手にインストールしない。有効化後は新しい会話で `/sandbox`・`/status`・`/permissions` を確認し、架空データで通常の制作と拒否を試す。
 
 Windowsネイティブにはこの例を有効化しない。Claude Codeのsandboxが必要ならWSL2で実行する。MacとWindowsで同じ案件を同期する時もlocal設定を同期しない。上位のuser/管理者設定がsandboxを強制していれば、共通設定からの分離だけでは起動問題を解消しない。設定元と対応策を示し、管理者設定や本人の選択を無断で変更しない。
 

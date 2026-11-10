@@ -1,19 +1,26 @@
 #!/usr/bin/env python3
-"""公式Gitの固定commitを取得・検査。信頼済み旧版だけを実行する。"""
+"""公式Gitの固定commitを取得・検査。信頼済み旧版だけを実行する。
+
+更新の確認と取得は、認証なしのHTTPS（公式リポジトリの確認）とGitだけで行う。GitHub CLIは使わない。"""
 import argparse
 import base64
 from contextlib import contextmanager
 import hashlib
+import http.client
 import io
 import json
 import os
 import re
 import shutil
+import socket
+import ssl
 import stat
 import subprocess
 import sys
 import tempfile
 import time
+import urllib.error
+import urllib.request
 import zipfile
 from pathlib import Path
 
@@ -29,6 +36,23 @@ MAX_ZIP = 16 * 1024 * 1024
 AUTO_INTERVAL = 24 * 60 * 60
 AUTO_TIMEOUT = 8
 AUTO_DIRECTORY = "tools/.state/os-update"
+API_ROOT = "https://api.github.com/repos/"
+MAX_API = 64 * 1024  # small answers only: large ones were cut off behind a sandbox proxy
+RELEASE_TAG_REF = "refs/builder-os/release-tag"
+# A sandbox routes all traffic through a local proxy that it names in these variables. Without them nothing connects.
+PROXY_VARIABLES = ("HTTP_PROXY", "HTTPS_PROXY", "ALL_PROXY", "NO_PROXY", "http_proxy", "https_proxy", "all_proxy", "no_proxy")
+NETWORK_VARIABLES = frozenset({"PATH", "TMPDIR", "TMP", "TEMP", "SYSTEMROOT", "WINDIR", "LANG", "LC_ALL",
+                               "SSL_CERT_FILE", "SSL_CERT_DIR", *PROXY_VARIABLES})
+PROXY_AUTH_METHODS = ("anyauth", "basic", "digest", "negotiate", "ntlm")
+UNCONFIRMED = ("確認できなかっただけで、「更新なし」ではありません。sandboxなどの保護やTLS証明書の検証を無効にしたり弱めたりしないでください。"
+               "本人が自分のターミナルで同じコマンドを実行できます（tools/os-update.md）")
+NO_CONNECTION = "GitHubへ接続できません（通信が許可されていないか、オフラインです）。" + UNCONFIRMED
+NO_TLS = "GitHubのTLS証明書を確認できません。検証は省略しません。" + UNCONFIRMED
+NO_TIME = "GitHubの応答が時間内に返りませんでした。" + UNCONFIRMED
+RATE_LIMITED = "GitHubの回数制限に達しました（認証なしの確認は、同じ回線の合計で1時間に60回まで）。時間をおいて確認してください。" + UNCONFIRMED
+NO_RECORD = ("公開の記録（注釈つきの公開tag vX.Y.Z）を確認できません。公開作業の途中か、公開されていない変更の可能性があります。"
+             "取得・更新しないでください。「更新なし」という意味ではありません")
+RECORD_DIFFERS = "公開tagの記録（commit・tree・配布一覧hash）が取得物と一致しません。更新しないでください"
 ROOT_FILES = {"AGENTS.md", "CLAUDE.md", "README.md", "DESIGN.md", ".gitignore", ".claude/settings.json",
               "VERSION", "LICENSE", "NOTICE", "THIRD_PARTY.md", "CONTRIBUTING.md", INVENTORY}
 OS_ROOT_FILES = {"VERSION", "AGENTS.md", "CLAUDE.md", "README.md", "DESIGN.md", ".gitignore", ".claude/settings.json"}
@@ -467,50 +491,247 @@ def fetch_release(tag, workspace):
         raise
 
 
-def run_git(binary, args, environment):
-    result = subprocess.run([binary, "-c", "core.hooksPath=" + os.devnull,
-                             "-c", "credential.helper=", "-c", "protocol.allow=never",
-                             "-c", "protocol.https.allow=always", "-c", "http.followRedirects=false",
-                             "-c", "fetch.fsckObjects=true", "-c", "transfer.fsckObjects=true",
-                             *args], env=environment, capture_output=True, timeout=120)
-    require(result.returncode == 0, "公式Gitの取得・検査に失敗しました。検査を省略できません")
+def network_environment():
+    """Only the variables the network tools need. HOME and tokens are left out; the proxy variables are kept."""
+    return {key: value for key, value in os.environ.items() if key in NETWORK_VARIABLES}
+
+
+def git_environment():
+    environment = network_environment()
+    environment.update({"GIT_CONFIG_NOSYSTEM": "1", "GIT_CONFIG_GLOBAL": os.devnull,
+                        "GIT_CONFIG_SYSTEM": os.devnull, "GIT_TERMINAL_PROMPT": "0",
+                        "GIT_NO_REPLACE_OBJECTS": "1", "GIT_ATTR_NOSYSTEM": "1"})
+    return environment
+
+
+def proxy_auth_method():
+    """How Git should log in to the proxy, when the environment says so. A sandbox names its proxy with a user name
+    and tells Git (through GIT_CONFIG_PARAMETERS) to send it at once; without that Git is refused. Only this one
+    setting, and only its known values, is taken over. Every other Git setting from the environment stays ignored."""
+    value = os.environ.get("GIT_HTTP_PROXY_AUTHMETHOD", "").lower()
+    if value in PROXY_AUTH_METHODS:
+        return value
+    match = re.search(r"'http\.proxyauthmethod'?='?(" + "|".join(PROXY_AUTH_METHODS) + r")'",
+                      os.environ.get("GIT_CONFIG_PARAMETERS", ""), re.IGNORECASE)
+    return match.group(1).lower() if match else None
+
+
+def official_url():
+    return "https://github.com/" + OFFICIAL_REPOSITORY + ".git"
+
+
+def git_failure(stderr):
+    """Why Git stopped, as one of a few fixed sentences. The raw text (it can hold a proxy address) is never shown."""
+    text = stderr.decode("utf-8", "replace").lower()
+    if any(mark in text for mark in ("ssl certificate", "certificate verif", "server certificate", "schannel", "sectrust")):
+        return NO_TLS
+    if any(mark in text for mark in ("could not resolve", "couldn't resolve", "failed to connect", "couldn't connect",
+                                     "connection refused", "connection timed out", "network is unreachable",
+                                     "proxy connect", "received http code", "recv failure", "operation timed out",
+                                     "empty reply", "unable to access")):
+        return NO_CONNECTION
+    return "公式Gitの取得・検査に失敗しました。検査を省略できません（未確認です。「更新なし」という意味ではありません）"
+
+
+def run_git(binary, args, environment, timeout=120, cwd=None):
+    method = proxy_auth_method()
+    try:
+        result = subprocess.run([binary, "-c", "core.hooksPath=" + os.devnull,
+                                 "-c", "credential.helper=", "-c", "protocol.allow=never",
+                                 "-c", "protocol.https.allow=always", "-c", "http.followRedirects=false",
+                                 "-c", "fetch.fsckObjects=true", "-c", "transfer.fsckObjects=true",
+                                 *(["-c", "http.proxyAuthMethod=" + method] if method else []),
+                                 *args], env=environment, capture_output=True, timeout=max(1, timeout), cwd=cwd)
+    except subprocess.TimeoutExpired:
+        raise PackageError(NO_TIME) from None
+    require(result.returncode == 0, git_failure(result.stderr))
     require(len(result.stdout) <= MAX_TOTAL, "Gitの応答が大きすぎます")
     return result.stdout
 
 
+def rate_limited(reset):
+    """The anonymous API allows 60 requests an hour for everyone on the same connection. Say when it opens again."""
+    try:
+        minutes = max(1, int((int(reset) - time.time() + 59) // 60))
+    except (TypeError, ValueError):
+        return RATE_LIMITED
+    if minutes > 90:
+        return RATE_LIMITED
+    return RATE_LIMITED.replace("時間をおいて確認してください。", f"約{minutes}分後にもう一度確認してください。", 1)
+
+
+class NoRedirect(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, *args, **kwargs):
+        return None
+
+
+def curl_get(url, headers, timeout):
+    """The same GET with curl, for a Python that has no usable CA certificates. curl verifies TLS itself.
+    Returns None when curl is not installed."""
+    binary = shutil.which("curl")
+    if binary is None:
+        return None
+    arguments = [binary, "-q", "--fail", "--silent", "--proto", "=https", "--max-time", str(max(1, int(timeout))),
+                 "--max-filesize", str(MAX_API)]
+    for name, value in headers.items():
+        arguments += ["-H", name + ": " + value]
+    try:
+        result = subprocess.run([*arguments, url], env=network_environment(), capture_output=True, timeout=timeout + 5)
+    except subprocess.TimeoutExpired:
+        raise PackageError(NO_TIME) from None
+    if result.returncode in {35, 51, 53, 54, 58, 59, 60, 77, 83, 90, 91}:
+        raise PackageError(NO_TLS)
+    if result.returncode == 28:
+        raise PackageError(NO_TIME)
+    if result.returncode == 22:
+        raise PackageError("GitHubの応答が想定と違います。" + UNCONFIRMED)
+    require(result.returncode == 0, NO_CONNECTION)
+    return result.stdout
+
+
+def http_get(url, timeout=30):
+    """One small anonymous HTTPS GET to the GitHub API. TLS is always verified and redirects are refused.
+    No token is sent: the repository is public, and a login that lives in a keychain is not reachable everywhere."""
+    require(url.startswith(API_ROOT), "APIの宛先が不正です")
+    headers = {"Accept": "application/vnd.github+json", "User-Agent": "kote2-builder-ai-os-update",
+               "X-GitHub-Api-Version": "2022-11-28"}
+    data, started = None, time.monotonic()
+
+    def with_curl():
+        # The time already spent counts: both attempts together stay within the one time limit.
+        left = timeout - (time.monotonic() - started)
+        require(left > 0, NO_TIME)
+        found = curl_get(url, headers, left)
+        require(found is not None, NO_TLS)
+        return found
+    try:
+        opener = urllib.request.build_opener(NoRedirect)
+        with opener.open(urllib.request.Request(url, headers=headers), timeout=timeout) as response:
+            data = response.read(MAX_API + 1)
+    except urllib.error.HTTPError as error:
+        limited = error.code in {403, 429} and error.headers is not None and error.headers.get("x-ratelimit-remaining") == "0"
+        if limited:
+            raise PackageError(rate_limited(error.headers.get("x-ratelimit-reset"))) from None
+        raise PackageError(f"GitHubの応答が想定と違います（HTTP {error.code}）。" + UNCONFIRMED) from None
+    except urllib.error.URLError as error:
+        if isinstance(error.reason, ssl.SSLError):
+            data = with_curl()
+        elif isinstance(error.reason, (TimeoutError, socket.timeout)):
+            raise PackageError(NO_TIME) from None
+        else:
+            raise PackageError(NO_CONNECTION) from None
+    except ssl.SSLError:
+        data = with_curl()
+    except (TimeoutError, socket.timeout):
+        raise PackageError(NO_TIME) from None
+    except (http.client.HTTPException, OSError):
+        raise PackageError(NO_CONNECTION) from None
+    require(len(data) <= MAX_API, "GitHubの応答が大きすぎます")
+    return data
+
+
+def remaining(deadline, limit):
+    if deadline is None:
+        return limit
+    left = deadline - time.monotonic()
+    require(left > 0, "版確認の時間制限に達しました")
+    return min(limit, left)
+
+
+def valid_ref(ref, message):
+    require(isinstance(ref, str) and re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._/-]{0,199}", ref)
+            and ".." not in ref and "//" not in ref and not ref.endswith("/"), message)
+
+
+def remote_refs(binary, environment, timeout=120):
+    """Branch heads and release tags of the official repository. For an annotated tag, '<tag>^{}' is its commit."""
+    # Run it in a new empty folder, with repository discovery stopped there: the Git settings of the workspace
+    # (a rewritten URL, a relaxed TLS check, another proxy) must not decide where the refs are read from.
+    empty = Path(tempfile.mkdtemp(prefix="builder-os-refs-")).resolve()
+    try:
+        output = run_git(binary, ["ls-remote", official_url(), "refs/heads/*", "refs/tags/v*"],
+                         {**environment, "GIT_CEILING_DIRECTORIES": str(empty.parent)}, timeout, cwd=str(empty))
+    finally:
+        try:
+            empty.rmdir()
+        except OSError:
+            pass
+    refs = {}
+    for line in output.decode("ascii").splitlines():
+        value, separator, name = line.partition("\t")
+        require(separator and re.fullmatch(r"[0-9a-f]{40}", value) and name.startswith("refs/") and name not in refs,
+                "公式refの一覧が不正です")
+        refs[name] = value
+    require(0 < len(refs) <= 8192, "公式refの一覧が不正です")
+    return refs
+
+
+def release_tag(refs, commit):
+    """The one annotated release tag vX.Y.Z that points at this commit, and the tag object's ID.
+    A commit without it is not a published release, even when it is on the default branch."""
+    names = [name[len("refs/tags/"):-len("^{}")] for name, value in refs.items()
+             if name.startswith("refs/tags/") and name.endswith("^{}") and value == commit]
+    names = [name for name in names if re.fullmatch("v" + STABLE_VERSION, name)]
+    # A release tag without a message (a lightweight tag) on the same commit is not a record either: stop.
+    bare = [name for name, value in refs.items() if value == commit and not name.endswith("^{}")
+            and re.fullmatch("refs/tags/v" + STABLE_VERSION, name)]
+    require(len(names) == 1 and "refs/tags/" + names[0] in refs and not bare, NO_RECORD)
+    return names[0], refs["refs/tags/" + names[0]]
+
+
 def remote_source(ref=None, deadline=None):
+    """Identity of the official repository (anonymous API), then the commit and its release tag (git ls-remote)."""
     repository, repository_id = OFFICIAL_REPOSITORY, OFFICIAL_REPOSITORY_ID
     require(re.fullmatch(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+", repository) and re.fullmatch(r"[1-9][0-9]*", repository_id),
             "公式リポジトリが未設定です。通信せず停止します")
     if ref is not None:
-        require(isinstance(ref, str) and re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._/-]{0,199}", ref)
-                and ".." not in ref and "//" not in ref and not ref.endswith("/"), "取得refが不正です")
-    binary = shutil.which("gh")
-    require(binary is not None, "GitHub CLIが必要です")
-    environment = {key: value for key, value in os.environ.items() if key in
-                   {"HOME", "PATH", "TMPDIR", "TMP", "TEMP", "SYSTEMROOT", "WINDIR", "LANG", "LC_ALL",
-                    "GH_TOKEN", "GITHUB_TOKEN", "SSL_CERT_FILE", "SSL_CERT_DIR"}}
-    environment.update({"GH_HOST": "github.com", "GH_PROMPT_DISABLED": "1", "GH_NO_UPDATE_NOTIFIER": "1", "GH_PAGER": "cat"})
-    def api(path):
-        arguments = ["api", "--hostname", "github.com", f"repos/{repository}/{path}".rstrip("/")]
-        if deadline is None:
-            return json_bytes(run_gh(binary, arguments, environment))
-        remaining = deadline - time.monotonic()
-        require(remaining > 0, "版確認の時間制限に達しました")
-        return json_bytes(run_gh(binary, arguments, environment, timeout=min(120, remaining)))
-    identity = api("")
+        valid_ref(ref, "取得refが不正です")
+    binary = shutil.which("git")
+    require(binary is not None, "Gitが必要です")
+    environment = git_environment()
+    identity = json_bytes(http_get(API_ROOT + repository, remaining(deadline, 30)))
     require(str(identity.get("id")) == repository_id and identity.get("full_name") == repository
             and identity.get("private") is False, "公式リポジトリのidentityが一致しません")
+    refs = remote_refs(binary, environment, remaining(deadline, 120))
     if ref is None:
         ref = identity.get("default_branch")
-        require(isinstance(ref, str) and re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._/-]{0,199}", ref)
-                and ".." not in ref and "//" not in ref and not ref.endswith("/"), "公式の既定branchが不正です")
-    resolved = api("commits/" + ref)
-    commit = resolved.get("sha", "")
-    require(isinstance(commit, str) and re.fullmatch(r"[0-9a-f]{40}", commit), "公開commitを確認できません")
+        valid_ref(ref, "公式の既定branchが不正です")
     if re.fullmatch(r"[0-9a-f]{40}", ref):
-        require(commit == ref, "指定commitと公開commitが一致しません")
-    return {"repository": repository, "repository_id": repository_id, "ref": ref, "commit": commit}, binary, environment, api
+        commit = ref
+    else:
+        found = {refs[name] for name in ("refs/heads/" + ref, "refs/tags/" + ref + "^{}") if name in refs}
+        require(len(found) == 1, "指定したrefを公式リポジトリで確認できません")
+        commit = found.pop()
+    tag, tag_object = release_tag(refs, commit)
+    source = {"repository": repository, "repository_id": repository_id, "ref": ref, "commit": commit,
+              "release_tag": tag, "version": tag[1:]}
+    return source, binary, environment, tag_object
+
+
+def release_record(binary, prefix, environment, name, expected_object, commit, inventory_sha256):
+    """The published record of this release: the annotated tag written when it was accepted for publication.
+    Its target, its name, and the commit / tree / release-files.json sha256 lines in its message must all match
+    what was fetched."""
+    tag_object = run_git(binary, [*prefix, "rev-parse", "--verify", RELEASE_TAG_REF], environment).decode().strip()
+    require(tag_object == expected_object, "公開tagが確認の間に変わりました")
+    raw = run_git(binary, [*prefix, "cat-file", "tag", tag_object], environment)
+    require(len(raw) <= 65536, "公開tagが大きすぎます")
+    header, separator, body = raw.decode("utf-8").partition("\n\n")
+    pairs = [line.split(" ", 1) for line in header.splitlines() if " " in line]
+    fields = dict(pairs)
+    require(separator and all([key for key, _ in pairs].count(key) == 1 for key in ("object", "type", "tag"))
+            and fields.get("object") == commit and fields.get("type") == "commit" and fields.get("tag") == name,
+            RECORD_DIFFERS)
+    tree = run_git(binary, [*prefix, "rev-parse", "--verify", commit + "^{tree}"], environment).decode().strip()
+    lines = body.splitlines()
+
+    def recorded(pattern):
+        values = [match.group(1) for match in (re.fullmatch(pattern, line) for line in lines) if match]
+        require(len(values) == 1, RECORD_DIFFERS)
+        return values[0]
+    require(recorded(r"commit ([0-9a-f]{40})") == commit and recorded(r"tree ([0-9a-f]{40})") == tree
+            and recorded(r"release-files\.json sha256 ([0-9a-f]{64})") == inventory_sha256, RECORD_DIFFERS)
+    return tag_object
 
 
 def workspace_version(workspace):
@@ -530,25 +751,12 @@ def workspace_version(workspace):
 
 
 def update_status(workspace=".", ref=None, timeout=None):
+    """Is a newer published release available? Reads only the repository identity and its refs: no files are fetched.
+    The version comes from the release tag on the commit; fetch later checks that the files say the same."""
     current, old_raw = workspace_version(workspace)
-    if timeout is None:
-        source, binary, environment, api = remote_source(ref)
-    else:
-        source, binary, environment, api = remote_source(ref, deadline=time.monotonic() + timeout)
-    response = api("contents/VERSION?ref=" + source["commit"])
-    require(response.get("type") == "file" and response.get("path") == "VERSION" and response.get("encoding") == "base64"
-            and type(response.get("size")) is int and 0 < response["size"] <= 128, "公式VERSIONの情報が不正です")
-    content = response.get("content")
-    require(isinstance(content, str) and len(content) <= 256, "公式VERSIONの内容が不正です")
-    data = base64.b64decode(content.replace("\n", ""), validate=True)
-    require(len(data) == response["size"]
-            and hashlib.sha1(b"blob " + str(len(data)).encode("ascii") + b"\0" + data).hexdigest() == response.get("sha"),
-            "公式VERSIONのhash/sizeが一致しません")
-    text = data.decode("ascii")
-    require(re.fullmatch(STABLE_VERSION + r"\n?", text), "公式VERSIONは安定版番号1行が必要です")
-    version = text.removesuffix("\n")
+    source = remote_source(ref, None if timeout is None else time.monotonic() + timeout)[0]
     require(workspace_version(workspace) == (current, old_raw), "確認の間にワークスペースの版が変わりました")
-    return {**source, "current_version": current, "version": version, "available": version_order(version) > version_order(current)}
+    return {**source, "current_version": current, "available": version_order(source["version"]) > version_order(current)}
 
 
 @contextmanager
@@ -700,38 +908,36 @@ def fetch(tag=None, workspace=".", ref=None):
     require(tag is None or ref is None, "tagとrefは同時に指定できません")
     requested = tag if tag is not None else ref
     if requested is not None:
-        require(isinstance(requested, str) and re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._/-]{0,199}", requested)
-                and ".." not in requested and "//" not in requested and not requested.endswith("/"), "取得refが不正です")
+        valid_ref(requested, "取得refが不正です")
     old_version, old_raw = workspace_version(workspace)
     workspace = Path(workspace).resolve()
     if tag is not None:
         require(version_order(tag[1:]) > version_order(old_version), "同じ版・古い版へは更新しません")
-    git_binary = shutil.which("git")
-    require(git_binary is not None, "GitHub CLIとGitが必要です")
-    source, binary, environment, api = remote_source(requested)
-    requested, commit = source["ref"], source["commit"]
-    git_environment = {key: value for key, value in environment.items() if key in
-                       {"PATH", "TMPDIR", "TMP", "TEMP", "SYSTEMROOT", "WINDIR", "LANG", "LC_ALL", "SSL_CERT_FILE", "SSL_CERT_DIR"}}
-    git_environment.update({"GIT_CONFIG_NOSYSTEM": "1", "GIT_CONFIG_GLOBAL": os.devnull,
-                            "GIT_CONFIG_SYSTEM": os.devnull, "GIT_TERMINAL_PROMPT": "0",
-                            "GIT_NO_REPLACE_OBJECTS": "1", "GIT_ATTR_NOSYSTEM": "1"})
+    source, git_binary, environment, tag_object = remote_source(requested)
+    requested, commit, release = source["ref"], source["commit"], source["release_tag"]
+    require(tag is None or release == tag, "指定したtagと公開の記録が一致しません")
+    require(version_order(source["version"]) > version_order(old_version), "同じ版・古い版へは更新しません")
     folder = Path(tempfile.mkdtemp(prefix="builder-os-git-")).resolve()
     try:
         require(not folder.is_relative_to(workspace), "取得先がワークスペース内です")
         objects = folder / "objects.git"
-        run_git(git_binary, ["init", "--bare", "--template=", str(objects)], git_environment)
+        # Created from inside the new folder, so that the workspace's own Git settings are never consulted.
+        run_git(git_binary, ["init", "--bare", "--template=", str(objects)],
+                {**environment, "GIT_CEILING_DIRECTORIES": str(folder.parent)}, cwd=str(folder))
         prefix = ["--git-dir", str(objects)]
         run_git(git_binary, [*prefix, "fetch", "--depth=1", "--no-tags", "--no-recurse-submodules", "--no-auto-maintenance",
-                             "https://github.com/" + repository + ".git", commit], git_environment)
-        require(run_git(git_binary, [*prefix, "rev-parse", "--verify", "FETCH_HEAD^{commit}"], git_environment).decode().strip() == commit,
+                             official_url(), commit, "refs/tags/" + release + ":" + RELEASE_TAG_REF], environment)
+        require(run_git(git_binary, [*prefix, "rev-parse", "--verify", commit + "^{commit}"], environment).decode().strip() == commit,
                 "取得commitが一致しません")
-        run_git(git_binary, [*prefix, "fsck", "--strict", "--no-reflogs"], git_environment)
+        run_git(git_binary, [*prefix, "fsck", "--strict", "--no-reflogs"], environment)
         package = folder / "package"
-        extract_commit(git_binary, objects, commit, package, git_environment)
+        extract_commit(git_binary, objects, commit, package, environment)
         metadata = inspect(package)
         require(re.fullmatch(STABLE_VERSION, metadata["version"]), "配布版は安定版番号が必要です")
-        require(tag is None or metadata["version"] == tag[1:], "tagと配布物の版が一致しません")
+        require(metadata["version"] == source["version"], "公開tagと配布物の版が一致しません")
         require(version_order(metadata["version"]) > version_order(old_version), "同じ版・古い版へは更新しません")
+        inventory_sha256 = digest((package / INVENTORY).read_bytes())
+        release_record(git_binary, prefix, environment, release, tag_object, commit, inventory_sha256)
         verified_tree = read_tree(package)
         require(checked_bytes(workspace / MANIFEST)[0] == old_raw, "取得の間にワークスペースの版が変わりました")
         runner = workspace / "tools/update_os.py"
@@ -744,8 +950,8 @@ def fetch(tag=None, workspace=".", ref=None):
         require(len(plans) == 1, "旧版checkのplanを取得できません")
         print(checked.stdout, end="")
         receipt = {"source": "git", "repository": repository, "repository_id": repository_id, "ref": requested,
-                   "commit": commit, "version": metadata["version"], "inventory_sha256": digest((package / INVENTORY).read_bytes()),
-                   "plan": plans[0], "package": str(package)}
+                   "commit": commit, "version": metadata["version"], "release_tag": release,
+                   "inventory_sha256": inventory_sha256, "plan": plans[0], "package": str(package)}
         (folder / "verified.json").write_text(json.dumps(receipt, sort_keys=True) + "\n", encoding="utf-8")
         return receipt
     except BaseException:
@@ -766,7 +972,7 @@ def main():
     selection.add_argument("--tag")
     selection.add_argument("--ref")
     obtain.add_argument("--ws", default=".")
-    status = commands.add_parser("status", help="公式VERSIONだけで更新の有無を確認")
+    status = commands.add_parser("status", help="公式リポジトリの公開tagだけで更新の有無を確認（ファイルは取得しない）")
     status.add_argument("--ws", default=".")
     status.add_argument("--ref")
     automatic = commands.add_parser("auto-status", help="24時間ごとの版確認。取得・適用しない")
@@ -788,8 +994,13 @@ def main():
             result = fetch(args.tag, args.ws, args.ref)
         print(json.dumps(result, ensure_ascii=False, sort_keys=True))
         return 0
-    except (PackageError, OSError, ValueError, KeyError, TypeError, AttributeError, zipfile.BadZipFile, subprocess.SubprocessError) as error:
+    except PackageError as error:
         print(f"止めました: {error}", file=sys.stderr)
+        return 3
+    except (OSError, ValueError, KeyError, TypeError, AttributeError, zipfile.BadZipFile, subprocess.SubprocessError) as error:
+        # No raw text: it can hold local paths. The class name is enough to tell what kind of failure it was.
+        print(f"止めました: 道具の中で予期しない失敗が起きました（{type(error).__name__}）。処理は完了していません。"
+              "更新の確認・取得だった場合は未確認で、「更新なし」という意味ではありません", file=sys.stderr)
         return 3
 
 

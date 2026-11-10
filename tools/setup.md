@@ -11,7 +11,7 @@
 - この配布物の版: ルートの [`VERSION`](../VERSION) が正本です。導入記録には取得したcommitと併せて残します。
 - 修正はpatch、互換性を保つ機能追加はminor、互換性のない変更はmajorを進めます。同じ版の配布物は後から差し替えません。
 
-必要な道具はGit・Python 3と、更新元のAPI確認に使うGitHub CLI（`gh`）です。安全性を確認した公式版を使ってください。通常Git tree取得はRelease検証を使わないため、Release検証用の `gh 2.102.0` 最低版条件はありません。API利用に認証が必要なら本人が設定し、トークンをAIへ貼り付けません。
+必要な道具はGitとPython 3です。安全性を確認した公式版を使ってください。OSの更新の確認と取得は、認証なしのHTTPSとGitだけで行います。GitHub CLI（`gh`）やGitHubへのログインは要りません。トークンをAIへ貼り付ける場面はありません。
 
 全機能の利用には **Python 3.11以上を推奨**します。とくに `tools/building_check.py` の **Codex設定検査はPython 3.11以上が必須**です（`tomllib`を使用）。`python3 --version`で確認してください。Windowsで `python3` がなければ `py -3 --version` で確認し、以降の例もその起動方法に読み替えます。古いPythonですべてのCLIを一律停止する規則ではありません。必要な機能の条件に合わせて本人が準備し、AIはPythonや既存CLI設定を自動で入れ替えません。macOSでの確認実績はありますが、実Windowsの最終確認は未完了です。
 

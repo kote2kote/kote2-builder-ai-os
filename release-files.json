@@ -226,7 +226,7 @@
     },
     "README.md": {
       "mode": 420,
-      "sha256": "e655378be5ea3ea7a746385ff01f74b9a1effc3c86227554177e510b48f2324d"
+      "sha256": "777cd3d79f051171257491adb06564aa9863060dabe3c3a0d0ba1c1e59e343d4"
     },
     "THIRD_PARTY.md": {
       "mode": 420,
@@ -234,7 +234,7 @@
     },
     "VERSION": {
       "mode": 420,
-      "sha256": "67e28833d99a5cb09ef3142c738e71d538589fdb21cbed46bbd447b4bbf30060"
+      "sha256": "43e9fb767a7c3ee185de160da7cea73984111c95dd0c4a9e0a58d5f0e9464746"
     },
     "projects/.gitkeep": {
       "mode": 420,
@@ -666,11 +666,11 @@
     },
     "tools/building/project.md": {
       "mode": 420,
-      "sha256": "9275d9a39eec9b07295c72d1a38a709f1ceb75ed134a463354c3c7977b109c10"
+      "sha256": "6923ac274f62249ebfdbb661e0c2ea1a86c224dbc4a703c950a251ea3e1aaead"
     },
     "tools/building/settings.md": {
       "mode": 420,
-      "sha256": "3441bf2948975e2e6857b91d71b161b5918989006926277063c9685239594d55"
+      "sha256": "02f3a6cbed7d8f7164b5d0dc35a46c6a2fd65ebd943b7e7afaaa7fc24c493331"
     },
     "tools/building/skills.md": {
       "mode": 420,
@@ -678,7 +678,7 @@
     },
     "tools/building/templates/AGENTS.md.in": {
       "mode": 420,
-      "sha256": "37d18cf33b3a5326c2f5efbee70d885031dadeb77e6c02dbaa269731c861e153"
+      "sha256": "36d5c7ec606d9612675fc81f27741be08546d6a25ed6ffe705c62e27d2383a89"
     },
     "tools/building/templates/CLAUDE.md.in": {
       "mode": 420,
@@ -694,7 +694,7 @@
     },
     "tools/building/templates/claude-sandbox-settings.json": {
       "mode": 420,
-      "sha256": "257ba3ef06e2401294ce24ac238f7a5134e81ab64f0d9e39addecd7bea5f2773"
+      "sha256": "306e3e18625fb1fe83b7bba513510feea77832b6d689795a15377e6433dc3cf4"
     },
     "tools/building/templates/claude-settings.json": {
       "mode": 420,
@@ -726,7 +726,7 @@
     },
     "tools/features.md": {
       "mode": 420,
-      "sha256": "b9120683dd539b6dcaed50276302e333adceaa457c281d872e0f0f3e750cb28f"
+      "sha256": "13783a333fbec288a5df13b95f5a01a2676ebf0671874face080a83575ce4ade"
     },
     "tools/interview.md": {
       "mode": 420,
@@ -746,11 +746,11 @@
     },
     "tools/os-files.txt": {
       "mode": 420,
-      "sha256": "184fa5f95c605a03c62a041f4ea489dfc0c56ded4fa37606a0d727f1765d0bf7"
+      "sha256": "001f9319daa5571194e69c8a6a55d06716d7e84f772a77be220d585cbf54c07c"
     },
     "tools/os-update.md": {
       "mode": 420,
-      "sha256": "ea1072eab97f1eb8602773eabb257d70ef23f39c665212a4009d71feb3cf2e5b"
+      "sha256": "03bb9cb45fb0cf154899eb32df4b2a8feee3d9802105eaf188326449a292c537"
     },
     "tools/output_migration.py": {
       "mode": 420,
@@ -782,7 +782,7 @@
     },
     "tools/release_package.py": {
       "mode": 420,
-      "sha256": "312ec341cde99f25ed0d30969f34baecc7897e94007f7814c23017708b770956"
+      "sha256": "279546aa058d2d4675b9b4f389fd37017b68655759c4bec27e6ea1e0d202a177"
     },
     "tools/safety.md": {
       "mode": 420,
@@ -790,7 +790,7 @@
     },
     "tools/save-status.md": {
       "mode": 420,
-      "sha256": "25d9fcf221036f88fd1b59090570bcf06b75a3083fd7cb8e2b9c683fba748ade"
+      "sha256": "54af1946571985f992d1df143e1d4f37eb68597520c4714220c7da4779818da9"
     },
     "tools/save_status.py": {
       "mode": 420,
@@ -798,7 +798,7 @@
     },
     "tools/setup.md": {
       "mode": 420,
-      "sha256": "748b7c4586b7ec27349eb171af7b1542b391e572d406f2fc17324b72c257ebaa"
+      "sha256": "76cc3f7ec409818d0b61b5d4750176828e3b51237aec5265c39be86a63fa2dbe"
     },
     "tools/skills/create-prototype/SKILL.md": {
       "mode": 420,
@@ -844,17 +844,21 @@
       "mode": 420,
       "sha256": "3b68ecc9a8df256634e64faa55c7ed18dc4d09a1c51c2fd308a8d96080a49cf2"
     },
+    "tools/wiki_pending.py": {
+      "mode": 420,
+      "sha256": "cfbb3c77f3dd277c776020de85b5d814a34d1425fb5033141bb3ef21a25c3d73"
+    },
     "tools/wiki_view.py": {
       "mode": 420,
       "sha256": "5b4c942b2e566730ffbfbd7bfa851149eb87982be63eeaab5742845fedbdcdd1"
     },
     "tools/windows-upgrade.md": {
       "mode": 420,
-      "sha256": "d7623481b755ef3e93e9d2dafa961ec36ddc7d8f366f48d4d43e2578d1d9099a"
+      "sha256": "06bbafbdb8d2a93d3424c564e040c18458a7a6378ed425ee2c42c29bb9877140"
     },
     "wiki/README.md": {
       "mode": 420,
-      "sha256": "d046ab87174ee0010d2146f9789a30a6ac3d55e175648b713f9438cb94303a6e"
+      "sha256": "d08b174ca1dff6470e3b79ae72df6d913a2f59bd7a44cd8029bd192a2fdda6ac"
     },
     "wiki/index.md": {
       "mode": 420,
@@ -878,5 +882,5 @@
     }
   },
   "format": 1,
-  "version": "4.5.1"
+  "version": "4.5.2"
 }

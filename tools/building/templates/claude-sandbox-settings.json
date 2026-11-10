@@ -62,6 +62,12 @@
           "mode": "deny"
         }
       ]
+    },
+    "network": {
+      "allowedDomains": [
+        "github.com",
+        "api.github.com"
+      ]
     }
   }
 }
