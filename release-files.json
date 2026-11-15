@@ -202,7 +202,7 @@
     },
     "AGENTS.md": {
       "mode": 420,
-      "sha256": "5e0afe6be6d1c3866d4e67f25183b15048b62a5f4f64c9d5acf0843172fa2a33"
+      "sha256": "8ab616794efa8cc714733d5be6ac4589164b2c0667793de5d61b9daa6197bb25"
     },
     "CLAUDE.md": {
       "mode": 420,
@@ -234,7 +234,7 @@
     },
     "VERSION": {
       "mode": 420,
-      "sha256": "43e9fb767a7c3ee185de160da7cea73984111c95dd0c4a9e0a58d5f0e9464746"
+      "sha256": "916211a0a25da8daa76e92ab40c2a67dfcdc901975bb25b4987ccf5ef9575298"
     },
     "projects/.gitkeep": {
       "mode": 420,
@@ -738,7 +738,7 @@
     },
     "tools/native-defaults.json": {
       "mode": 420,
-      "sha256": "fa0966546d2443a602679c233c9773ea60a32fc72211a1369d31dc17562573e9"
+      "sha256": "d5b63ff2b1ea2e816f31b2a629b20c0a2f3c5b30da06987715d18056d51cb2f1"
     },
     "tools/onboarding.md": {
       "mode": 420,
@@ -746,7 +746,7 @@
     },
     "tools/os-files.txt": {
       "mode": 420,
-      "sha256": "001f9319daa5571194e69c8a6a55d06716d7e84f772a77be220d585cbf54c07c"
+      "sha256": "80c8511c5822f898a1a1a7d0b5f17d3a8e4df0d63855501131a5b270a1912de1"
     },
     "tools/os-update.md": {
       "mode": 420,
@@ -882,5 +882,5 @@
     }
   },
   "format": 1,
-  "version": "4.5.2"
+  "version": "4.5.3"
 }
