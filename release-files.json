@@ -202,7 +202,7 @@
     },
     "AGENTS.md": {
       "mode": 420,
-      "sha256": "8ab616794efa8cc714733d5be6ac4589164b2c0667793de5d61b9daa6197bb25"
+      "sha256": "4019b40f771084d0643fa1e19018794d544b61fb2eebe77641291de7536be957"
     },
     "CLAUDE.md": {
       "mode": 420,
@@ -226,15 +226,15 @@
     },
     "README.md": {
       "mode": 420,
-      "sha256": "777cd3d79f051171257491adb06564aa9863060dabe3c3a0d0ba1c1e59e343d4"
+      "sha256": "c06194b859c2f31f3e7000499c19f11767464fb3c0e0c7c448ff83c7ac945698"
     },
     "THIRD_PARTY.md": {
       "mode": 420,
-      "sha256": "ea9a3a97d206e197924abdddef0d318ea62903d2c69cfff4bf85b13ea0f596e8"
+      "sha256": "ddc1d876bf475dcd68a6e521d6328d3eb429e98011ca8e05e9e561ca092a4d23"
     },
     "VERSION": {
       "mode": 420,
-      "sha256": "916211a0a25da8daa76e92ab40c2a67dfcdc901975bb25b4987ccf5ef9575298"
+      "sha256": "ef3193df6d68bc7ef70fda62056eba15f0ef668fc9c21b487ae7fd56a562bfd6"
     },
     "projects/.gitkeep": {
       "mode": 420,
@@ -644,9 +644,17 @@
       "mode": 420,
       "sha256": "7ceea81ed4bce945d876b02e07a2e56e4fb46c81eaca81f9b8c79f92c105c0fa"
     },
+    "tools/assets/TERMS.md": {
+      "mode": 420,
+      "sha256": "30678eccd4b4c2700d07aabfca84359e963dc86eaa90405d8dfd8c2d326e4c80"
+    },
+    "tools/assets/aios-overview.jpg": {
+      "mode": 420,
+      "sha256": "72acfd13194ee9cff97868a248884d38d84a178675d76e9f0422ce9c8b707f85"
+    },
     "tools/building/design.md": {
       "mode": 420,
-      "sha256": "4c01e684ca2480da85a6bdc565886943c6c8a4630b44023665f48ca64548dc16"
+      "sha256": "892183e795f548419c902fc03651e70420d29a485bca20403f30bb7bfd8c232d"
     },
     "tools/building/existing-projects.md": {
       "mode": 420,
@@ -726,11 +734,11 @@
     },
     "tools/features.md": {
       "mode": 420,
-      "sha256": "13783a333fbec288a5df13b95f5a01a2676ebf0671874face080a83575ce4ade"
+      "sha256": "a8e04ab5b305732a3d24504ef0a216e1d25dde7b41c6b90f4554edf1001b7dee"
     },
     "tools/interview.md": {
       "mode": 420,
-      "sha256": "02cf90e1c406f93313bc492c7211c242ce60bedf07dc0e2334d2275e16a7ee54"
+      "sha256": "5dde772b4ea7572a9a3651972e52f6713b28cf32e2c0fa0eff5a39c00aa4aea3"
     },
     "tools/migrate_v3.py": {
       "mode": 420,
@@ -738,15 +746,15 @@
     },
     "tools/native-defaults.json": {
       "mode": 420,
-      "sha256": "d5b63ff2b1ea2e816f31b2a629b20c0a2f3c5b30da06987715d18056d51cb2f1"
+      "sha256": "843cccf6048fb28df9652749d23ea54b6e0545b7d29027c9c7f631dd1aab04f9"
     },
     "tools/onboarding.md": {
       "mode": 420,
-      "sha256": "21214c12a20d8b7054bfd25b5281f5b49e880369b96ca816b013794347309195"
+      "sha256": "be8600b561e7cc6e2412e4cf4ccff3a1814283518a9a22397e4fdf96d975b747"
     },
     "tools/os-files.txt": {
       "mode": 420,
-      "sha256": "80c8511c5822f898a1a1a7d0b5f17d3a8e4df0d63855501131a5b270a1912de1"
+      "sha256": "cf3b33a28a8936b68d37efc8b6e6348f44c1b054bfd694e75c5f066704d1312d"
     },
     "tools/os-update.md": {
       "mode": 420,
@@ -822,7 +830,7 @@
     },
     "tools/v3-migration.md": {
       "mode": 420,
-      "sha256": "33647c1ea004d9dfd99c0a10fcda329f07288fddf33fffeec763f6dad7f7f283"
+      "sha256": "f66e3a587bdab3978286bb0e7c7881382258d79910060a474eee46c2b58a5444"
     },
     "tools/v3_topics.py": {
       "mode": 420,
@@ -858,7 +866,7 @@
     },
     "wiki/README.md": {
       "mode": 420,
-      "sha256": "d08b174ca1dff6470e3b79ae72df6d913a2f59bd7a44cd8029bd192a2fdda6ac"
+      "sha256": "393a7b7b891951da0902908e90f74de7eb36f0e2e036b7c86bc9365e716fd799"
     },
     "wiki/index.md": {
       "mode": 420,
@@ -882,5 +890,5 @@
     }
   },
   "format": 1,
-  "version": "4.5.3"
+  "version": "4.7.0"
 }
